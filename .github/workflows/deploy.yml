@@ -3,22 +3,32 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: 'Deploy all services'
+        type: boolean
+        default: true
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-devness-com
     outputs:
-      web: ${{ steps.filter.outputs.web }}
+      web: ${{ steps.filter.outputs.web || github.event.inputs.deploy_all == 'true' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'push'
         with:
           filters: |
             web:
               - 'packages/web/**'
               - 'packages/ui/**'
               - 'packages/shared/**'
+              - 'deploy/Dockerfile.web'
 
   deploy-web:
     needs: changes
