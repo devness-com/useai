@@ -1,0 +1,77 @@
+version: 5
+name: useai
+description: useai.dev — Track your AI-assisted development workflow
+
+repos:
+  useai:
+    url: https://github.com/nabeelkausari/useai.git
+    path: /home/dev/useai
+    auth: token
+
+apps:
+  api:
+    path: packages/api
+    port: 3010
+    type: backend
+    framework: nestjs
+    runner: pm2
+    healthcheck: /api/admin/health
+    depends_on: [postgres, redis]
+    commands:
+      dev: dev
+      build: build
+      start: start:prod
+  web:
+    path: packages/web
+    port: 3456
+    type: frontend
+    framework: nextjs
+    runner: pm2
+    commands:
+      dev: dev
+      build: build
+      start: start
+  admin:
+    path: packages/admin
+    port: 3457
+    type: frontend
+    framework: vite
+    runner: pm2
+    commands:
+      dev: dev
+      build: build
+  worker:
+    path: packages/worker
+    type: worker
+    runner: pm2
+    depends_on: [redis]
+    commands:
+      dev: dev
+      build: build
+      start: start
+
+infra:
+  - name: postgres
+    image: postgres:16-alpine
+    port: 5432
+    env:
+      POSTGRES_USER: useai
+      POSTGRES_PASSWORD: useai_dev
+      POSTGRES_DB: useai
+  - redis
+
+defaults:
+  size: small
+
+presets:
+  frontend:
+    description: Frontend apps against local API
+    apps: [web, admin, api]
+    size: small
+  backend:
+    description: API and worker with infrastructure
+    apps: [api, worker]
+    size: small
+  full:
+    description: Full stack development with all services
+    size: medium

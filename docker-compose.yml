@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports: ["5532:5432"]
+    environment:
+      POSTGRES_USER: useai
+      POSTGRES_PASSWORD: useai_dev
+      POSTGRES_DB: useai
+    volumes: [postgres_data:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:alpine
+    ports: ["6479:6379"]
+
+volumes:
+  postgres_data:
