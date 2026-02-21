@@ -1,0 +1,35 @@
+{
+  "name": "useai",
+  "version": "0.2.0",
+  "private": true,
+  "description": "useai.dev — Track your AI-assisted development workflow",
+  "author": "nabeelkausari",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@useai/web",
+    "dev:dashboard": "pnpm --filter @useai/dashboard run dev",
+    "dev:daemon": "pnpm --filter @devness/useai run daemon",
+    "dev:mcp": "turbo dev --filter=@devness/useai",
+    "dev:cli": "turbo dev --filter=@devness/useai-cli",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "publish:packages": "node scripts/publish.mjs",
+    "split:repo": "bash scripts/split-repo.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=18"
+  }
+}

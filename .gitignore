@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.next/
+*.tgz
+.DS_Store
+.env
+.env.local
+.turbo/
+.coverit/
+*.log
+*.tsbuildinfo
+
+# Drizzle migrations
+**/drizzle/
+
+# coverit
+test-results/
+playwright-report/
+.pytest_cache/
+
+# Genbox secrets
+.env.genbox
+.genbox/
+.uploads/
+
+# Private packages (not open sourced)
+packages/api/
+packages/admin/
+packages/worker/

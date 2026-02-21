@@ -1,0 +1,46 @@
+{
+  "name": "@devness/useai-cli",
+  "version": "0.5.34",
+  "description": "CLI tool for useai.dev — stats, sync, publish your AI development workflow",
+  "author": "nabeelkausari",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "useai": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc --watch",
+    "bundle": "tsup src/index.ts --format esm --target node18 --no-splitting",
+    "prepublishOnly": "pnpm run bundle",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.2.1",
+    "chalk": "^5.4.1",
+    "commander": "^12.1.0",
+    "smol-toml": "^1.6.0",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@useai/shared": "workspace:*",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nabeelkausari/useai"
+  },
+  "homepage": "https://useai.dev",
+  "engines": {
+    "node": ">=18"
+  }
+}

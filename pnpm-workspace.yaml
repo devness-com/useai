@@ -1,0 +1,7 @@
+packages:
+  - packages/shared
+  - packages/mcp
+  - packages/cli
+  - packages/ui
+  - packages/dashboard
+  - packages/web
