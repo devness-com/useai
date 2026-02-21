@@ -2,7 +2,7 @@
 @source "../../ui/src/**/*.tsx";
 
 :root {
-  /* Dark theme (default) */
+  /* Dark theme (default) — matches dashboard */
   --bg-base: #09090b;
   --bg-surface-1: #18181b;
   --bg-surface-2: #27272a;
@@ -10,38 +10,48 @@
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
-  --accent: #e2b45a;
-  --accent-bright: #f0c66e;
-  --accent-rgb: 226, 180, 90;
-  --success: #4ade80;
-  --error: #f87171;
-  --streak: #fb923c;
+  --accent: #b4f82c;
+  --accent-bright: #d4fc6e;
+  --accent-dim: #4d7c0f;
+  --accent-rgb: 180, 248, 44;
+  --success: #b4f82c;
+  --error: #ef4444;
+  --streak: #f59e0b;
+  --streak-bg: rgba(245, 158, 11, 0.06);
+  --streak-border: rgba(245, 158, 11, 0.2);
+  --streak-muted: rgba(245, 158, 11, 0.5);
   --history: #60a5fa;
   --history-rgb: 96, 165, 250;
   --border: #27272a;
-  --glass-bg: rgba(24, 24, 27, 0.8);
-  --glass-border: rgba(39, 39, 42, 0.6);
+  --border-accent: rgba(var(--accent-rgb), 0.2);
+  --glass-bg: rgba(24, 24, 27, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="light"] {
-  --bg-base: #fafaf9;
-  --bg-surface-1: #f5f5f4;
-  --bg-surface-2: #e7e5e4;
-  --bg-surface-3: #d6d3d1;
-  --text-primary: #1c1917;
-  --text-secondary: #57534e;
-  --text-muted: #a8a29e;
-  --accent: #b8860b;
-  --accent-bright: #d4a017;
-  --accent-rgb: 184, 134, 11;
-  --success: #16a34a;
+  --bg-base: #ffffff;
+  --bg-surface-1: #f4f4f5;
+  --bg-surface-2: #e4e4e7;
+  --bg-surface-3: #d4d4d8;
+  --text-primary: #09090b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --accent: #65a30d;
+  --accent-bright: #84cc16;
+  --accent-dim: #f7fee7;
+  --accent-rgb: 101, 163, 13;
+  --success: #65a30d;
   --error: #dc2626;
-  --streak: #ea580c;
+  --streak: #b45309;
+  --streak-bg: rgba(180, 83, 9, 0.06);
+  --streak-border: rgba(180, 83, 9, 0.2);
+  --streak-muted: rgba(180, 83, 9, 0.5);
   --history: #2563eb;
   --history-rgb: 37, 99, 235;
-  --border: #d6d3d1;
-  --glass-bg: rgba(245, 245, 244, 0.8);
-  --glass-border: rgba(214, 211, 209, 0.6);
+  --border: #e4e4e7;
+  --border-accent: rgba(var(--accent-rgb), 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.05);
 }
 
 @theme {
@@ -54,18 +64,24 @@
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
   --color-success: var(--success);
   --color-error: var(--error);
   --color-streak: var(--streak);
+  --color-streak-bg: var(--streak-bg);
+  --color-streak-border: var(--streak-border);
+  --color-streak-muted: var(--streak-muted);
   --color-history: var(--history);
   --color-border: var(--border);
-  --color-purple: #a78bfa;
-  --color-blue: #60a5fa;
+  --color-border-accent: var(--border-accent);
+  --color-purple: #8b5cf6;
+  --color-blue: #3b82f6;
   --color-emerald: #34d399;
   --color-glass-bg: var(--glass-bg);
   --color-glass-border: var(--glass-border);
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -79,7 +95,8 @@ html {
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-feature-settings: "ss01", "ss02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
@@ -89,13 +106,24 @@ body {
 
 .glass-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .subtle-glow {
-  box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.08);
+  position: relative;
+}
+
+.subtle-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(45deg, transparent, rgba(var(--accent-rgb), 0.1), transparent);
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Landing page utilities */
@@ -103,20 +131,20 @@ body {
 .hero-glow {
   background: radial-gradient(
     ellipse 60% 50% at 50% 40%,
-    rgba(var(--accent-rgb), 0.12) 0%,
-    rgba(var(--accent-rgb), 0.04) 40%,
+    rgba(var(--accent-rgb), 0.08) 0%,
+    rgba(var(--accent-rgb), 0.03) 40%,
     transparent 70%
   );
 }
 
 .dot-pattern {
-  background-image: radial-gradient(circle, rgba(var(--accent-rgb), 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(var(--accent-rgb), 0.06) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.15), transparent);
 }
 
 .gradient-text {

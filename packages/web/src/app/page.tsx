@@ -28,6 +28,28 @@ import {
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
+/*  UseAI SVG Logo (matches dashboard)                                 */
+/* ------------------------------------------------------------------ */
+
+function UseAILogo({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 611.54 143.47" className={className}>
+      {/* USE */}
+      <g fill="var(--text-primary)">
+        <path d="M21.4,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v76.64c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h27.87c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v88.25c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85H37.78c-6.35,0-11.81-2.28-16.37-6.85Z"/>
+        <path d="M146.93,124.06v-13.93c0-3.1,1.55-4.65,4.64-4.65h69.67c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-51.09c-6.35,0-11.81-2.28-16.37-6.85-4.57-4.57-6.85-10.02-6.85-16.37v-23.22c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h92.9c3.1,0,4.65,1.55,4.65,4.65v13.94c0,3.1-1.55,4.65-4.65,4.65h-69.67c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25s1.12,6,3.37,8.25c2.24,2.25,4.99,3.37,8.25,3.37h51.09c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-92.9c-3.1,0-4.64-1.55-4.64-4.65Z"/>
+        <path d="M286.16,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V35.81c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h74.32c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-62.71v11.61c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h69.67c3.1,0,4.65,1.55,4.65,4.65v13.93c0,3.1-1.55,4.65-4.65,4.65h-92.9c-6.35,0-11.81-2.28-16.37-6.85ZM361.87,55.66c2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-27.87c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25v11.61h39.48c3.25,0,6-1.12,8.25-3.37Z"/>
+      </g>
+      {/* AI */}
+      <g fill="var(--accent)">
+        <path d="M432.08,126.44c-4.76-4.76-7.14-10.44-7.14-17.06v-24.2c0-6.61,2.38-12.3,7.14-17.06,4.76-4.76,10.44-7.14,17.06-7.14h65.34v-12.1c0-3.39-1.17-6.25-3.51-8.59-2.34-2.34-5.2-3.51-8.59-3.51h-72.6c-3.23,0-4.84-1.61-4.84-4.84v-14.52c0-3.23,1.61-4.84,4.84-4.84h96.8c6.61,0,12.3,2.38,17.06,7.14,4.76,4.76,7.14,10.45,7.14,17.06v72.6c0,6.62-2.38,12.3-7.14,17.06-4.76,4.76-10.45,7.14-17.06,7.14h-77.44c-6.62,0-12.3-2.38-17.06-7.14ZM510.97,105.87c2.34-2.34,3.51-5.2,3.51-8.59v-12.1h-41.14c-3.39,0-6.25,1.17-8.59,3.51-2.34,2.34-3.51,5.2-3.51,8.59s1.17,6.25,3.51,8.59c2.34,2.34,5.2,3.51,8.59,3.51h29.04c3.39,0,6.25-1.17,8.59-3.51Z"/>
+        <path d="M562.87,128.74V17.42c0-3.23,1.61-4.84,4.84-4.84h26.62c3.23,0,4.84,1.61,4.84,4.84v111.32c0,3.23-1.61,4.84-4.84,4.84h-26.62c-3.23,0-4.84-1.61-4.84-4.84Z"/>
+      </g>
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -49,31 +71,31 @@ const METRICS = [
     icon: Brain,
     title: 'Session Intelligence',
     description: 'Every session captured: duration, model, tool, milestones, and AI-evaluated quality scores.',
-    accent: '#e2b45a',
+    accent: 'var(--accent)',
   },
   {
     icon: Target,
     title: 'Task Distribution',
     description: 'See how your time splits across coding, debugging, testing, planning, and reviewing.',
-    accent: '#60a5fa',
+    accent: '#3b82f6',
   },
   {
     icon: Sparkles,
     title: 'Prompt Quality',
     description: 'AI-assessed prompt clarity, context quality, and scope precision — averaged over time.',
-    accent: '#a78bfa',
+    accent: '#8b5cf6',
   },
   {
     icon: Gauge,
     title: 'Output Velocity',
     description: 'Files touched, milestones hit, and tools leveraged per session. Track your throughput.',
-    accent: '#4ade80',
+    accent: 'var(--accent)',
   },
   {
     icon: Clock,
     title: 'Time Patterns',
     description: 'Heatmaps of your most productive hours and days. Find your flow state.',
-    accent: '#fb923c',
+    accent: '#f59e0b',
   },
   {
     icon: TrendingUp,
@@ -178,18 +200,18 @@ function SkillRadar() {
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => pointAt(i, level * maxR));
         const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
-        return <path key={level} d={path} fill="none" stroke="rgba(226,180,90,0.1)" strokeWidth="1" />;
+        return <path key={level} d={path} fill="none" stroke="var(--bg-surface-3)" strokeWidth="1" opacity="0.6" />;
       })}
       {/* Axes */}
       {Array.from({ length: n }, (_, i) => {
         const [x, y] = pointAt(i, maxR);
-        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(226,180,90,0.08)" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--bg-surface-3)" strokeWidth="1" opacity="0.4" />;
       })}
       {/* Data polygon */}
-      <path d={dataPath} fill="rgba(226,180,90,0.15)" stroke="var(--accent)" strokeWidth="2" />
+      <path d={dataPath} fill="rgba(var(--accent-rgb), 0.2)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
       {/* Data dots */}
       {dataPoints.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="var(--accent)" />
+        <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="var(--accent-bright)" />
       ))}
       {/* Labels */}
       {RADAR_DIMENSIONS.map((dim, i) => {
@@ -201,7 +223,7 @@ function SkillRadar() {
             y={y}
             textAnchor="middle"
             dominantBaseline="central"
-            className="fill-text-muted text-[10px]"
+            className="fill-text-secondary text-[10px]"
           >
             {dim.label}
           </text>
@@ -232,7 +254,7 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
       <span className="text-text-muted select-none">$</span>
       <span>{command}</span>
       {copied ? (
-        <Check className="w-4 h-4 text-success shrink-0" />
+        <Check className="w-4 h-4 text-accent shrink-0" />
       ) : (
         <Clipboard className="w-4 h-4 text-text-muted group-hover:text-accent shrink-0 transition-colors" />
       )}
@@ -250,9 +272,7 @@ export default function LandingPage() {
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-bg-base/80 border-b border-border/30">
         <div className="flex items-center justify-between max-w-6xl mx-auto px-6 py-4">
-          <div className="text-xl font-extrabold tracking-tight text-text-primary">
-            use<span className="text-accent">AI</span>
-          </div>
+          <UseAILogo className="h-5" />
           <div className="flex items-center gap-6">
             <a href="#features" className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors">
               Features
@@ -405,11 +425,11 @@ export default function LandingPage() {
             <motion.div
               key={m.title}
               variants={fadeUp}
-              className="group p-6 rounded-xl border border-border/50 bg-bg-surface-1/50 hover:border-accent/30 transition-colors"
+              className="group p-6 rounded-xl border border-border/50 bg-bg-surface-1 hover:border-accent/30 transition-colors"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                style={{ background: `${m.accent}15` }}
+                style={{ background: `color-mix(in srgb, ${m.accent} 10%, transparent)` }}
               >
                 <m.icon className="w-5 h-5" style={{ color: m.accent }} />
               </div>
@@ -471,15 +491,15 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface-2/50">
               <div className="w-3 h-3 rounded-full bg-error/60" />
               <div className="w-3 h-3 rounded-full bg-streak/60" />
-              <div className="w-3 h-3 rounded-full bg-success/60" />
+              <div className="w-3 h-3 rounded-full bg-accent/60" />
               <span className="text-xs text-text-muted font-mono ml-2">Terminal</span>
             </div>
             <div className="p-5 font-mono text-xs sm:text-sm leading-relaxed space-y-4">
               {/* Setup */}
               <div>
                 <div className="text-text-muted">$ npx @devness/useai setup</div>
-                <div className="text-success mt-1.5">&#10003; MCP server configured for Claude Code</div>
-                <div className="text-success">&#10003; Daemon started on port 19200</div>
+                <div className="text-accent mt-1.5">&#10003; MCP server configured for Claude Code</div>
+                <div className="text-accent">&#10003; Daemon started on port 19200</div>
                 <div className="text-text-muted mt-1">Ready — sessions will be tracked automatically.</div>
               </div>
 
@@ -491,7 +511,7 @@ export default function LandingPage() {
                   <div>Sessions today: <span className="text-text-primary">4</span> &nbsp;|&nbsp; Week: <span className="text-text-primary">23</span></div>
                   <div>Prompt quality: <span className="text-accent">4.1</span> / 5</div>
                   <div>Top tool: <span className="text-text-primary">Claude Code</span> (68%)</div>
-                  <div>Completion rate: <span className="text-success">92%</span></div>
+                  <div>Completion rate: <span className="text-accent">92%</span></div>
                 </div>
               </div>
             </div>
@@ -621,7 +641,7 @@ export default function LandingPage() {
             <motion.div
               key={tool.name}
               variants={fadeUp}
-              className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-bg-surface-1/50"
+              className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-bg-surface-1"
             >
               <span className="w-3 h-3 rounded-full shrink-0" style={{ background: tool.color }} />
               <span className="text-sm font-medium text-text-secondary truncate">{tool.name}</span>
@@ -660,7 +680,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5 }}
-            className="rounded-xl border border-border/50 bg-bg-surface-1/50 p-6"
+            className="rounded-xl border border-border/50 bg-bg-surface-1 p-6"
           >
             <div className="flex items-center gap-2 mb-5">
               <Trophy className="w-5 h-5 text-accent" />
@@ -682,7 +702,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="rounded-xl border border-border/50 bg-bg-surface-1/50 p-6"
+            className="rounded-xl border border-border/50 bg-bg-surface-1 p-6"
           >
             <div className="flex items-center gap-2 mb-5">
               <Users className="w-5 h-5 text-accent" />
@@ -746,9 +766,7 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-border/50 py-8">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-xs text-text-muted">
-            use<span className="text-accent font-bold">AI</span> &middot; useai.dev
-          </span>
+          <UseAILogo className="h-3.5" />
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/AhmedElBanna/useai"
