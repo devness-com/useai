@@ -64,6 +64,8 @@
   --color-emerald: #34d399;
   --color-glass-bg: var(--glass-bg);
   --color-glass-border: var(--glass-border);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
 }
 
 html {
@@ -94,4 +96,32 @@ body {
 
 .subtle-glow {
   box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.08);
+}
+
+/* Landing page utilities */
+
+.hero-glow {
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 40%,
+    rgba(var(--accent-rgb), 0.12) 0%,
+    rgba(var(--accent-rgb), 0.04) 40%,
+    transparent 70%
+  );
+}
+
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(var(--accent-rgb), 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.2), transparent);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), var(--accent-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
