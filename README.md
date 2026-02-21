@@ -116,14 +116,18 @@ All data is written to `~/.useai/` as JSONL files. The MCP server makes zero net
 - Generic milestone descriptions (privacy-filtered by design)
 - Self-evaluation metrics (prompt quality, task outcome, independence)
 
-**Never tracked:** your code, prompts, responses, file names, paths, or project names.
+**Never tracked:** your code, prompts, AI responses, file names, file paths, or directory structure.
+
+### What Gets Synced
+
+When you run `useai sync`, full session records (not just aggregates) are sent to the server. This includes all fields above plus `private_title` and `project` name. See [PRIVACY.md](PRIVACY.md) for the exact payload and what's publicly visible vs. private.
 
 ## CLI
 
 ```bash
 useai stats         # View local stats: streaks, hours, tools, languages
 useai status        # See everything stored on your machine
-useai sync          # Sync aggregate stats to useai.dev
+useai sync          # Sync sessions to useai.dev
 useai serve         # Start local analytics dashboard
 useai config        # Manage settings
 ```
@@ -157,8 +161,10 @@ UseAI is designed with privacy as architecture, not just policy:
 - **Local-first** -- MCP server writes to disk, never to the network
 - **Open source** -- audit exactly what gets recorded
 - **Cryptographic chain** -- Ed25519 signed hash chain for tamper evidence
-- **Opt-in sync** -- stats only leave your machine when you choose
+- **Opt-in sync** -- data only leaves your machine when you choose
 - **You own your data** -- export or delete at any time
+
+For a complete list of every field captured, what happens when you sync, and what's visible on your public profile, see [PRIVACY.md](PRIVACY.md). For details on the cryptographic chain, see [SECURITY.md](SECURITY.md).
 
 ## Contributing
 
