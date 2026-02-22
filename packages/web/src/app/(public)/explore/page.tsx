@@ -4,13 +4,7 @@ import { SUPPORTED_AI_TOOLS, TOOL_COLORS, TOOL_ICONS } from '@useai/shared';
 export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-bg-base">
-      <nav className="flex items-center justify-between max-w-6xl mx-auto px-6 py-4">
-        <a href="/" className="text-xl font-black tracking-tight text-text-primary">
-          use<span className="text-accent">AI</span>
-        </a>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 pt-24 pb-12">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
           <div className="flex items-center gap-3">
             <Sparkles className="w-6 h-6 text-accent" />
@@ -25,6 +19,19 @@ export default function ExplorePage() {
           {SUPPORTED_AI_TOOLS.map((tool) => {
             const color = TOOL_COLORS[tool.key] ?? '#91919a';
             const iconSrc = TOOL_ICONS[tool.key];
+            const iconMaskStyle = iconSrc
+              ? {
+                  WebkitMaskImage: `url("${iconSrc}")`,
+                  maskImage: `url("${iconSrc}")`,
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  backgroundColor: 'currentColor',
+                }
+              : undefined;
 
             return (
               <div
@@ -33,12 +40,17 @@ export default function ExplorePage() {
               >
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-                  style={{ backgroundColor: `${color}15`, color }}
+                  style={{ backgroundColor: `${color}15` }}
                 >
                   {iconSrc ? (
-                    <img src={iconSrc} alt={`${tool.name} icon`} className="w-5 h-5" />
+                    <span
+                      role="img"
+                      aria-label={`${tool.name} icon`}
+                      className="w-5 h-5 block text-text-primary"
+                      style={iconMaskStyle}
+                    />
                   ) : (
-                    <span className="text-xs font-black">{tool.name.slice(0, 2).toUpperCase()}</span>
+                    <span className="text-xs font-black text-text-primary">{tool.name.slice(0, 2).toUpperCase()}</span>
                   )}
                 </div>
                 <h3 className="text-sm font-bold text-text-primary mb-1 group-hover:text-accent transition-colors">

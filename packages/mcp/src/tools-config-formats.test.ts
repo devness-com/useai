@@ -36,6 +36,9 @@ vi.mock('node:child_process', () => ({
 
 vi.mock('@useai/shared', () => ({
   DAEMON_MCP_URL: 'http://localhost:12425/mcp',
+  CONFIG_FILE: '/tmp/useai-test-config.json',
+  readJson: () => ({ milestone_tracking: true, auto_sync: true, evaluation_framework: 'raw' }),
+  buildInstructionsText: () => '## UseAI Session Tracking\n- test instructions',
 }));
 
 function readJson(path: string): Record<string, unknown> {

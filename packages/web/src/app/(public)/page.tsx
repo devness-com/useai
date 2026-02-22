@@ -24,29 +24,8 @@ import {
   Trophy,
   ChevronRight,
   Zap,
-  Github,
   Activity
 } from 'lucide-react';
-
-/* ------------------------------------------------------------------ */
-/*  UseAI SVG Logo                                                     */
-/* ------------------------------------------------------------------ */
-
-function UseAILogo({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 611.54 143.47" className={className}>
-      <g fill="var(--text-primary)">
-        <path d="M21.4,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v76.64c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h27.87c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v88.25c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85H37.78c-6.35,0-11.81-2.28-16.37-6.85Z"/>
-        <path d="M146.93,124.06v-13.93c0-3.1,1.55-4.65,4.64-4.65h69.67c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-51.09c-6.35,0-11.81-2.28-16.37-6.85-4.57-4.57-6.85-10.02-6.85-16.37v-23.22c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h92.9c3.1,0,4.65,1.55,4.65,4.65v13.94c0,3.1-1.55,4.65-4.65,4.65h-69.67c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25s1.12,6,3.37,8.25c2.24,2.25,4.99,3.37,8.25,3.37h51.09c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-92.9c-3.1,0-4.64-1.55-4.64-4.65Z"/>
-        <path d="M286.16,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V35.81c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h74.32c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-62.71v11.61c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h69.67c3.1,0,4.65,1.55,4.65,4.65v13.93c0,3.1-1.55,4.65-4.65,4.65h-92.9c-6.35,0-11.81-2.28-16.37-6.85ZM361.87,55.66c2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-27.87c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25v11.61h39.48c3.25,0,6-1.12,8.25-3.37Z"/>
-      </g>
-      <g fill="var(--accent)">
-        <path d="M432.08,126.44c-4.76-4.76-7.14-10.44-7.14-17.06v-24.2c0-6.61,2.38-12.3,7.14-17.06,4.76-4.76,10.44-7.14,17.06-7.14h65.34v-12.1c0-3.39-1.17-6.25-3.51-8.59-2.34-2.34-5.2-3.51-8.59-3.51h-72.6c-3.23,0-4.84-1.61-4.84-4.84v-14.52c0-3.23,1.61-4.84,4.84-4.84h96.8c6.61,0,12.3,2.38,17.06,7.14,4.76,4.76,7.14,10.45,7.14,17.06v72.6c0,6.62-2.38,12.3-7.14,17.06-4.76,4.76-10.45,7.14-17.06,7.14h-77.44c-6.62,0-12.3-2.38-17.06-7.14ZM510.97,105.87c2.34-2.34,3.51-5.2,3.51-8.59v-12.1h-41.14c-3.39,0-6.25,1.17-8.59,3.51-2.34,2.34-3.51,5.2-3.51,8.59s1.17,6.25,3.51,8.59c2.34,2.34,5.2,3.51,8.59,3.51h29.04c3.39,0,6.25-1.17,8.59-3.51Z"/>
-        <path d="M562.87,128.74V17.42c0-3.23,1.61-4.84,4.84-4.84h26.62c3.23,0,4.84,1.61,4.84,4.84v111.32c0,3.23-1.61,4.84-4.84,4.84h-26.62c-3.23,0-4.84-1.61-4.84-4.84Z"/>
-      </g>
-    </svg>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -332,13 +311,13 @@ function HeroDashboardAnimation() {
   }, [activePanel]);
 
   const leaderboardUsers = panel3Climbed ? [
-    { id: 'you', rank: 1, name: 'You', score: 92, isYou: true },
-    { id: '0xNeural', rank: 2, name: '0xNeural', score: 91, isYou: false },
-    { id: 'CyberDev', rank: 3, name: 'CyberDev', score: 89, isYou: false },
+    { id: '0xNeural', rank: 1, name: '0xNeural', score: 96, isYou: false },
+    { id: 'you', rank: 2, name: 'You', score: 92, isYou: true },
+    { id: 'CyberDev', rank: 3, name: 'CyberDev', score: 91, isYou: false },
   ] : [
-    { id: '0xNeural', rank: 1, name: '0xNeural', score: 91, isYou: false },
-    { id: 'CyberDev', rank: 2, name: 'CyberDev', score: 89, isYou: false },
-    { id: 'you', rank: 3, name: 'You', score: 92, isYou: true },
+    { id: '0xNeural', rank: 1, name: '0xNeural', score: 96, isYou: false },
+    { id: 'CyberDev', rank: 2, name: 'CyberDev', score: 91, isYou: false },
+    { id: 'you', rank: 3, name: 'You', score: 89, isYou: true },
   ];
 
   const smoothTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] };
@@ -347,9 +326,9 @@ function HeroDashboardAnimation() {
     <div className="w-full relative z-10 px-4 md:px-0 mt-6 md:mt-0">
       <div className="flex flex-col gap-3 relative max-w-lg mx-auto lg:mx-0 lg:ml-auto w-full min-h-[340px]">
         {/* Connecting Lines (Desktop only) */}
-        <div className="hidden lg:block absolute left-[2.5rem] top-[2.5rem] bottom-[2.5rem] w-px bg-border-accent/30 -z-10">
+        <div className="hidden lg:block absolute -right-6 top-[2.5rem] bottom-[4rem] w-px bg-border-accent/30 -z-10">
           <motion.div 
-            className="w-full bg-accent/80"
+            className="w-full bg-accent/80 origin-top"
             initial={{ height: '33%' }}
             animate={{ height: activePanel === 0 ? '33%' : activePanel === 1 ? '66%' : '100%' }}
             transition={smoothTransition}
@@ -385,33 +364,29 @@ function HeroDashboardAnimation() {
                 transition={smoothTransition}
                 className="overflow-hidden"
               >
-                <div className="font-mono text-sm space-y-2">
-                  <p className="text-text-secondary"><span className="text-blue-400">const</span> prompt <span className="text-accent">=</span> <span className="text-green-400">"Refactor auth"</span>;</p>
-                  <motion.p 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-text-muted text-xs break-all"
-                  >
-                    <span className="text-purple-400">await</span> ai.generate(prompt);
-                  </motion.p>
-                  <div className="relative h-[3.75rem] w-full mt-1">
-                    <motion.div 
-                      key="typing-cursor"
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: [0, 1, 0] }} 
-                      transition={{ repeat: Infinity, duration: 1 }}
-                      className="w-2 h-3.5 bg-accent absolute top-0 left-0"
-                    />
+                <div className="font-mono text-xs space-y-2 leading-relaxed">
+                  <p className="text-text-primary"><span className="text-text-muted select-none">&gt;</span> "Refactor auth logic to use JWT"</p>
+                  
+                  <div className="relative h-[6.5rem] w-full mt-2">
                     <motion.div 
                       key="ide-results"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6 }}
-                      className="text-xs text-text-secondary bg-bg-surface-2 p-2 rounded absolute top-0 w-full pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="text-[10px] sm:text-xs text-text-secondary bg-bg-surface-2 p-2.5 rounded-lg absolute top-0 left-0 w-full pointer-events-none space-y-2 border border-border-accent/30 shadow-inner"
                     >
-                      <span className="text-accent">✔</span> 4 files updated<br/>
-                      <span className="text-accent">✔</span> Tests passed
+                      <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" /> <span>Call <span className="text-purple-400 font-bold">useai_start</span></span>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="flex items-center gap-2 pl-[14px]">
+                        <span className="text-text-muted">... refactoring 4 files</span>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.0 }} className="flex items-center gap-2 pl-[14px]">
+                        <span className="text-green-400">✔</span> <span>All tests passed</span>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.6 }} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" /> <span>Call <span className="text-purple-400 font-bold">useai_end</span></span>
+                      </motion.div>
                     </motion.div>
                   </div>
                 </div>
@@ -450,31 +425,33 @@ function HeroDashboardAnimation() {
                 transition={smoothTransition}
                 className="overflow-hidden"
               >
-                <div className="space-y-2.5 pt-1">
-                   <div className="flex justify-between items-center text-xs font-mono">
-                     <span className="text-text-secondary">PROMPT_QUALITY</span>
-                     <span className="text-text-primary">9.4/10</span>
-                   </div>
-                   <div className="w-full bg-bg-surface-2 h-1.5 rounded-full overflow-hidden">
-                     <motion.div className="h-full bg-blue-400" initial={{ width: '0%' }} animate={{ width: activePanel === 1 ? '94%' : '0%' }} transition={{ duration: 0.8, delay: 0.2 }}/>
-                   </div>
-                   
-                   <div className="flex justify-between items-center text-xs font-mono mt-2">
-                     <span className="text-text-secondary">CONTEXT_SCORE</span>
-                     <span className="text-text-primary">8.8/10</span>
-                   </div>
-                   <div className="w-full bg-bg-surface-2 h-1.5 rounded-full overflow-hidden">
-                     <motion.div className="h-full bg-purple-400" initial={{ width: '0%' }} animate={{ width: activePanel === 1 ? '88%' : '0%' }} transition={{ duration: 0.8, delay: 0.4 }} />
-                   </div>
+                <div className="space-y-1.5 pt-1">
+                  {[
+                    { label: 'PROMPT_QUALITY', score: '9.4', pct: '94%', color: 'bg-blue-400', delay: 0.2 },
+                    { label: 'CONTEXT_SCORE', score: '8.8', pct: '88%', color: 'bg-purple-400', delay: 0.3 },
+                    { label: 'SCOPE_PRECISION', score: '9.0', pct: '90%', color: 'bg-green-400', delay: 0.4 },
+                    { label: 'INDEPENDENCE', score: '8.5', pct: '85%', color: 'bg-yellow-400', delay: 0.5 },
+                    { label: 'TOOL_USAGE', score: '9.2', pct: '92%', color: 'bg-orange-400', delay: 0.6 },
+                  ].map((m) => (
+                    <div key={m.label} className="space-y-1">
+                      <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono">
+                        <span className="text-text-secondary">{m.label}</span>
+                        <span className="text-text-primary">{m.score}/10</span>
+                      </div>
+                      <div className="w-full bg-bg-surface-2 h-1 rounded-full overflow-hidden">
+                        <motion.div className={`h-full ${m.color}`} initial={{ width: '0%' }} animate={{ width: activePanel === 1 ? m.pct : '0%' }} transition={{ duration: 0.8, delay: m.delay }}/>
+                      </div>
+                    </div>
+                  ))}
 
                    <motion.div 
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6 }}
-                      className="mt-2 pt-2 border-t border-border/50 text-center"
+                      transition={{ delay: 0.8 }}
+                      className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between"
                    >
-                      <div className="text-[9px] text-text-muted font-mono tracking-widest">SESSION_SCORE</div>
-                      <div className="text-2xl font-black text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] leading-none mt-1">92</div>
+                      <div className="text-[10px] text-text-muted font-mono tracking-widest">SESSION_SCORE</div>
+                      <div className="text-xl font-black text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] leading-none">92</div>
                    </motion.div>
                 </div>
               </motion.div>
@@ -543,78 +520,12 @@ function HeroDashboardAnimation() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page Components                                                    */
-/* ------------------------------------------------------------------ */
-
-function TopNav() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    
-    // Check initial state
-    handleScroll();
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b transform-gpu ${
-      scrolled 
-        ? 'bg-bg-base/80 backdrop-blur-md border-border shadow-sm' 
-        : 'bg-transparent border-transparent shadow-none'
-    }`}>
-      <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center gap-3">
-          <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
-          <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-[var(--accent-alpha)] text-[10px] text-accent font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
-            SYSTEM_ONLINE
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-8">
-          <a href="#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
-            // FEATURES
-          </a>
-          <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
-            // LEADERBOARD
-          </Link>
-          <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-white border border-accent flex items-center gap-2">
-            ACCESS_TERM <Terminal className="w-3 h-3" />
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    
-    // Check initial state
-    handleScroll();
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
       <div className="blur-blob w-[600px] h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
       <div className="blur-blob w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
-
-      <TopNav />
 
       <main className="relative z-10 pb-32">
         {/* ── Hero ── */}
@@ -831,25 +742,6 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-
-      {/* ── Footer ── */}
-      <footer className="relative z-10 border-t border-border/50 bg-bg-surface-1 pt-12 pb-6">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-6">
-          <div className="flex flex-col gap-2">
-            <UseAILogo className="h-4 opacity-50 hover:opacity-100 transition-opacity" />
-            <span className="text-[10px] text-text-muted font-mono tracking-widest">© {new Date().getFullYear()} DEVNESS NETWORK</span>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <a href="https://github.com/AhmedElBanna/useai" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-2">
-              <Github className="w-4 h-4" /> REPOSITORY
-            </a>
-            <a href="https://www.npmjs.com/package/@devness/useai" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-2">
-              <Terminal className="w-4 h-4" /> PACKAGE
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

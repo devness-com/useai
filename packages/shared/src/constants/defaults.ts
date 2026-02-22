@@ -3,6 +3,7 @@ import type { LocalConfig } from '../types/config.js';
 export const DEFAULT_CONFIG: LocalConfig = {
   milestone_tracking: true,
   auto_sync: true,
+  evaluation_framework: 'raw',
 };
 
 export const DEFAULT_SYNC_INTERVAL_HOURS = 24;

@@ -7,11 +7,14 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 export type ConfigFormat = 'standard' | 'vscode' | 'zed' | 'toml' | 'yaml' | 'crush';
 
+type InstructionsConfig = { method: 'append' | 'create'; path: string };
+
 export interface AiTool {
   id: string;
   name: string;
   configFormat: ConfigFormat;
   supportsUrl: boolean;
+  instructionPlacement?: InstructionsConfig;
   getConfigPath(): string;
   detect(): boolean;
   isConfigured(): boolean;
@@ -33,7 +36,7 @@ const MCP_ENTRY = {
   args: ['-y', '@devness/useai@latest'],
 };
 
-import { DAEMON_MCP_URL } from '@useai/shared';
+import { DAEMON_MCP_URL, buildInstructionsText } from '@useai/shared';
 
 export const MCP_HTTP_URL = DAEMON_MCP_URL;
 
@@ -344,16 +347,13 @@ function installCrushHttp(configPath: string): void {
 const INSTRUCTIONS_START = '<!-- useai:start -->';
 const INSTRUCTIONS_END = '<!-- useai:end -->';
 
-const USEAI_INSTRUCTIONS = [
-  '## UseAI Session Tracking',
-  '- At the START of every response, call `useai_session_start` with the appropriate task_type.',
-  '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
-  '- At the END of every response, call `useai_session_end` with languages used, files_touched_count, and milestones (generic descriptions only — no project names, file paths, or company names).',
-].join('\n');
+function getUseaiInstructions(frameworkId?: string): string {
+  return buildInstructionsText(frameworkId);
+}
 
-const USEAI_INSTRUCTIONS_BLOCK = `${INSTRUCTIONS_START}\n${USEAI_INSTRUCTIONS}\n${INSTRUCTIONS_END}`;
-
-type InstructionsConfig = { method: 'append' | 'create'; path: string };
+function getUseaiInstructionsBlock(frameworkId?: string): string {
+  return `${INSTRUCTIONS_START}\n${getUseaiInstructions(frameworkId)}\n${INSTRUCTIONS_END}`;
+}
 
 function hasInstructionsBlock(filePath: string): boolean {
   if (!existsSync(filePath)) return false;
@@ -364,11 +364,14 @@ function hasInstructionsBlock(filePath: string): boolean {
   }
 }
 
-function injectInstructions(config: InstructionsConfig): void {
+function injectInstructions(config: InstructionsConfig, frameworkId?: string): void {
   mkdirSync(dirname(config.path), { recursive: true });
 
+  const instructions = getUseaiInstructions(frameworkId);
+  const block = getUseaiInstructionsBlock(frameworkId);
+
   if (config.method === 'create') {
-    writeFileSync(config.path, USEAI_INSTRUCTIONS + '\n');
+    writeFileSync(config.path, instructions + '\n');
     return;
   }
 
@@ -383,12 +386,12 @@ function injectInstructions(config: InstructionsConfig): void {
     const pattern = new RegExp(
       `${INSTRUCTIONS_START}[\\s\\S]*?${INSTRUCTIONS_END}`,
     );
-    writeFileSync(config.path, existing.replace(pattern, USEAI_INSTRUCTIONS_BLOCK));
+    writeFileSync(config.path, existing.replace(pattern, block));
     return;
   }
 
   const separator = existing && !existing.endsWith('\n') ? '\n\n' : existing ? '\n' : '';
-  writeFileSync(config.path, existing + separator + USEAI_INSTRUCTIONS_BLOCK + '\n');
+  writeFileSync(config.path, existing + separator + block + '\n');
 }
 
 function removeInstructions(config: InstructionsConfig): void {
@@ -451,6 +454,7 @@ function createTool(def: {
     name: def.name,
     configFormat: def.configFormat,
     supportsUrl: urlSupported,
+    instructionPlacement: def.instructions,
     getConfigPath: () => def.configPath,
     detect: def.detect,
     isConfigured: () => handler.isConfigured(def.configPath),
@@ -739,3 +743,20 @@ export const AI_TOOLS: AiTool[] = [
     manualHint: 'Add the instructions below to .junie/guidelines.md in your project root.',
   }),
 ];
+
+/** Re-inject instructions for all configured tools using the specified framework. */
+export function reinjectInstructions(frameworkId: string): { tool: string; ok: boolean }[] {
+  const results: { tool: string; ok: boolean }[] = [];
+  for (const tool of AI_TOOLS) {
+    try {
+      if (!tool.isConfigured()) continue;
+      if (tool.instructionPlacement) {
+        injectInstructions(tool.instructionPlacement, frameworkId);
+        results.push({ tool: tool.name, ok: true });
+      }
+    } catch {
+      results.push({ tool: tool.name, ok: false });
+    }
+  }
+  return results;
+}

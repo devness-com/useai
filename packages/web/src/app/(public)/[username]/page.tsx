@@ -57,13 +57,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <nav className="flex items-center justify-between max-w-4xl mx-auto px-6 py-4">
-        <a href="/" className="text-xl font-black tracking-tight text-text-primary">
-          use<span className="text-accent">AI</span>
-        </a>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
         {/* Profile header */}
         <div className="flex items-center gap-4 mb-8">
           <div className="w-16 h-16 rounded-full bg-bg-surface-2 flex items-center justify-center text-xl font-black text-text-muted">

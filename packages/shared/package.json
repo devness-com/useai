@@ -34,6 +34,14 @@
     "./daemon": {
       "types": "./dist/daemon/index.d.ts",
       "import": "./dist/daemon/index.js"
+    },
+    "./frameworks": {
+      "types": "./dist/frameworks/index.d.ts",
+      "import": "./dist/frameworks/index.js"
+    },
+    "./scoring": {
+      "types": "./dist/scoring/index.d.ts",
+      "import": "./dist/scoring/index.js"
     }
   },
   "scripts": {

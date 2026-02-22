@@ -13,7 +13,8 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { AiTool as BaseAiTool, InstructionsConfig, InstructionPlacement } from '@devness/mcp-setup';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { DAEMON_MCP_URL } from '@useai/shared';
+import { DAEMON_MCP_URL, CONFIG_FILE, readJson, buildInstructionsText } from '@useai/shared';
+import type { LocalConfig } from '@useai/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,17 @@ export interface AiTool extends BaseAiTool {
 
 // ── Instructions ─────────────────────────────────────────────────────────────
 
+/** Generate instructions text using the configured evaluation framework. */
+export function getInstructionsText(): string {
+  const config = readJson<LocalConfig>(CONFIG_FILE, {
+    milestone_tracking: true,
+    auto_sync: true,
+    evaluation_framework: 'raw',
+  });
+  return buildInstructionsText(config.evaluation_framework);
+}
+
+/** Static instructions text for backward compatibility (uses raw default). */
 export const USEAI_INSTRUCTIONS_TEXT = [
   '## UseAI Session Tracking',
   '- At the START of every response, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
@@ -41,6 +53,15 @@ const INSTRUCTIONS: InstructionsConfig = {
   startMarker: '<!-- useai:start -->',
   endMarker: '<!-- useai:end -->',
 };
+
+/** Get instructions config with dynamic text from active framework. */
+export function getInstructions(): InstructionsConfig {
+  return {
+    text: getInstructionsText(),
+    startMarker: '<!-- useai:start -->',
+    endMarker: '<!-- useai:end -->',
+  };
+}
 
 // ── Shared registry ──────────────────────────────────────────────────────────
 
@@ -174,7 +195,7 @@ const registryTools: AiTool[] = registry.tools.map((baseTool) => {
       // but we wrote a different config entry above)
       const placement = toolInstructions[baseTool.id];
       if (placement) {
-        injectInstructions(INSTRUCTIONS, placement);
+        injectInstructions(getInstructions(), placement);
       }
     },
   };
@@ -241,7 +262,7 @@ function createExtraTool(def: {
         : { ...MCP_STDIO_ENTRY };
       config[jsonKey] = servers;
       writeJsonFile(def.configPath, config);
-      if (def.instructions) injectInstructions(INSTRUCTIONS, def.instructions);
+      if (def.instructions) injectInstructions(getInstructions(), def.instructions);
     },
     installHttp() {
       if (def.configFormat === 'antigravity') {
@@ -251,7 +272,7 @@ function createExtraTool(def: {
       } else {
         installStandardHttp(def.configPath);
       }
-      if (def.instructions) injectInstructions(INSTRUCTIONS, def.instructions);
+      if (def.instructions) injectInstructions(getInstructions(), def.instructions);
     },
     remove() {
       const config = readJsonFile(def.configPath);

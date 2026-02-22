@@ -30,13 +30,7 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <nav className="flex items-center justify-between max-w-4xl mx-auto px-6 py-4">
-        <a href="/" className="text-xl font-black tracking-tight text-text-primary">
-          use<span className="text-accent">AI</span>
-        </a>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
         <div className="flex items-center gap-3 mb-8">
           <Trophy className="w-6 h-6 text-accent" />
           <h1 className="text-2xl font-black text-text-primary">Leaderboard</h1>

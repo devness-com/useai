@@ -23,6 +23,7 @@ import {
   generateSessionId,
 } from '@useai/shared';
 import type { SessionSeal, SessionEvaluation, ToolOverhead, Milestone, LocalConfig } from '@useai/shared';
+import { getFramework } from '@useai/shared';
 import type { SessionState } from './session-state.js';
 import { writeMcpMapping } from './mcp-map.js';
 
@@ -306,6 +307,16 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         }
       }
 
+      // Compute session score from evaluation using configured framework
+      let sessionScore: number | undefined;
+      let frameworkId: string | undefined;
+      if (evaluation) {
+        const config = getConfig();
+        const framework = getFramework(config.evaluation_framework);
+        sessionScore = Math.round(framework.computeSessionScore(evaluation));
+        frameworkId = framework.id;
+      }
+
       // Estimate token overhead for useai_end call
       const endParamsJson = JSON.stringify({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation });
       const endOutputTokensEst = Math.ceil(endParamsJson.length / 4);
@@ -318,6 +329,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         files_touched: files_touched_count ?? 0,
         heartbeat_count: session.heartbeatCount,
         ...(evaluation ? { evaluation } : {}),
+        ...(sessionScore !== undefined ? { session_score: sessionScore } : {}),
+        ...(frameworkId ? { evaluation_framework: frameworkId } : {}),
         ...(session.modelId ? { model: session.modelId } : {}),
       });
 
@@ -340,6 +353,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
+        session_score: sessionScore,
+        evaluation_framework: frameworkId,
         started_at: new Date(session.sessionStartTime).toISOString(),
         ended_at: now,
         duration_seconds: duration,
@@ -375,7 +390,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       const langStr = languages && languages.length > 0 ? ` using ${languages.join(', ')}` : '';
       const milestoneStr = milestoneCount > 0 ? ` · ${milestoneCount} milestone${milestoneCount > 1 ? 's' : ''} recorded` : '';
       const evalStr = evaluation ? ` · eval: ${evaluation.task_outcome} (prompt: ${evaluation.prompt_quality}/5)` : '';
-      const responseText = `Session ended: ${durationStr} ${finalTaskType}${langStr}${milestoneStr}${evalStr}`;
+      const scoreStr = sessionScore !== undefined ? ` · score: ${sessionScore}/100 (${frameworkId})` : '';
+      const responseText = `Session ended: ${durationStr} ${finalTaskType}${langStr}${milestoneStr}${evalStr}${scoreStr}`;
 
       // Finalize tool_overhead
       const endInputTokensEst = Math.ceil(responseText.length / 4);
@@ -400,6 +416,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
+        session_score: sessionScore,
+        evaluation_framework: frameworkId,
         tool_overhead: toolOverhead,
         started_at: new Date(session.sessionStartTime).toISOString(),
         ended_at: now,
