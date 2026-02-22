@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   ArrowRight,
@@ -25,22 +25,21 @@ import {
   ChevronRight,
   Zap,
   Github,
+  Activity
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/*  UseAI SVG Logo (matches dashboard)                                 */
+/*  UseAI SVG Logo                                                     */
 /* ------------------------------------------------------------------ */
 
 function UseAILogo({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 611.54 143.47" className={className}>
-      {/* USE */}
       <g fill="var(--text-primary)">
         <path d="M21.4,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v76.64c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h27.87c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v88.25c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85H37.78c-6.35,0-11.81-2.28-16.37-6.85Z"/>
         <path d="M146.93,124.06v-13.93c0-3.1,1.55-4.65,4.64-4.65h69.67c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-51.09c-6.35,0-11.81-2.28-16.37-6.85-4.57-4.57-6.85-10.02-6.85-16.37v-23.22c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h92.9c3.1,0,4.65,1.55,4.65,4.65v13.94c0,3.1-1.55,4.65-4.65,4.65h-69.67c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25s1.12,6,3.37,8.25c2.24,2.25,4.99,3.37,8.25,3.37h51.09c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-92.9c-3.1,0-4.64-1.55-4.64-4.65Z"/>
         <path d="M286.16,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V35.81c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h74.32c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-62.71v11.61c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h69.67c3.1,0,4.65,1.55,4.65,4.65v13.93c0,3.1-1.55,4.65-4.65,4.65h-92.9c-6.35,0-11.81-2.28-16.37-6.85ZM361.87,55.66c2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-27.87c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25v11.61h39.48c3.25,0,6-1.12,8.25-3.37Z"/>
       </g>
-      {/* AI */}
       <g fill="var(--accent)">
         <path d="M432.08,126.44c-4.76-4.76-7.14-10.44-7.14-17.06v-24.2c0-6.61,2.38-12.3,7.14-17.06,4.76-4.76,10.44-7.14,17.06-7.14h65.34v-12.1c0-3.39-1.17-6.25-3.51-8.59-2.34-2.34-5.2-3.51-8.59-3.51h-72.6c-3.23,0-4.84-1.61-4.84-4.84v-14.52c0-3.23,1.61-4.84,4.84-4.84h96.8c6.61,0,12.3,2.38,17.06,7.14,4.76,4.76,7.14,10.45,7.14,17.06v72.6c0,6.62-2.38,12.3-7.14,17.06-4.76,4.76-10.45,7.14-17.06,7.14h-77.44c-6.62,0-12.3-2.38-17.06-7.14ZM510.97,105.87c2.34-2.34,3.51-5.2,3.51-8.59v-12.1h-41.14c-3.39,0-6.25,1.17-8.59,3.51-2.34,2.34-3.51,5.2-3.51,8.59s1.17,6.25,3.51,8.59c2.34,2.34,5.2,3.51,8.59,3.51h29.04c3.39,0,6.25-1.17,8.59-3.51Z"/>
         <path d="M562.87,128.74V17.42c0-3.23,1.61-4.84,4.84-4.84h26.62c3.23,0,4.84,1.61,4.84,4.84v111.32c0,3.23-1.61,4.84-4.84,4.84h-26.62c-3.23,0-4.84-1.61-4.84-4.84Z"/>
@@ -54,16 +53,16 @@ function UseAILogo({ className }: { className?: string }) {
 /* ------------------------------------------------------------------ */
 
 const AI_TOOLS = [
-  { name: 'Claude Code', color: '#d4a27a' },
-  { name: 'Cursor', color: '#7c6af6' },
-  { name: 'GitHub Copilot', color: '#79c0ff' },
-  { name: 'Windsurf', color: '#00c2a8' },
-  { name: 'Gemini CLI', color: '#4285f4' },
-  { name: 'Aider', color: '#4ade80' },
-  { name: 'Amazon Q', color: '#ff9900' },
-  { name: 'Codex CLI', color: '#10a37f' },
-  { name: 'Augment', color: '#e879f9' },
-  { name: 'Amp', color: '#f87171' },
+  { name: 'Claude Code', color: '#d4a27a', glow: 'rgba(212, 162, 122, 0.4)' },
+  { name: 'Cursor', color: '#7c6af6', glow: 'rgba(124, 106, 246, 0.4)' },
+  { name: 'GitHub Copilot', color: '#79c0ff', glow: 'rgba(121, 192, 255, 0.4)' },
+  { name: 'Windsurf', color: '#00c2a8', glow: 'rgba(0, 194, 168, 0.4)' },
+  { name: 'Gemini CLI', color: '#4285f4', glow: 'rgba(66, 133, 244, 0.4)' },
+  { name: 'Aider', color: '#4ade80', glow: 'rgba(74, 222, 128, 0.4)' },
+  { name: 'Amazon Q', color: '#ff9900', glow: 'rgba(255, 153, 0, 0.4)' },
+  { name: 'Codex CLI', color: '#10a37f', glow: 'rgba(16, 163, 127, 0.4)' },
+  { name: 'Augment', color: '#e879f9', glow: 'rgba(232, 121, 249, 0.4)' },
+  { name: 'Amp', color: '#f87171', glow: 'rgba(248, 113, 113, 0.4)' },
 ];
 
 const METRICS = [
@@ -108,79 +107,55 @@ const METRICS = [
 const STEPS = [
   {
     step: '01',
-    title: 'Install',
-    description: 'One command adds UseAI to your MCP config. Works with any MCP-compatible AI tool.',
+    title: 'Initialize Uplink',
+    description: 'One command seamlessly integrates UseAI into your existing MCP workflow.',
     command: 'npx @devness/useai@latest',
   },
   {
     step: '02',
-    title: 'Code',
-    description: 'Use your AI tools as usual. Sessions are tracked automatically in the background.',
-    command: '# just code — tracking is automatic',
+    title: 'Execute & Track',
+    description: 'Write code. UseAI runs silently in the background capturing actionable telemetry.',
+    command: 'Tracking protocol activated...',
   },
   {
     step: '03',
-    title: 'Grow',
-    description: 'Review your stats, identify patterns, and watch your AI proficiency improve over time.',
+    title: 'Analyze & Dominate',
+    description: 'Review your performance matrix and rise up the global AI proficiency ranks.',
     command: 'npx @devness/useai@latest stats',
   },
 ];
 
 const RADAR_DIMENSIONS = [
-  { label: 'Prompt Quality', value: 0.82, description: 'Clarity, specificity, and completeness of your prompts' },
-  { label: 'Context', value: 0.68, description: 'How well you provide relevant files, errors, and constraints' },
-  { label: 'Scope', value: 0.74, description: 'Task sizing — precise and achievable, not vague or sprawling' },
-  { label: 'Independence', value: 0.91, description: 'Self-directed execution vs. constant clarification' },
-  { label: 'Tooling', value: 0.57, description: 'Breadth of AI capabilities leveraged per session' },
-];
-
-const PRIVACY_CARDS = [
-  {
-    icon: Database,
-    title: 'Zero Capture',
-    description: 'We never see your code, prompts, or file paths. Session data stays on your machine.',
-  },
-  {
-    icon: Lock,
-    title: 'Local-First',
-    description: 'All tracking runs via a local daemon. Your data is stored in ~/.useai — you own it.',
-  },
-  {
-    icon: Fingerprint,
-    title: 'Cryptographic Proof',
-    description: 'Every session is HMAC-signed. Milestones are verifiable without exposing private details.',
-  },
-];
-
-const APS_COMPONENTS = [
-  { name: 'Prompt Quality', weight: '25%' },
-  { name: 'Context Provided', weight: '20%' },
-  { name: 'Scope Quality', weight: '20%' },
-  { name: 'Independence Level', weight: '20%' },
-  { name: 'Task Completion', weight: '15%' },
+  { label: 'Prompt Quality', value: 0.82, description: 'Clarity, specificity, completeness' },
+  { label: 'Context', value: 0.68, description: 'Provision of files, errors, constraints' },
+  { label: 'Scope', value: 0.74, description: 'Task sizing and precision' },
+  { label: 'Independence', value: 0.91, description: 'Self-directed execution capability' },
+  { label: 'Tooling', value: 0.57, description: 'Breadth of AI capabilities leveraged' },
 ];
 
 /* ------------------------------------------------------------------ */
 /*  Animation variants                                                 */
 /* ------------------------------------------------------------------ */
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
+import type { Variants } from 'motion/react';
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 20, stiffness: 100 } },
 };
 
-const stagger = {
-  visible: { transition: { staggerChildren: 0.08 } },
+const stagger: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
 };
+
 
 /* ------------------------------------------------------------------ */
-/*  Skill Radar SVG                                                    */
+/*  Cyber Elements                                                     */
 /* ------------------------------------------------------------------ */
 
 function SkillRadar() {
-  const cx = 150,
-    cy = 150,
-    maxR = 110;
+  const cx = 150, cy = 150, maxR = 100;
   const values = RADAR_DIMENSIONS.map((d) => d.value);
   const n = values.length;
   const angleStep = (2 * Math.PI) / n;
@@ -190,52 +165,116 @@ function SkillRadar() {
     return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
   };
 
-  const gridLevels = [0.25, 0.5, 0.75, 1.0];
   const dataPoints = values.map((v, i) => pointAt(i, v * maxR));
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
 
   return (
-    <svg viewBox="0 0 300 300" className="w-full max-w-[300px]">
-      {/* Grid rings */}
-      {gridLevels.map((level) => {
-        const pts = Array.from({ length: n }, (_, i) => pointAt(i, level * maxR));
-        const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
-        return <path key={level} d={path} fill="none" stroke="var(--bg-surface-3)" strokeWidth="1" opacity="0.6" />;
-      })}
-      {/* Axes */}
-      {Array.from({ length: n }, (_, i) => {
-        const [x, y] = pointAt(i, maxR);
-        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--bg-surface-3)" strokeWidth="1" opacity="0.4" />;
-      })}
-      {/* Data polygon */}
-      <path d={dataPath} fill="rgba(var(--accent-rgb), 0.2)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
-      {/* Data dots */}
-      {dataPoints.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="var(--accent-bright)" />
-      ))}
-      {/* Labels */}
-      {RADAR_DIMENSIONS.map((dim, i) => {
-        const [x, y] = pointAt(i, maxR + 24);
-        return (
-          <text
-            key={dim.label}
-            x={x}
-            y={y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="fill-text-secondary text-[10px]"
-          >
-            {dim.label}
-          </text>
-        );
-      })}
-    </svg>
+    <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
+      <div className="absolute inset-0 bg-accent/5 rounded-full blur-3xl animate-pulse" />
+      <div className="pulse-ring w-full h-full" />
+      
+      <svg viewBox="0 0 300 300" className="relative z-10 w-full drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
+        {/* Hexagonal/pentagonal grids */}
+        {[0.25, 0.5, 0.75, 1.0].map((level) => {
+          const pts = Array.from({ length: n }, (_, i) => pointAt(i, level * maxR));
+          const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
+          return <path key={level} d={path} fill="none" stroke="var(--border-accent)" strokeWidth="1" strokeDasharray="2 4" opacity="0.6" />;
+        })}
+        {/* Axes */}
+        {Array.from({ length: n }, (_, i) => {
+          const [x, y] = pointAt(i, maxR);
+          return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--border-accent)" strokeWidth="1" opacity="0.4" />;
+        })}
+        {/* Data polygon with glow */}
+        <path d={dataPath} fill="rgba(var(--accent-rgb), 0.15)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
+        {/* Data dots */}
+        {dataPoints.map((p, i) => (
+          <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="var(--bg-base)" stroke="var(--accent)" strokeWidth="2" />
+        ))}
+        {/* Labels positioned further out */}
+        {RADAR_DIMENSIONS.map((dim, i) => {
+          const [x, y] = pointAt(i, maxR + 25);
+          return (
+            <text 
+              key={dim.label} x={x} y={y} 
+              textAnchor="middle" dominantBaseline="central" 
+              className="fill-text-primary text-[10px] font-mono tracking-wider"
+            >
+              {dim.label.toUpperCase()}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Copy-to-clipboard button                                           */
-/* ------------------------------------------------------------------ */
+function TerminalMockup() {
+  const [lines, setLines] = useState<number>(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLines(l => (l < 5 ? l + 1 : l));
+    }, 800);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hud-border rounded-xl bg-bg-surface-1 overflow-hidden shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] relative">
+      <div className="scanner-line" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-surface-2">
+        <div className="flex gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-border" />
+          <div className="w-2.5 h-2.5 rounded-full bg-border" />
+          <div className="w-2.5 h-2.5 rounded-full bg-accent/60 shadow-[0_0_5px_var(--accent)]" />
+        </div>
+        <span className="text-[10px] text-text-muted font-mono tracking-widest">USEAI_UPLINK_V1</span>
+      </div>
+      <div className="p-6 font-mono text-sm leading-relaxed min-h-[280px]">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-text-muted">
+          <span className="text-accent">&gt;</span> npx @devness/useai@latest stats
+        </motion.div>
+        
+        {lines > 0 && (
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-4 text-text-primary space-y-2">
+            <div className="flex justify-between border-b border-border-accent pb-2">
+              <span className="text-text-secondary">SYSTEM STATUS:</span>
+              <span className="text-accent text-[10px] bg-accent/10 px-2 py-0.5 rounded-md border border-accent/20">ONLINE</span>
+            </div>
+            
+            {lines > 1 && (
+              <div className="flex items-center gap-4 py-2">
+                <Gauge className="w-4 h-4 text-accent" />
+                <span>AI Proficiency Score: <span className="text-accent font-bold">78</span>/100</span>
+              </div>
+            )}
+            
+            {lines > 2 && (
+              <div className="flex items-center gap-4 py-2">
+                <Target className="w-4 h-4 text-blue-400" />
+                <span>Prompt Quality: <span className="text-text-primary">4.1</span> <span className="text-text-muted">/ 5.0</span></span>
+              </div>
+            )}
+            
+            {lines > 3 && (
+              <div className="flex items-center gap-4 py-2">
+                <Terminal className="w-4 h-4 text-purple-400" />
+                <span>Top Tool Interface: <span className="text-text-primary">Claude Code</span></span>
+              </div>
+            )}
+            
+            {lines > 4 && (
+              <div className="flex items-center gap-4 py-2 text-accent">
+                <Zap className="w-4 h-4" />
+                <span className="animate-pulse">Global Rank: #4,092 — Top 12%</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function CopyCommand({ command, className = '' }: { command: string; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -249,540 +288,308 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
   return (
     <button
       onClick={copy}
-      className={`group inline-flex items-center gap-3 px-5 py-3 rounded-xl border border-border bg-bg-surface-1 font-mono text-sm text-text-secondary hover:border-accent/40 hover:text-text-primary transition-colors cursor-pointer ${className}`}
+      className={`group relative inline-flex items-center gap-4 px-6 py-3.5 rounded-xl border border-border-accent bg-bg-surface-1 font-mono text-sm text-text-secondary hover:text-accent transition-all cursor-pointer overflow-hidden ${className}`}
     >
-      <span className="text-text-muted select-none">$</span>
-      <span>{command}</span>
+      <div className="absolute inset-0 bg-accent/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
+      <span className="text-text-muted select-none group-hover:animate-pulse z-10">&gt;</span>
+      <span className="z-10 tracking-wide text-text-primary">{command}</span>
       {copied ? (
-        <Check className="w-4 h-4 text-accent shrink-0" />
+        <Check className="w-4 h-4 text-accent shrink-0 z-10 drop-shadow-[0_0_8px_var(--accent)]" />
       ) : (
-        <Clipboard className="w-4 h-4 text-text-muted group-hover:text-accent shrink-0 transition-colors" />
+        <Clipboard className="w-4 h-4 text-text-muted group-hover:text-accent shrink-0 transition-colors z-10" />
       )}
     </button>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Page                                                               */
+/*  Page Component                                                     */
 /* ------------------------------------------------------------------ */
 
 export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    
+    // Check initial state
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-bg-base overflow-x-hidden">
+    <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
+      <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
+      <div className="blur-blob bg-accent/20 w-[600px] h-[600px] top-[-10%] left-[-10%]" />
+      <div className="blur-blob bg-blue-500/10 w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s' }} />
+
       {/* ── Nav ── */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-bg-base/80 border-b border-border/30">
-        <div className="flex items-center justify-between max-w-6xl mx-auto px-6 py-4">
-          <UseAILogo className="h-5" />
-          <div className="flex items-center gap-6">
-            <a href="#features" className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors">
-              Features
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
+        scrolled 
+          ? 'bg-bg-base/80 backdrop-blur-md border-border shadow-sm' 
+          : 'bg-transparent border-transparent shadow-none'
+      }`}>
+        <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-3">
+            <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
+            <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-accent/5 text-[10px] text-accent font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
+              SYSTEM_ONLINE
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <a href="#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
+              // FEATURES
             </a>
-            <Link href="/leaderboard" className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors">
-              Leaderboard
+            <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
+              // LEADERBOARD
             </Link>
-            <a
-              href="https://github.com/AhmedElBanna/useai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors"
-            >
-              GitHub
-            </a>
-            <Link
-              href="/login"
-              className="text-sm font-bold text-accent hover:text-accent-bright transition-colors"
-            >
-              Log in
+            <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-white border border-accent flex items-center gap-2">
+              ACCESS_TERM <Terminal className="w-3 h-3" />
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="relative">
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div className="absolute inset-0 dot-pattern pointer-events-none opacity-40" />
-        <div className="relative max-w-4xl mx-auto px-6 pt-28 pb-20 text-center">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={stagger}
-            className="flex flex-col items-center"
-          >
-            <motion.div
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/20 bg-accent/5 text-accent text-xs font-bold uppercase tracking-widest mb-8"
-            >
-              <Zap className="w-3 h-3" />
-              Not a time tracker. A proficiency tracker.
-            </motion.div>
-
-            <motion.h1
-              variants={fadeUp}
-              className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-text-primary leading-[1.08] mb-6"
-            >
-              Know how you code{' '}
-              <span className="gradient-text">with AI</span>
-            </motion.h1>
-
-            <motion.p
-              variants={fadeUp}
-              className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed"
-            >
-              UseAI tracks every AI coding session — across every tool — and turns raw activity
-              into a proficiency profile you can measure, share, and prove.
-            </motion.p>
-
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center gap-4">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-accent hover:bg-accent-bright text-black font-bold rounded-xl transition-colors"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <CopyCommand command="npx @devness/useai@latest" />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Tool Strip ── */}
-      <section className="max-w-4xl mx-auto px-6 pb-20">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={stagger}
-          className="flex flex-wrap items-center justify-center gap-3"
-        >
-          {AI_TOOLS.map((tool) => (
-            <motion.span
-              key={tool.name}
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-bg-surface-1/50 text-xs font-medium text-text-secondary"
-            >
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tool.color }} />
-              {tool.name}
-            </motion.span>
-          ))}
-        </motion.div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── The Gap ── */}
-      <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            The problem
-          </motion.p>
-          <motion.h2
-            variants={fadeUp}
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-text-primary leading-tight mb-6"
-          >
-            You can&apos;t improve what you don&apos;t measure
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-text-secondary text-lg leading-relaxed max-w-xl mx-auto">
-            You use AI tools every day but have no idea which sessions are productive, which prompts
-            work best, or how your skills are actually evolving. UseAI makes the invisible visible.
-          </motion.p>
-        </motion.div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── What Gets Measured ── */}
-      <section id="features" className="max-w-6xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            What gets measured
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
-            One dashboard for every AI tool
-          </motion.h2>
-        </motion.div>
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={stagger}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        >
-          {METRICS.map((m) => (
-            <motion.div
-              key={m.title}
-              variants={fadeUp}
-              className="group p-6 rounded-xl border border-border/50 bg-bg-surface-1 hover:border-accent/30 transition-colors"
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                style={{ background: `color-mix(in srgb, ${m.accent} 10%, transparent)` }}
-              >
-                <m.icon className="w-5 h-5" style={{ color: m.accent }} />
-              </div>
-              <h3 className="text-base font-bold text-text-primary mb-2">{m.title}</h3>
-              <p className="text-sm text-text-muted leading-relaxed">{m.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── How It Works ── */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            Three steps. Thirty seconds.
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
-            How it works
-          </motion.h2>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Steps */}
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            variants={stagger}
-            className="space-y-8"
-          >
-            {STEPS.map((s) => (
-              <motion.div key={s.step} variants={fadeUp} className="flex gap-5">
-                <div className="text-2xl font-extrabold text-accent/30 shrink-0 w-10 pt-0.5">{s.step}</div>
-                <div>
-                  <h3 className="text-lg font-bold text-text-primary mb-1">{s.title}</h3>
-                  <p className="text-sm text-text-muted leading-relaxed mb-2">{s.description}</p>
-                  <code className="text-xs font-mono text-accent/70">{s.command}</code>
-                </div>
+      <main className="relative z-10 pb-32">
+        {/* ── Hero ── */}
+        <section className="relative pt-32 md:pt-48 pb-16 px-6 flex flex-col justify-center items-center overflow-x-hidden min-h-[90vh]">
+          <div className="max-w-5xl mx-auto text-center w-full flex flex-col items-center mb-20 relative z-10">
+            <div className="flex flex-col items-center w-full">
+              
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-3">
+                <Activity className="w-3 h-3 text-accent" />
+                <span className="text-xs font-mono text-text-secondary tracking-widest">PROFILING_ACTIVE</span>
               </motion.div>
-            ))}
-          </motion.div>
 
-          {/* Terminal mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="rounded-xl border border-border bg-bg-surface-1 overflow-hidden shadow-2xl"
-          >
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface-2/50">
-              <div className="w-3 h-3 rounded-full bg-error/60" />
-              <div className="w-3 h-3 rounded-full bg-streak/60" />
-              <div className="w-3 h-3 rounded-full bg-accent/60" />
-              <span className="text-xs text-text-muted font-mono ml-2">Terminal</span>
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-text-primary leading-[1.2] sm:leading-[1.25] mb-8"
+              >
+                KNOW HOW YOU <br className="hidden md:block" />
+                <span className="gradient-text-accent italic inline-block py-2 pr-4">CODE WITH AI</span>
+              </motion.h1>
+
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-lg md:text-xl text-text-muted max-w-2xl text-center mb-12 leading-relaxed font-light"
+              >
+                Capture every AI session across any tool. Turn raw activity into an actionable 
+                intelligence profile. <span className="text-text-primary font-medium">Measure, improve, and dominate the leaderboard.</span>
+              </motion.p>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
+                className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-xl mx-auto mt-2"
+              >
+                <CopyCommand command="npx @devness/useai@latest" className="w-full sm:w-auto shrink-0" />
+                <span className="text-text-muted font-mono text-xs hidden sm:block">OR</span>
+                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-3 px-8 py-3.5 bg-text-primary text-bg-base font-bold text-sm tracking-wider uppercase transition-colors hover:bg-white/90">
+                  View Dashboard
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
             </div>
-            <div className="p-5 font-mono text-xs sm:text-sm leading-relaxed space-y-4">
-              {/* Setup */}
+          </div>
+
+          {/* Scrolling Tool Strip */}
+          <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-4 opacity-70 relative z-10">
+            <span className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">// Supported Integrations</span>
+            <motion.div 
+              className="flex gap-6 whitespace-nowrap"
+              animate={{ x: [0, -1000] }}
+              transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+            >
+              {[...AI_TOOLS, ...AI_TOOLS].map((tool, idx) => (
+                <div key={`${tool.name}-${idx}`} className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-accent/40 bg-bg-surface-1/30 backdrop-blur-sm mix-blend-normal">
+                  <div className="w-2 h-2 rounded-full" style={{ background: tool.color, boxShadow: `0 0 10px ${tool.glow}` }} />
+                  <span className="font-mono text-xs text-text-secondary">{tool.name}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Visual Break ── */}
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-10 max-w-7xl mx-auto" />
+
+        {/* ── Intelligence Grid (Features) ── */}
+        <section id="features" className="max-w-7xl mx-auto px-6 py-24">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="grid lg:grid-cols-12 gap-12">
+            
+            <motion.div variants={fadeUp} className="lg:col-span-4 flex flex-col justify-center">
+              <div className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">TELEMETRY_DATABANKS</div>
+              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-6">
+                Quantify <br/><span className="gradient-text">Your Process</span>
+              </h2>
+              <p className="text-text-muted leading-relaxed mb-8">
+                Raw output isn't enough. UseAI monitors how you orchestrate AI tools—analyzing 
+                prompt complexity, task scoping, and autonomy.
+              </p>
+              <Link href="/explore" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
+                Explore Metric Definitions <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+
+            <motion.div variants={stagger} className="lg:col-span-8 grid sm:grid-cols-2 gap-4">
+              {METRICS.map((m, i) => (
+                <motion.div 
+                  key={m.title} 
+                  variants={fadeUp} 
+                  className="hud-border rounded-xl p-6 bg-bg-surface-1/50 backdrop-blur hover:bg-bg-surface-2 transition-colors group"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-bg-surface-2 flex items-center justify-center border border-border-accent relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-20" style={{ background: m.accent }} />
+                      <m.icon className="w-6 h-6 z-10" style={{ color: m.accent }} />
+                    </div>
+                    <span className="text-text-muted font-mono text-xs opacity-50 group-hover:opacity-100 transition-opacity">0{i+1}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-text-primary mb-2 font-mono tracking-wide">{m.title}</h3>
+                  <p className="text-sm text-text-muted leading-relaxed">{m.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ── Architecture / Terminal Section ── */}
+        <section className="bg-bg-surface-1/30 py-32 relative border-y border-border/50">
+          <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+            
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}>
+              <TerminalMockup />
+            </motion.div>
+
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="space-y-12">
               <div>
-                <div className="text-text-muted">$ npx @devness/useai@latest</div>
-                <div className="text-accent mt-1.5">&#10003; MCP server configured for Claude Code</div>
-                <div className="text-accent">&#10003; Daemon started on port 19200</div>
-                <div className="text-text-muted mt-1">Ready — sessions will be tracked automatically.</div>
+                <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">INITIALIZATION</motion.div>
+                <motion.h2 variants={fadeUp} className="text-4xl font-black uppercase tracking-tight text-text-primary mb-6">
+                  Frictionless <span className="gradient-text-accent">Integration</span>
+                </motion.h2>
+                <motion.p variants={fadeUp} className="text-text-muted leading-relaxed">
+                  We built UseAI to be completely invisible during your workflow. No context switching, 
+                  no extra tabs. Just code, and let the daemon handle the telemetry.
+                </motion.p>
               </div>
 
-              {/* Stats */}
-              <div className="border-t border-border/50 pt-4">
-                <div className="text-text-muted">$ npx @devness/useai@latest stats</div>
-                <div className="mt-1.5 text-text-secondary">
-                  <div className="text-accent font-bold mb-1">AI Proficiency Score: 78 / 100</div>
-                  <div>Sessions today: <span className="text-text-primary">4</span> &nbsp;|&nbsp; Week: <span className="text-text-primary">23</span></div>
-                  <div>Prompt quality: <span className="text-accent">4.1</span> / 5</div>
-                  <div>Top tool: <span className="text-text-primary">Claude Code</span> (68%)</div>
-                  <div>Completion rate: <span className="text-accent">92%</span></div>
-                </div>
+              <div className="space-y-6">
+                {STEPS.map((s, idx) => (
+                  <motion.div key={s.step} variants={fadeUp} className="flex gap-6 items-start group">
+                    <div className="text-xs font-mono font-bold text-accent px-2 py-1 bg-accent/10 border border-accent/20 rounded-md mt-1">
+                      {s.step}
+                    </div>
+                    <div className="flex-1 border-b border-border-accent/30 pb-6 group-hover:border-accent transition-colors">
+                      <h3 className="font-mono text-text-primary mb-2 tracking-wide uppercase font-bold">{s.title}</h3>
+                      <p className="text-sm text-text-muted mb-3">{s.description}</p>
+                      <code className="block text-[10px] font-mono text-accent/70 bg-bg-surface-2/80 p-2 rounded-lg">
+                        &gt; {s.command}
+                      </code>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── Skill Profile ── */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            Skill profile
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
-            Five dimensions of AI proficiency
-          </motion.h2>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center"
-          >
-            <SkillRadar />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            variants={stagger}
-            className="space-y-5"
-          >
-            {RADAR_DIMENSIONS.map((dim) => (
-              <motion.div key={dim.label} variants={fadeUp} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-bold text-accent">{Math.round(dim.value * 100)}</span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-text-primary">{dim.label}</h3>
-                  <p className="text-xs text-text-muted leading-relaxed">{dim.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── Privacy ── */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            Privacy
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
-            Privacy by architecture, not policy
-          </motion.h2>
-        </motion.div>
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={stagger}
-          className="grid md:grid-cols-3 gap-4"
-        >
-          {PRIVACY_CARDS.map((card) => (
-            <motion.div
-              key={card.title}
-              variants={fadeUp}
-              className="glass-card rounded-xl p-6"
-            >
-              <card.icon className="w-6 h-6 text-accent mb-4" />
-              <h3 className="text-base font-bold text-text-primary mb-2">{card.title}</h3>
-              <p className="text-sm text-text-muted leading-relaxed">{card.description}</p>
             </motion.div>
-          ))}
-        </motion.div>
-      </section>
+          </div>
+        </section>
 
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── Supported Tools ── */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            Universal
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
-            Every AI tool, one profile
-          </motion.h2>
-        </motion.div>
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={stagger}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"
-        >
-          {AI_TOOLS.map((tool) => (
-            <motion.div
-              key={tool.name}
-              variants={fadeUp}
-              className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-bg-surface-1"
-            >
-              <span className="w-3 h-3 rounded-full shrink-0" style={{ background: tool.color }} />
-              <span className="text-sm font-medium text-text-secondary truncate">{tool.name}</span>
+        {/* ── Compete Section ── */}
+        <section className="max-w-7xl mx-auto px-6 py-32">
+          <motion.div 
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} 
+            className="text-center mb-20 max-w-3xl mx-auto"
+          >
+            <motion.div variants={fadeUp} className="inline-flex justify-center mb-6">
+               <Trophy className="w-12 h-12 text-accent drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
             </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── Community / Leaderboard ── */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={stagger}
-          className="text-center mb-14"
-        >
-          <motion.p variants={fadeUp} className="text-sm font-bold uppercase tracking-widest text-accent mb-4">
-            Community
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary mb-4">
-            Opt in. Rise up.
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-text-secondary text-lg max-w-xl mx-auto leading-relaxed">
-            Your proficiency is measured by the AI Proficiency Score (APS) — a weighted composite
-            of the five dimensions every AI evaluates per session.
-          </motion.p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* APS breakdown */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5 }}
-            className="rounded-xl border border-border/50 bg-bg-surface-1 p-6"
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <Trophy className="w-5 h-5 text-accent" />
-              <h3 className="text-base font-bold text-text-primary">APS Components</h3>
-            </div>
-            <div className="space-y-3">
-              {APS_COMPONENTS.map((c) => (
-                <div key={c.name} className="flex items-center justify-between">
-                  <span className="text-sm text-text-secondary">{c.name}</span>
-                  <span className="text-sm font-mono font-bold text-accent">{c.weight}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Leaderboard preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="rounded-xl border border-border/50 bg-bg-surface-1 p-6"
-          >
-            <div className="flex items-center gap-2 mb-5">
-              <Users className="w-5 h-5 text-accent" />
-              <h3 className="text-base font-bold text-text-primary">Leaderboard</h3>
-            </div>
-            <div className="space-y-3">
-              {['Developer profiles with verified APS', 'Rankings by score, sessions, and streaks', 'Public milestones — cryptographically signed', 'Opt-in only — private by default'].map((item) => (
-                <div key={item} className="flex items-start gap-2.5">
-                  <ChevronRight className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                  <span className="text-sm text-text-secondary leading-relaxed">{item}</span>
-                </div>
-              ))}
-            </div>
-            <Link
-              href="/leaderboard"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:text-accent-bright transition-colors mt-5"
-            >
-              View leaderboard
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="section-divider max-w-xl mx-auto" />
-
-      {/* ── Final CTA ── */}
-      <section className="relative">
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div className="relative max-w-3xl mx-auto px-6 py-28 text-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={stagger}
-            className="flex flex-col items-center"
-          >
-            <motion.h2
-              variants={fadeUp}
-              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-text-primary mb-4"
-            >
-              Start tracking in 30 seconds
+            <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-black uppercase tracking-tight text-text-primary mb-6">
+              Global <span className="gradient-text">Leaderboard</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-text-secondary text-lg mb-10 max-w-lg mx-auto leading-relaxed">
-              One command. Zero config. Works with every MCP-compatible AI tool.
+            <motion.p variants={fadeUp} className="text-lg text-text-muted leading-relaxed">
+              Coding is a multiplayer game. Compare your AI Proficiency Score (APS) against top developers globally. Prove your efficiency.
             </motion.p>
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center gap-4">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-accent hover:bg-accent-bright text-black font-bold rounded-xl transition-colors"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <CopyCommand command="npx @devness/useai@latest" />
-            </motion.div>
           </motion.div>
-        </div>
-      </section>
+
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="lg:col-span-5 flex justify-center lg:justify-end">
+              <SkillRadar />
+            </motion.div>
+
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="lg:col-span-7 hud-border rounded-xl p-8 bg-bg-surface-1">
+              <div className="flex justify-between items-center border-b border-border/50 pb-4 mb-6">
+                <span className="font-mono text-sm text-text-primary flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> LIVE_RANKINGS
+                </span>
+                <Link href="/leaderboard" className="text-xs font-mono text-accent hover:underline">VIEW_ALL &gt;</Link>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { rank: 1, name: "0xNeural", score: 98, level: "AI Prime" },
+                  { rank: 2, name: "CyberDev", score: 94, level: "Architect" },
+                  { rank: 3, name: "NeonCoder", score: 91, level: "Architect" },
+                  { rank: 4, name: "You (Soon)", score: "--", level: "Initiate" },
+                ].map((user, idx) => (
+                  <motion.div key={user.name} variants={fadeUp} className={`flex items-center justify-between p-3 rounded-xl bg-bg-surface-2/50 border ${idx === 0 ? 'border-accent/40' : 'border-transparent'}`}>
+                    <div className="flex items-center gap-4">
+                      <span className={`font-mono text-lg font-bold w-6 text-center ${idx === 0 ? 'text-accent' : 'text-text-muted'}`}>
+                        {user.rank}
+                      </span>
+                      <div className="flex flex-col">
+                        <span className={`font-mono font-bold ${idx === 3 ? 'text-accent border-b border-accent border-dashed' : 'text-text-primary'}`}>{user.name}</span>
+                        <span className="text-[10px] text-text-muted tracking-widest uppercase">{user.level}</span>
+                      </div>
+                    </div>
+                    <div className="font-mono text-xl font-bold text-text-primary tracking-widest">{user.score}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Privacy / Verification ── */}
+        <section className="bg-bg-surface-1/20 border-t border-border/30 py-24">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <h2 className="text-2xl font-mono text-text-primary mb-12 flex items-center justify-center gap-3">
+              <Shield className="w-6 h-6 text-accent" /> SECURE_PROTOCOLS
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8 text-left">
+              {[
+                { icon: Database, title: 'ZERO PAYLOAD', desc: 'No source code, file paths, or prompt contents are ever transmitted. Telemetry only.' },
+                { icon: Lock, title: 'LOCAL DAEMON', desc: 'Processing happens locally in ~/.useai. You fully own and control your raw data timeline.' },
+                { icon: Fingerprint, title: 'CRYPTO VERIFIED', desc: 'Public milestones and APS scores are HMAC-signed for authenticity on the leaderboard.' }
+              ].map(item => (
+                <div key={item.title} className="p-6 rounded-xl border border-border/40 bg-bg-surface-1/40 hover:border-accent/30 transition-colors">
+                  <item.icon className="w-8 h-8 text-text-muted mb-4" />
+                  <h3 className="font-mono font-bold text-sm text-text-primary mb-2">{item.title}</h3>
+                  <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <UseAILogo className="h-3.5" />
-          <div className="flex items-center gap-4">
-            <a
-              href="https://github.com/AhmedElBanna/useai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-text-muted hover:text-text-primary transition-colors"
-            >
-              GitHub
+      <footer className="relative z-10 border-t border-border/50 bg-bg-surface-1 pt-12 pb-6">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-6">
+          <div className="flex flex-col gap-2">
+            <UseAILogo className="h-4 opacity-50 hover:opacity-100 transition-opacity" />
+            <span className="text-[10px] text-text-muted font-mono tracking-widest">© {new Date().getFullYear()} DEVNESS NETWORK</span>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <a href="https://github.com/AhmedElBanna/useai" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-2">
+              <Github className="w-4 h-4" /> REPOSITORY
             </a>
-            <a
-              href="https://www.npmjs.com/package/@devness/useai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-text-muted hover:text-text-primary transition-colors"
-            >
-              npm
+            <a href="https://www.npmjs.com/package/@devness/useai" target="_blank" rel="noopener noreferrer" className="text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-2">
+              <Terminal className="w-4 h-4" /> PACKAGE
             </a>
           </div>
         </div>
