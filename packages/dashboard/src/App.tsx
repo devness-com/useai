@@ -32,6 +32,7 @@ function SessionsTab({
   onDeleteMilestone,
   globalShowPublic,
   onToggleShowPublic,
+  showFullDate,
 }: {
   filteredSessions: SessionSeal[];
   filteredMilestones: Milestone[];
@@ -42,6 +43,7 @@ function SessionsTab({
   onDeleteMilestone: (id: string) => void;
   globalShowPublic: boolean;
   onToggleShowPublic: () => void;
+  showFullDate?: boolean;
 }) {
   const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilter = filters.client !== 'all' || filters.language !== 'all' || filters.project !== 'all';
@@ -95,6 +97,7 @@ function SessionsTab({
         milestones={filteredMilestones}
         filters={filters}
         globalShowPublic={globalShowPublic}
+        showFullDate={showFullDate}
         onDeleteSession={onDeleteSession}
         onDeleteConversation={onDeleteConversation}
         onDeleteMilestone={onDeleteMilestone}
@@ -260,6 +263,7 @@ export function App() {
               onDeleteMilestone={deleteMilestone}
               globalShowPublic={globalShowPublic}
               onToggleShowPublic={() => setGlobalShowPublic((v) => !v)}
+              showFullDate={timeScale === '7d' || timeScale === '30d'}
             />
           )}
 

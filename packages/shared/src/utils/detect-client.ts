@@ -27,6 +27,7 @@ const MCP_CLIENT_NAME_MAP: Record<string, string> = {
   'opencode': 'opencode',
   'goose': 'goose',
   'junie': 'junie',
+  'antigravity': 'antigravity',
 };
 
 /**

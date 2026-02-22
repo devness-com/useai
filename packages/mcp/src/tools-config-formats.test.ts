@@ -1200,7 +1200,7 @@ describe('AI_TOOLS metadata', () => {
   });
 
   it('configFormat is one of the valid formats for every tool', () => {
-    const validFormats = ['standard', 'vscode', 'zed', 'toml', 'yaml'];
+    const validFormats = ['standard', 'vscode', 'zed', 'toml', 'yaml', 'antigravity', 'crush'];
     for (const tool of AI_TOOLS) {
       expect(validFormats).toContain(tool.configFormat);
     }

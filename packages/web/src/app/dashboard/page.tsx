@@ -143,6 +143,7 @@ export default function DashboardPage() {
             milestones={filteredMilestones}
             filters={filters}
             globalShowPublic={globalShowPublic}
+            showFullDate={timeScale === '7d' || timeScale === '30d'}
           />
         </div>
       )}

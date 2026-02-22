@@ -26,7 +26,7 @@ program.addCommand(milestonesCommand);
 program.addCommand(configCommand);
 program.addCommand(exportCommand);
 program.addCommand(purgeCommand);
-program.addCommand(mcpCommand);
+program.addCommand(mcpCommand, { isDefault: true });
 program.addCommand(daemonCommand);
 program.addCommand(serveCommand);
 program.addCommand(loginCommand);

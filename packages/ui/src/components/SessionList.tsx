@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Clock, Lock, Shield, Eye, EyeOff, Flag, FolderKanban } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
@@ -34,7 +34,7 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-function ConversationCard({ group, defaultExpanded, globalShowPublic, showFullDate, highlightWords, onDeleteSession, onDeleteMilestone, onDeleteConversation }: { group: ConversationGroup; defaultExpanded: boolean; globalShowPublic?: boolean; showFullDate?: boolean; highlightWords?: string[]; onDeleteSession?: (id: string) => void; onDeleteMilestone?: (id: string) => void; onDeleteConversation?: (id: string) => void }) {
+const ConversationCard = memo(function ConversationCard({ group, defaultExpanded, globalShowPublic, showFullDate, highlightWords, onDeleteSession, onDeleteMilestone, onDeleteConversation }: { group: ConversationGroup; defaultExpanded: boolean; globalShowPublic?: boolean; showFullDate?: boolean; highlightWords?: string[]; onDeleteSession?: (id: string) => void; onDeleteMilestone?: (id: string) => void; onDeleteConversation?: (id: string) => void }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [localShowPublic, setLocalShowPublic] = useState(false);
   const showPublic = globalShowPublic || localShowPublic;
@@ -249,7 +249,7 @@ function ConversationCard({ group, defaultExpanded, globalShowPublic, showFullDa
       </AnimatePresence>
     </div>
   );
-}
+});
 
 interface SessionListProps {
   sessions: SessionSeal[];
@@ -262,6 +262,8 @@ interface SessionListProps {
   onDeleteConversation?: (conversationId: string) => void;
   onDeleteMilestone?: (milestoneId: string) => void;
 }
+
+const BATCH_SIZE = 25;
 
 export function SessionList({ sessions, milestones, filters, globalShowPublic, showFullDate, highlightWords, onDeleteSession, onDeleteConversation, onDeleteMilestone }: SessionListProps) {
   // Filter sessions by client, language, project
@@ -286,6 +288,31 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
     return groupIntoConversations(groups);
   }, [filtered, filteredMilestones]);
 
+  // Progressive rendering — show conversations in batches
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset visible count when the conversation list changes (time window / filter change)
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE);
+  }, [conversations]);
+
+  // IntersectionObserver to load more batches on scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisibleCount((prev) => prev + BATCH_SIZE);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [conversations, visibleCount]);
+
   if (conversations.length === 0) {
     return (
       <div className="text-center text-text-muted py-8 text-sm mb-4">
@@ -294,9 +321,12 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
     );
   }
 
+  const isTruncated = visibleCount < conversations.length;
+  const visible = isTruncated ? conversations.slice(0, visibleCount) : conversations;
+
   return (
     <div className="space-y-1.5 mb-4">
-      {conversations.map((conv) => (
+      {visible.map((conv) => (
         <ConversationCard
           key={conv.conversationId ?? conv.sessions[0]!.session.session_id}
           group={conv}
@@ -309,6 +339,26 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
           onDeleteConversation={onDeleteConversation}
         />
       ))}
+
+      {/* Sentinel for IntersectionObserver — triggers next batch */}
+      {isTruncated && <div ref={sentinelRef} className="h-px" />}
+
+      {/* Footer showing progress */}
+      {conversations.length > BATCH_SIZE && (
+        <div className="flex items-center justify-center gap-3 py-2 text-[11px] text-text-muted">
+          <span>
+            Showing {Math.min(visibleCount, conversations.length)} of {conversations.length} conversations
+          </span>
+          {isTruncated && (
+            <button
+              onClick={() => setVisibleCount(conversations.length)}
+              className="text-accent hover:text-accent/80 font-semibold transition-colors"
+            >
+              Show all
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

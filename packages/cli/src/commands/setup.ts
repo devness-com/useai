@@ -41,17 +41,23 @@ function showManualHints(installedTools: AiTool[]): void {
 function showStatus(tools: AiTool[]): void {
   console.log(header('AI Tool MCP Status'));
 
+  // Only show tools that are actually installed on this system
+  const detected = tools.filter((t) => t.detect());
+
+  if (detected.length === 0) {
+    console.log(chalk.dim('  No supported AI tools detected on this system.'));
+    console.log();
+    return;
+  }
+
   const rows: string[] = [];
-  const nameWidth = Math.max(...tools.map((t) => t.name.length));
+  const nameWidth = Math.max(...detected.map((t) => t.name.length));
   const statusWidth = 16;
 
-  for (const tool of tools) {
-    const detected = tool.detect();
+  for (const tool of detected) {
     const name = tool.name.padEnd(nameWidth);
 
-    if (!detected) {
-      rows.push(`  ${chalk.dim(name)}  ${chalk.dim('— Not found'.padEnd(statusWidth))}`);
-    } else if (tool.isConfigured()) {
+    if (tool.isConfigured()) {
       rows.push(
         `  ${name}  ${chalk.green('✓ Configured'.padEnd(statusWidth))}  ${chalk.dim(shortenPath(tool.getConfigPath()))}`,
       );

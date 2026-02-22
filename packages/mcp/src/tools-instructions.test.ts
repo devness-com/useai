@@ -188,7 +188,7 @@ describe('AI_TOOLS', () => {
     for (const tool of AI_TOOLS) {
       expect(typeof tool.id).toBe('string');
       expect(typeof tool.name).toBe('string');
-      expect(['standard', 'vscode', 'zed', 'toml', 'yaml']).toContain(tool.configFormat);
+      expect(['standard', 'vscode', 'zed', 'toml', 'yaml', 'antigravity', 'crush']).toContain(tool.configFormat);
       expect(typeof tool.supportsUrl).toBe('boolean');
       expect(typeof tool.getConfigPath).toBe('function');
       expect(typeof tool.detect).toBe('function');
@@ -201,10 +201,10 @@ describe('AI_TOOLS', () => {
   });
 
   describe('supportsUrl flag', () => {
-    it('standard and vscode format tools can support URL', () => {
+    it('standard, vscode, antigravity and crush format tools can support URL', () => {
       const urlTools = AI_TOOLS.filter((t) => t.supportsUrl);
       for (const tool of urlTools) {
-        expect(['standard', 'vscode']).toContain(tool.configFormat);
+        expect(['standard', 'vscode', 'antigravity', 'crush']).toContain(tool.configFormat);
       }
     });
 
@@ -529,11 +529,11 @@ describe('createTool wiring of installHttp for URL-supporting tools', () => {
     }
   });
 
-  it('tools with supportsUrl=true are all standard or vscode format', () => {
+  it('tools with supportsUrl=true are all standard, vscode, antigravity, or crush format', () => {
     const urlTools = AI_TOOLS.filter((t) => t.supportsUrl);
     expect(urlTools.length).toBeGreaterThan(0);
     for (const tool of urlTools) {
-      expect(['standard', 'vscode']).toContain(tool.configFormat);
+      expect(['standard', 'vscode', 'antigravity', 'crush']).toContain(tool.configFormat);
     }
   });
 

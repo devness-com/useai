@@ -110,7 +110,7 @@ const STEPS = [
     step: '01',
     title: 'Install',
     description: 'One command adds UseAI to your MCP config. Works with any MCP-compatible AI tool.',
-    command: 'npx @devness/useai setup',
+    command: 'npx @devness/useai@latest',
   },
   {
     step: '02',
@@ -122,7 +122,7 @@ const STEPS = [
     step: '03',
     title: 'Grow',
     description: 'Review your stats, identify patterns, and watch your AI proficiency improve over time.',
-    command: 'npx @devness/useai stats',
+    command: 'npx @devness/useai@latest stats',
   },
 ];
 
@@ -341,7 +341,7 @@ export default function LandingPage() {
                 Get Started
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <CopyCommand command="npx @devness/useai setup" />
+              <CopyCommand command="npx @devness/useai@latest" />
             </motion.div>
           </motion.div>
         </div>
@@ -497,7 +497,7 @@ export default function LandingPage() {
             <div className="p-5 font-mono text-xs sm:text-sm leading-relaxed space-y-4">
               {/* Setup */}
               <div>
-                <div className="text-text-muted">$ npx @devness/useai setup</div>
+                <div className="text-text-muted">$ npx @devness/useai@latest</div>
                 <div className="text-accent mt-1.5">&#10003; MCP server configured for Claude Code</div>
                 <div className="text-accent">&#10003; Daemon started on port 19200</div>
                 <div className="text-text-muted mt-1">Ready — sessions will be tracked automatically.</div>
@@ -505,7 +505,7 @@ export default function LandingPage() {
 
               {/* Stats */}
               <div className="border-t border-border/50 pt-4">
-                <div className="text-text-muted">$ npx @devness/useai stats</div>
+                <div className="text-text-muted">$ npx @devness/useai@latest stats</div>
                 <div className="mt-1.5 text-text-secondary">
                   <div className="text-accent font-bold mb-1">AI Proficiency Score: 78 / 100</div>
                   <div>Sessions today: <span className="text-text-primary">4</span> &nbsp;|&nbsp; Week: <span className="text-text-primary">23</span></div>
@@ -757,7 +757,7 @@ export default function LandingPage() {
                 Get Started
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <CopyCommand command="npx @devness/useai setup" />
+              <CopyCommand command="npx @devness/useai@latest" />
             </motion.div>
           </motion.div>
         </div>

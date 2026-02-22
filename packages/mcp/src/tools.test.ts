@@ -99,7 +99,7 @@ describe('AI_TOOLS registry', () => {
     for (const tool of AI_TOOLS) {
       expect(tool.id).toEqual(expect.any(String));
       expect(tool.name).toEqual(expect.any(String));
-      expect(['standard', 'vscode', 'zed', 'toml', 'yaml']).toContain(tool.configFormat);
+      expect(['standard', 'vscode', 'zed', 'toml', 'yaml', 'antigravity', 'crush']).toContain(tool.configFormat);
       expect(typeof tool.getConfigPath).toBe('function');
       expect(typeof tool.detect).toBe('function');
       expect(typeof tool.isConfigured).toBe('function');

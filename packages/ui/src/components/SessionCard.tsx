@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { ChevronDown, Clock, Lock, Zap, Shield, Eye, EyeOff, Flag, MessageSquare, FileText, Target, Compass, RefreshCw, Wrench, FolderKanban, Cpu, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal, Milestone, SessionEvaluation } from '@useai/shared/types';
@@ -134,7 +134,7 @@ interface SessionCardProps {
   onDeleteMilestone?: (milestoneId: string) => void;
 }
 
-export function SessionCard({ session, milestones, defaultExpanded = false, externalShowPublic, hideClientAvatar = false, hideProject = false, showFullDate = false, highlightWords, onDeleteSession, onDeleteMilestone }: SessionCardProps) {
+export const SessionCard = memo(function SessionCard({ session, milestones, defaultExpanded = false, externalShowPublic, hideClientAvatar = false, hideProject = false, showFullDate = false, highlightWords, onDeleteSession, onDeleteMilestone }: SessionCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [internalShowPublic, setInternalShowPublic] = useState(false);
   const showPublic = externalShowPublic ?? internalShowPublic;
@@ -387,4 +387,4 @@ export function SessionCard({ session, milestones, defaultExpanded = false, exte
       </AnimatePresence>
     </div>
   );
-}
+});

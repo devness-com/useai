@@ -1,4 +1,4 @@
-p /**
+/**
  * MCP Setup — UseAI-specific orchestrator.
  *
  * Uses shared building blocks from @devness/mcp-setup for stdio flows,
@@ -409,7 +409,9 @@ export async function runSetup(args: string[]): Promise<void> {
   }
 
   if (isStatus) {
-    (await getShared()).showStatus(tools);
+    // Only show tools that are actually installed on this system
+    const detected = tools.filter((t) => t.detect());
+    (await getShared()).showStatus(detected);
   } else if (isRemove) {
     await fullRemoveFlow(tools, autoYes, explicit);
   } else if (isStdio) {
