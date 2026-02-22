@@ -43,7 +43,7 @@ export function TopNav() {
           <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
             // LEADERBOARD
           </Link>
-          <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-white border border-accent flex items-center gap-2">
+          <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-bg-base border border-accent flex items-center gap-2">
             ACCESS_TERM <Terminal className="w-3 h-3" />
           </Link>
         </div>

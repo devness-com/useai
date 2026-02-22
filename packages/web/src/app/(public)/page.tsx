@@ -59,8 +59,8 @@ const METRICS = [
   },
   {
     icon: Sparkles,
-    title: 'Prompt Quality',
-    description: 'AI-assessed prompt clarity, context quality, and scope precision — averaged over time.',
+    title: 'SPACE Evaluation',
+    description: 'Sessions scored using the SPACE developer productivity framework — prompt quality, context, independence, and scope.',
     accent: '#8b5cf6',
   },
   {
@@ -217,8 +217,8 @@ function TerminalMockup() {
         {lines > 0 && (
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-4 text-text-primary space-y-2">
             <div className="flex justify-between border-b border-border-accent pb-2">
-              <span className="text-text-secondary">SYSTEM STATUS:</span>
-              <span className="text-accent text-[10px] bg-[var(--accent-alpha)] px-2 py-0.5 rounded-md border border-accent/20">ONLINE</span>
+              <span className="text-text-secondary">FRAMEWORK:</span>
+              <span className="text-accent text-[10px] bg-[var(--accent-alpha)] px-2 py-0.5 rounded-md border border-accent/20">SPACE</span>
             </div>
             
             {lines > 1 && (
@@ -450,7 +450,7 @@ function HeroDashboardAnimation() {
                       transition={{ delay: 0.8 }}
                       className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between"
                    >
-                      <div className="text-[10px] text-text-muted font-mono tracking-widest">SESSION_SCORE</div>
+                      <div className="text-[10px] text-text-muted font-mono tracking-widest">SPACE_SCORE</div>
                       <div className="text-xl font-black text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] leading-none">92</div>
                    </motion.div>
                 </div>
@@ -562,7 +562,7 @@ export default function LandingPage() {
               >
                 <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
                 <span className="text-text-muted font-mono text-[10px] hidden sm:block">OR</span>
-                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-bold text-xs tracking-wider uppercase transition-colors hover:bg-white/90">
+                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-bold text-xs tracking-wider uppercase transition-opacity hover:opacity-80">
                   Dashboard
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
@@ -598,7 +598,7 @@ export default function LandingPage() {
                 Raw output isn't enough. UseAI monitors how you orchestrate AI tools—analyzing 
                 prompt complexity, task scoping, and autonomy.
               </p>
-              <Link href="/explore" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
+              <Link href="/explore#metrics" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
                 Explore Metric Definitions <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>

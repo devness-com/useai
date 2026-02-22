@@ -16,7 +16,7 @@ UseAI is a local-first [MCP server](https://modelcontextprotocol.io/) that recor
 
 - **Session tracking** -- automatically records when you start and stop using AI tools
 - **Streak tracking** -- daily coding streaks with global leaderboard
-- **Evaluation metrics** -- self-assessed prompt quality, task outcomes, and independence scores
+- **Evaluation metrics** -- sessions scored using the [SPACE framework](https://queue.acm.org/detail.cfm?id=3454124) for prompt quality, context, independence, and scope
 - **Local dashboard** -- built-in web UI served from the daemon (`useai serve`)
 - **Privacy-first** -- everything stays in `~/.useai/` on your machine, zero network calls from the MCP server
 - **Ed25519 signed chain** -- every session record is cryptographically signed for tamper evidence
@@ -106,6 +106,26 @@ All data is written to `~/.useai/` as JSONL files. The MCP server makes zero net
 | `useai_start` | Begin tracking a session |
 | `useai_heartbeat` | Keep-alive during long sessions |
 | `useai_end` | End session, record milestones and evaluation |
+
+## Evaluation Frameworks
+
+UseAI uses configurable **evaluation frameworks** to score each AI coding session. The framework controls what rubric the AI model uses when self-assessing session quality, producing a 0-100 session score.
+
+| Framework | Description |
+|-----------|-------------|
+| **SPACE** (default) | Based on the [SPACE developer productivity framework](https://queue.acm.org/detail.cfm?id=3454124) by GitHub/Microsoft Research. Weighted rubrics across Communication (prompt quality, context), Efficiency (independence), and Performance (scope). |
+| **Basic** | Simple equal-weight average across all dimensions. No detailed rubric guidance. |
+
+Session scores feed into the **AI Proficiency Score (APS)** -- a 0-1000 composite score across five dimensions: Output, Efficiency, Prompt Quality, Consistency, and Breadth.
+
+Change your framework:
+
+```bash
+useai config --framework space    # recommended
+useai config --framework raw      # basic/no rubric
+```
+
+The setup wizard (`npx @devness/useai`) also lets you pick a framework during installation.
 
 ## What Gets Tracked
 

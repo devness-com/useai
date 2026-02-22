@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai-cli",
-  "version": "0.5.44",
+  "version": "0.5.46",
   "description": "CLI tool for useai.dev — stats, sync, publish your AI development workflow",
   "author": "nabeelkausari",
   "license": "MIT",

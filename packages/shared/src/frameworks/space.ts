@@ -59,7 +59,7 @@ const rubrics: DimensionRubric[] = [
 export const spaceFramework: EvaluationFramework = {
   id: 'space',
   name: 'SPACE',
-  description: 'SPACE-mapped rubrics with explicit per-level criteria and weighted dimensions.',
+  description: 'Based on the SPACE developer productivity framework (GitHub/Microsoft Research). Weighted rubrics with explicit per-level criteria.',
   version: '1.0.0',
   rubrics,
 

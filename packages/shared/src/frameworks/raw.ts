@@ -54,8 +54,8 @@ const rubrics: DimensionRubric[] = [
 
 export const rawFramework: EvaluationFramework = {
   id: 'raw',
-  name: 'Raw',
-  description: 'Equal-weight average across all scored dimensions. Minimal rubric guidance.',
+  name: 'Basic',
+  description: 'Simple equal-weight average, no detailed rubric. Good for getting started.',
   version: '1.0.0',
   rubrics,
 

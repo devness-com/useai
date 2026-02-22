@@ -11,7 +11,7 @@ export const configCommand = new Command('config')
   .option('--no-sync', 'Disable auto-sync')
   .option('--milestones', 'Enable milestone tracking')
   .option('--no-milestones', 'Disable milestone tracking')
-  .option('--framework <name>', 'Set evaluation framework (raw, space)')
+  .option('--framework <name>', 'Set evaluation framework: space (recommended), raw (basic)')
   .action((opts) => {
     let changed = false;
 

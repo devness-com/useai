@@ -3,15 +3,15 @@ import { rawFramework } from './raw.js';
 import { spaceFramework } from './space.js';
 
 const frameworks: Record<EvaluationFrameworkId, EvaluationFramework> = {
-  raw: rawFramework,
   space: spaceFramework,
+  raw: rawFramework,
 };
 
 export function getFramework(id?: string): EvaluationFramework {
   if (id && id in frameworks) {
     return frameworks[id as EvaluationFrameworkId];
   }
-  return frameworks.raw;
+  return frameworks.space;
 }
 
 export function getFrameworkIds(): EvaluationFrameworkId[] {

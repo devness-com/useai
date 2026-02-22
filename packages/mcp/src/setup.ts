@@ -117,9 +117,9 @@ async function selectFramework(autoYes: boolean): Promise<string> {
   const config = readJson<LocalConfig>(CONFIG_FILE, {
     milestone_tracking: true,
     auto_sync: true,
-    evaluation_framework: 'raw',
+    evaluation_framework: 'space',
   });
-  const currentId = config.evaluation_framework ?? 'raw';
+  const currentId = config.evaluation_framework ?? 'space';
 
   if (autoYes) {
     return currentId;
@@ -129,11 +129,14 @@ async function selectFramework(autoYes: boolean): Promise<string> {
   const choices = frameworkIds.map((id) => {
     const fw = getFramework(id);
     const current = id === currentId ? ' (current)' : '';
-    return { name: `${fw.name}${current}`, value: id, description: fw.description };
+    const recommended = id === 'space' ? ' (Recommended)' : '';
+    return { name: `${fw.name}${recommended}${current}`, value: id, description: fw.description };
   });
 
   console.log(chalk.dim('\n  Evaluation Framework'));
-  console.log(chalk.dim('  Controls how AI models score your sessions.\n'));
+  console.log(chalk.dim('  Controls how AI models score your sessions.'));
+  console.log(chalk.dim('  SPACE is based on the developer productivity framework by GitHub/Microsoft Research.'));
+  console.log(chalk.dim('  Learn more: https://queue.acm.org/detail.cfm?id=3454124\n'));
 
   const chosen = await singleSelect('Choose evaluation framework:', choices);
 
