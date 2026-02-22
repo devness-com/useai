@@ -8,23 +8,30 @@ const mockWriteJson = vi.fn();
 const mockFormatDuration = vi.fn((s: number) => `${Math.round(s / 60)}m`);
 const mockDetectClient = vi.fn(() => 'claude-code');
 const mockSignHash = vi.fn((_hash: string, _key: string | null) => 'sig_abc123');
-
 const mockNormalizeMcpClientName = vi.fn((name: string) => name.toLowerCase());
 
-vi.mock('@useai/shared', () => ({
-  VERSION: '1.0.0-test',
-  ACTIVE_DIR: '/tmp/useai/active',
-  SEALED_DIR: '/tmp/useai/sealed',
-  CONFIG_FILE: '/tmp/useai/config.json',
-  SESSIONS_FILE: '/tmp/useai/sessions.json',
-  MILESTONES_FILE: '/tmp/useai/milestones.json',
-  readJson: (...args: unknown[]) => mockReadJson(...args),
-  writeJson: (...args: unknown[]) => mockWriteJson(...args),
-  formatDuration: (s: number) => mockFormatDuration(s),
-  detectClient: () => mockDetectClient(),
-  normalizeMcpClientName: (name: string) => mockNormalizeMcpClientName(name),
-  signHash: (_hash: string, _key: string | null) => mockSignHash(_hash, _key),
-}));
+let generateIdCounter = 0;
+const mockGenerateSessionId = vi.fn(() => `gen-id-${++generateIdCounter}`);
+
+vi.mock('@useai/shared', async () => {
+  const actual = await vi.importActual<typeof import('@useai/shared')>('@useai/shared');
+  return {
+    ...actual,
+    VERSION: '1.0.0-test',
+    ACTIVE_DIR: '/tmp/useai/active',
+    SEALED_DIR: '/tmp/useai/sealed',
+    CONFIG_FILE: '/tmp/useai/config.json',
+    SESSIONS_FILE: '/tmp/useai/sessions.json',
+    MILESTONES_FILE: '/tmp/useai/milestones.json',
+    readJson: (...args: unknown[]) => mockReadJson(...args),
+    writeJson: (...args: unknown[]) => mockWriteJson(...args),
+    formatDuration: (s: number) => mockFormatDuration(s),
+    detectClient: () => mockDetectClient(),
+    normalizeMcpClientName: (name: string) => mockNormalizeMcpClientName(name),
+    signHash: (_hash: string, _key: string | null) => mockSignHash(_hash, _key),
+    generateSessionId: () => mockGenerateSessionId(),
+  };
+});
 
 // ── Mock node:fs ───────────────────────────────────────────────────────────────
 
@@ -134,6 +141,7 @@ describe('registerTools', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    generateIdCounter = 0;
     server = createMockServer();
     session = createMockSession();
 
@@ -220,11 +228,12 @@ describe('registerTools', () => {
 
       await handler({ task_type: 'debugging' });
 
+      // No conversation_id passed → generates a new one (gen-id-1 from mock)
       expect(session.appendToChain).toHaveBeenCalledWith('session_start', {
         client: 'vscode',
         task_type: 'debugging',
         project: null,
-        conversation_id: 'conv-aaaa-bbbb-cccc-dddd',
+        conversation_id: 'gen-id-1',
         conversation_index: 0,
         version: '1.0.0-test',
       });

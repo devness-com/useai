@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai",
-  "version": "0.5.43",
+  "version": "0.5.44",
   "description": "Track your AI-assisted development workflow. MCP server that records usage metrics across all your AI tools.",
   "keywords": [
     "mcp",
@@ -36,7 +36,7 @@
     "prepublishOnly": "pnpm run bundle",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "clean": "rm -rf dist"
   },
   "dependencies": {

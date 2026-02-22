@@ -22,6 +22,8 @@ export interface SessionEvaluation {
   scope_quality: number;        // 1-5: was the task well-scoped?
   scope_quality_reason?: string;
   tools_leveraged: number;      // count of distinct AI capabilities used
+  session_score?: number;           // 0-100, computed by active framework
+  evaluation_framework?: string;    // which framework computed the score
 }
 
 export interface ToolOverhead {
@@ -44,6 +46,8 @@ export interface SessionSeal {
   prompt_word_count?: number;
   model?: string;
   evaluation?: SessionEvaluation;
+  session_score?: number;           // 0-100
+  evaluation_framework?: string;    // 'raw' | 'space' | ...
   tool_overhead?: ToolOverhead;
   started_at: string;
   ended_at: string;

@@ -20,8 +20,10 @@ import {
   taskTypeSchema,
   milestoneCategorySchema,
   complexitySchema,
+  generateSessionId,
 } from '@useai/shared';
 import type { SessionSeal, SessionEvaluation, ToolOverhead, Milestone, LocalConfig } from '@useai/shared';
+import { getFramework } from '@useai/shared';
 import type { SessionState } from './session-state.js';
 import { writeMcpMapping } from './mcp-map.js';
 
@@ -97,14 +99,38 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         .string()
         .optional()
         .describe('The AI model ID running this session. Example: "claude-opus-4-6", "claude-sonnet-4-6"'),
+      conversation_id: z
+        .string()
+        .optional()
+        .describe('Pass the conversation_id from the previous useai_start response to group sessions in the same conversation. Omit for a new conversation.'),
     },
-    async ({ task_type, title, private_title, project, model }) => {
+    async ({ task_type, title, private_title, project, model, conversation_id }) => {
+      // Save previous conversation ID before reset (reset preserves it + increments index)
+      const prevConvId = session.conversationId;
+
       // Seal the previous session before resetting (prevents orphaned sessions)
       if (session.sessionRecordCount > 0 && opts?.sealBeforeReset) {
         opts.sealBeforeReset();
       }
       session.reset();
       resolveClient(server, session);
+
+      // Conversation ID logic:
+      // - If conversation_id is provided and matches the previous: keep (reset already incremented index)
+      // - If conversation_id is provided but different: use it as a new conversation
+      // - If not provided: generate a fresh conversation ID (each useai_start = new conversation by default)
+      if (conversation_id) {
+        if (conversation_id !== prevConvId) {
+          session.conversationId = conversation_id;
+          session.conversationIndex = 0;
+        }
+        // else: matches previous → reset() already preserved it and incremented index
+      } else {
+        // No conversation_id → new conversation (fixes long-lived MCP connections
+        // like Antigravity where multiple user conversations share one transport)
+        session.conversationId = generateSessionId();
+        session.conversationIndex = 0;
+      }
       if (project) session.setProject(project);
       if (model) session.setModel(model);
       session.setTaskType(task_type ?? 'coding');
@@ -281,6 +307,16 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         }
       }
 
+      // Compute session score from evaluation using configured framework
+      let sessionScore: number | undefined;
+      let frameworkId: string | undefined;
+      if (evaluation) {
+        const config = getConfig();
+        const framework = getFramework(config.evaluation_framework);
+        sessionScore = Math.round(framework.computeSessionScore(evaluation));
+        frameworkId = framework.id;
+      }
+
       // Estimate token overhead for useai_end call
       const endParamsJson = JSON.stringify({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation });
       const endOutputTokensEst = Math.ceil(endParamsJson.length / 4);
@@ -293,6 +329,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         files_touched: files_touched_count ?? 0,
         heartbeat_count: session.heartbeatCount,
         ...(evaluation ? { evaluation } : {}),
+        ...(sessionScore !== undefined ? { session_score: sessionScore } : {}),
+        ...(frameworkId ? { evaluation_framework: frameworkId } : {}),
         ...(session.modelId ? { model: session.modelId } : {}),
       });
 
@@ -315,6 +353,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
+        session_score: sessionScore,
+        evaluation_framework: frameworkId,
         started_at: new Date(session.sessionStartTime).toISOString(),
         ended_at: now,
         duration_seconds: duration,
@@ -350,7 +390,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       const langStr = languages && languages.length > 0 ? ` using ${languages.join(', ')}` : '';
       const milestoneStr = milestoneCount > 0 ? ` · ${milestoneCount} milestone${milestoneCount > 1 ? 's' : ''} recorded` : '';
       const evalStr = evaluation ? ` · eval: ${evaluation.task_outcome} (prompt: ${evaluation.prompt_quality}/5)` : '';
-      const responseText = `Session ended: ${durationStr} ${finalTaskType}${langStr}${milestoneStr}${evalStr}`;
+      const scoreStr = sessionScore !== undefined ? ` · score: ${sessionScore}/100 (${frameworkId})` : '';
+      const responseText = `Session ended: ${durationStr} ${finalTaskType}${langStr}${milestoneStr}${evalStr}${scoreStr}`;
 
       // Finalize tool_overhead
       const endInputTokensEst = Math.ceil(responseText.length / 4);
@@ -375,6 +416,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
+        session_score: sessionScore,
+        evaluation_framework: frameworkId,
         tool_overhead: toolOverhead,
         started_at: new Date(session.sessionStartTime).toISOString(),
         ended_at: now,

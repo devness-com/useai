@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai-cli",
-  "version": "0.5.43",
+  "version": "0.5.44",
   "description": "CLI tool for useai.dev — stats, sync, publish your AI development workflow",
   "author": "nabeelkausari",
   "license": "MIT",
@@ -19,7 +19,7 @@
     "dev": "tsc --watch",
     "bundle": "tsup src/index.ts --format esm --target node18 --no-splitting",
     "prepublishOnly": "pnpm run bundle",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -33,7 +33,8 @@
     "@types/node": "^22.13.4",
     "@useai/shared": "workspace:*",
     "tsup": "^8.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,7 @@
 export interface LocalConfig {
   milestone_tracking: boolean;
   auto_sync: boolean;
+  evaluation_framework?: string;    // 'raw' | 'space'; default 'raw'
 }
 
 export interface UseaiConfig extends LocalConfig {

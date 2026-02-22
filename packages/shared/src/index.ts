@@ -5,3 +5,5 @@ export * from './validation/index.js';
 export * from './utils/index.js';
 export * from './daemon/index.js';
 export * from './hooks/index.js';
+export * from './frameworks/index.js';
+export * from './scoring/index.js';

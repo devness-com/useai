@@ -19,6 +19,10 @@
       "types": "./dist/constants/index.d.ts",
       "import": "./dist/constants/index.js"
     },
+    "./constants/tools": {
+      "types": "./dist/constants/tools.d.ts",
+      "import": "./dist/constants/tools.js"
+    },
     "./crypto": {
       "types": "./dist/crypto/index.d.ts",
       "import": "./dist/crypto/index.js"
@@ -34,12 +38,20 @@
     "./daemon": {
       "types": "./dist/daemon/index.d.ts",
       "import": "./dist/daemon/index.js"
+    },
+    "./frameworks": {
+      "types": "./dist/frameworks/index.d.ts",
+      "import": "./dist/frameworks/index.js"
+    },
+    "./scoring": {
+      "types": "./dist/scoring/index.d.ts",
+      "import": "./dist/scoring/index.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "clean": "rm -rf dist"
   },
   "dependencies": {
