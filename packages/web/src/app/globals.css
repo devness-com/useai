@@ -26,14 +26,19 @@
   --border-accent: rgba(var(--accent-rgb), 0.3);
   --glass-bg: rgba(14, 14, 17, 0.6);
   --glass-border: rgba(255, 255, 255, 0.05);
+  --grid-color: rgba(255, 255, 255, 0.03);
+  --glow-opacity: 0.15;
+  --glow-blue: rgba(59, 130, 246, 0.15);
+  --shadow-glow: rgba(var(--accent-rgb), 0.1);
+  --accent-alpha: rgba(var(--accent-rgb), 0.05);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg-base: #ffffff;
-    --bg-surface-1: #f4f4f5;
-    --bg-surface-2: #e4e4e7;
-    --bg-surface-3: #d4d4d8;
+    --bg-base: #fafafa;
+    --bg-surface-1: #ffffff;
+    --bg-surface-2: #f4f4f5;
+    --bg-surface-3: #e4e4e7;
     --text-primary: #09090b;
     --text-secondary: #52525b;
     --text-muted: #71717a;
@@ -50,9 +55,14 @@
     --history: #2563eb;
     --history-rgb: 37, 99, 235;
     --border: #e4e4e7;
-    --border-accent: rgba(var(--accent-rgb), 0.2);
+    --border-accent: rgba(var(--accent-rgb), 0.4);
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.05);
+    --grid-color: rgba(0, 0, 0, 0.04);
+    --glow-opacity: 0.25;
+    --glow-blue: rgba(59, 130, 246, 0.25);
+    --shadow-glow: rgba(0, 0, 0, 0.08);
+    --accent-alpha: rgba(var(--accent-rgb), 0.15);
   }
 }
 
@@ -191,8 +201,8 @@ body {
 
 .cyber-grid {
   background-image: 
-    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
   background-size: 50px 50px;
   mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);

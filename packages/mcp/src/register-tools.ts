@@ -20,6 +20,7 @@ import {
   taskTypeSchema,
   milestoneCategorySchema,
   complexitySchema,
+  generateSessionId,
 } from '@useai/shared';
 import type { SessionSeal, SessionEvaluation, ToolOverhead, Milestone, LocalConfig } from '@useai/shared';
 import type { SessionState } from './session-state.js';
@@ -97,14 +98,38 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         .string()
         .optional()
         .describe('The AI model ID running this session. Example: "claude-opus-4-6", "claude-sonnet-4-6"'),
+      conversation_id: z
+        .string()
+        .optional()
+        .describe('Pass the conversation_id from the previous useai_start response to group sessions in the same conversation. Omit for a new conversation.'),
     },
-    async ({ task_type, title, private_title, project, model }) => {
+    async ({ task_type, title, private_title, project, model, conversation_id }) => {
+      // Save previous conversation ID before reset (reset preserves it + increments index)
+      const prevConvId = session.conversationId;
+
       // Seal the previous session before resetting (prevents orphaned sessions)
       if (session.sessionRecordCount > 0 && opts?.sealBeforeReset) {
         opts.sealBeforeReset();
       }
       session.reset();
       resolveClient(server, session);
+
+      // Conversation ID logic:
+      // - If conversation_id is provided and matches the previous: keep (reset already incremented index)
+      // - If conversation_id is provided but different: use it as a new conversation
+      // - If not provided: generate a fresh conversation ID (each useai_start = new conversation by default)
+      if (conversation_id) {
+        if (conversation_id !== prevConvId) {
+          session.conversationId = conversation_id;
+          session.conversationIndex = 0;
+        }
+        // else: matches previous → reset() already preserved it and incremented index
+      } else {
+        // No conversation_id → new conversation (fixes long-lived MCP connections
+        // like Antigravity where multiple user conversations share one transport)
+        session.conversationId = generateSessionId();
+        session.conversationIndex = 0;
+      }
       if (project) session.setProject(project);
       if (model) session.setModel(model);
       session.setTaskType(task_type ?? 'coding');

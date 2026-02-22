@@ -170,7 +170,7 @@ function SkillRadar() {
 
   return (
     <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
-      <div className="absolute inset-0 bg-accent/5 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute inset-0 bg-[var(--accent-alpha)] rounded-full blur-3xl animate-pulse" />
       <div className="pulse-ring w-full h-full" />
       
       <svg viewBox="0 0 300 300" className="relative z-10 w-full drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
@@ -186,7 +186,7 @@ function SkillRadar() {
           return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--border-accent)" strokeWidth="1" opacity="0.4" />;
         })}
         {/* Data polygon with glow */}
-        <path d={dataPath} fill="rgba(var(--accent-rgb), 0.15)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
+        <path d={dataPath} fill="var(--accent-alpha)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
         {/* Data dots */}
         {dataPoints.map((p, i) => (
           <circle key={i} cx={p[0]} cy={p[1]} r="4" fill="var(--bg-base)" stroke="var(--accent)" strokeWidth="2" />
@@ -220,7 +220,7 @@ function TerminalMockup() {
   }, []);
 
   return (
-    <div className="hud-border rounded-xl bg-bg-surface-1 overflow-hidden shadow-[0_0_30px_rgba(var(--accent-rgb),0.1)] relative">
+    <div className="hud-border rounded-xl bg-bg-surface-1 overflow-hidden shadow-[0_0_30px_var(--shadow-glow)] relative">
       <div className="scanner-line" />
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-surface-2">
         <div className="flex gap-2">
@@ -239,7 +239,7 @@ function TerminalMockup() {
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-4 text-text-primary space-y-2">
             <div className="flex justify-between border-b border-border-accent pb-2">
               <span className="text-text-secondary">SYSTEM STATUS:</span>
-              <span className="text-accent text-[10px] bg-accent/10 px-2 py-0.5 rounded-md border border-accent/20">ONLINE</span>
+              <span className="text-accent text-[10px] bg-[var(--accent-alpha)] px-2 py-0.5 rounded-md border border-accent/20">ONLINE</span>
             </div>
             
             {lines > 1 && (
@@ -290,7 +290,7 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
       onClick={copy}
       className={`group relative inline-flex items-center gap-4 px-6 py-3.5 rounded-xl border border-border-accent bg-bg-surface-1 font-mono text-sm text-text-secondary hover:text-accent transition-all cursor-pointer overflow-hidden ${className}`}
     >
-      <div className="absolute inset-0 bg-accent/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
+      <div className="absolute inset-0 bg-[var(--accent-alpha)] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
       <span className="text-text-muted select-none group-hover:animate-pulse z-10">&gt;</span>
       <span className="z-10 tracking-wide text-text-primary">{command}</span>
       {copied ? (
@@ -330,7 +330,7 @@ function TopNav() {
       <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center gap-3">
           <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
-          <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-accent/5 text-[10px] text-accent font-mono">
+          <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-[var(--accent-alpha)] text-[10px] text-accent font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
             SYSTEM_ONLINE
           </div>
@@ -370,8 +370,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
-      <div className="blur-blob w-[600px] h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), 0.15) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
-      <div className="blur-blob w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 70%)' }} />
+      <div className="blur-blob w-[600px] h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
+      <div className="blur-blob w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
 
       <TopNav />
 
@@ -500,7 +500,7 @@ export default function LandingPage() {
               <div className="space-y-6">
                 {STEPS.map((s, idx) => (
                   <motion.div key={s.step} variants={fadeUp} className="flex gap-6 items-start group">
-                    <div className="text-xs font-mono font-bold text-accent px-2 py-1 bg-accent/10 border border-accent/20 rounded-md mt-1">
+                    <div className="text-xs font-mono font-bold text-accent px-2 py-1 bg-[var(--accent-alpha)] border border-accent/20 rounded-md mt-1">
                       {s.step}
                     </div>
                     <div className="flex-1 border-b border-border-accent/30 pb-6 group-hover:border-accent transition-colors">

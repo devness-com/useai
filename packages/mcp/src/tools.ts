@@ -27,6 +27,7 @@ export interface AiTool extends BaseAiTool {
 export const USEAI_INSTRUCTIONS_TEXT = [
   '## UseAI Session Tracking',
   '- At the START of every response, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
+  '- To group multiple prompts in the same conversation, pass the `conversation_id` from the previous `useai_start` response. Omit it for the first message or a new conversation.',
   '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
   '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones (generic descriptions only \u2014 no project names, file paths, or company names), and an `evaluation` object honestly assessing: prompt_quality (1-5), context_provided (1-5), task_outcome, iteration_count, independence_level (1-5), scope_quality (1-5), tools_leveraged count.',
 ].join('\n');

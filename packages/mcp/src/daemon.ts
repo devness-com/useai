@@ -592,7 +592,8 @@ function recoverStartSession(
   const privateTitle = args['private_title'] as string | undefined;
   const project = args['project'] as string | undefined;
   const model = args['model'] as string | undefined;
-  const convId = meta?.convId ?? randomUUID();
+  const argConvId = args['conversation_id'] as string | undefined;
+  const convId = argConvId ?? randomUUID();
 
   const chainData: Record<string, unknown> = {
     client,
