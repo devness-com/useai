@@ -88,7 +88,7 @@ const STEPS = [
     step: '01',
     title: 'Initialize Uplink',
     description: 'One command seamlessly integrates UseAI into your existing MCP workflow.',
-    command: 'npx @devness/useai@latest',
+    command: 'npx @devness/useai',
   },
   {
     step: '02',
@@ -100,7 +100,7 @@ const STEPS = [
     step: '03',
     title: 'Analyze & Dominate',
     description: 'Review your performance matrix and rise up the global AI proficiency ranks.',
-    command: 'npx @devness/useai@latest stats',
+    command: 'npx @devness/useai stats',
   },
 ];
 
@@ -211,7 +211,7 @@ function TerminalMockup() {
       </div>
       <div className="p-6 font-mono text-sm leading-relaxed min-h-[280px]">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-text-muted">
-          <span className="text-accent">&gt;</span> npx @devness/useai@latest stats
+          <span className="text-accent">&gt;</span> npx @devness/useai stats
         </motion.div>
         
         {lines > 0 && (
@@ -560,7 +560,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                 className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl"
               >
-                <CopyCommand command="npx @devness/useai@latest" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
+                <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
                 <span className="text-text-muted font-mono text-[10px] hidden sm:block">OR</span>
                 <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-bold text-xs tracking-wider uppercase transition-colors hover:bg-white/90">
                   Dashboard
