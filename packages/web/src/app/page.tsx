@@ -303,6 +303,184 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
 }
 
 /* ------------------------------------------------------------------ */
+/*  Hero Dashboard Animation                                           */
+/* ------------------------------------------------------------------ */
+
+function HeroDashboardAnimation() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((s) => (s + 1) % 4);
+    }, 2500); // 2.5s per step
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="w-full relative z-10 px-4 md:px-0 mt-6 md:mt-0">
+      <div className="flex flex-col gap-4 relative max-w-lg mx-auto lg:mx-0 lg:ml-auto">
+        {/* Connecting Lines (Desktop only) */}
+        <div className="hidden lg:block absolute left-[2.5rem] top-[2.5rem] bottom-[2.5rem] w-px bg-border-accent/30 -z-10">
+          <motion.div 
+            className="w-full bg-accent/80"
+            initial={{ height: '0%' }}
+            animate={{ height: step >= 1 ? '100%' : '0%' }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+          />
+        </div>
+
+        {/* Panel 1: Code / Prompt Input */}
+        <div className={`hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col gap-2 border border-border-accent/20 transition-all duration-500 ${step === 0 ? 'shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30' : 'opacity-70 grayscale-[50%]'}`}>
+          <div className="flex items-center justify-between border-b border-border/50 pb-1.5">
+            <span className="font-mono text-[10px] text-text-muted flex items-center gap-1.5">
+              <Terminal className="w-2.5 h-2.5" /> IDE_ACTIVITY
+            </span>
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400/50" />
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400/50" />
+            </div>
+          </div>
+          <div className="font-mono text-sm space-y-2">
+            <p className="text-text-secondary"><span className="text-blue-400">const</span> prompt <span className="text-accent">=</span> <span className="text-green-400">"Refactor auth"</span>;</p>
+            <motion.p 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: step >= 0 ? 1 : 0 }}
+              className="text-text-muted text-xs break-all"
+            >
+              <span className="text-purple-400">await</span> ai.generate(prompt);
+            </motion.p>
+            <div className="relative h-[3.75rem] w-full mt-1">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: step === 0 ? [0, 1, 0] : 0 }} 
+                transition={{ repeat: step === 0 ? Infinity : 0, duration: 1 }}
+                className="w-2 h-3.5 bg-accent absolute top-0 left-0"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: step > 0 ? 1 : 0, scale: step > 0 ? 1 : 0.95 }}
+                className="text-xs text-text-secondary bg-bg-surface-2 p-2 rounded absolute top-0 w-full pointer-events-none"
+              >
+                <span className="text-accent">✔</span> 4 files updated<br/>
+                <span className="text-accent">✔</span> Tests passed
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 2: Metric Extraction */}
+        <div className={`hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col gap-2 border border-border-accent/20 transition-all duration-500 ${step === 1 ? 'shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30 scale-[1.03]' : 'opacity-70 grayscale-[50%]'}`}>
+           <div className="flex items-center justify-between border-b border-border/50 pb-1.5">
+            <span className="font-mono text-[10px] text-text-muted flex items-center gap-1.5">
+              <Brain className="w-2.5 h-2.5" /> TELEMETRY_EXTRACT
+            </span>
+            <motion.div 
+              animate={{ rotate: step === 1 ? 360 : 0 }} 
+              transition={{ duration: 2, repeat: step === 1 ? Infinity : 0, ease: 'linear' }}
+            >
+              <Zap className={`w-2.5 h-2.5 ${step === 1 ? 'text-accent' : 'text-text-muted'}`} />
+            </motion.div>
+          </div>
+          <div className="space-y-2.5 mt-1">
+             <div className="flex justify-between items-center text-xs font-mono">
+               <span className="text-text-secondary">PROMPT_QUALITY</span>
+               <span className="text-text-primary">9.4/10</span>
+             </div>
+             <div className="w-full bg-bg-surface-2 h-1.5 rounded-full overflow-hidden">
+               <motion.div className="h-full bg-blue-400" initial={{ width: '0%' }} animate={{ width: step >= 1 ? '94%' : '0%' }} />
+             </div>
+             
+             <div className="flex justify-between items-center text-xs font-mono mt-2">
+               <span className="text-text-secondary">CONTEXT_SCORE</span>
+               <span className="text-text-primary">8.8/10</span>
+             </div>
+             <div className="w-full bg-bg-surface-2 h-1.5 rounded-full overflow-hidden">
+               <motion.div className="h-full bg-purple-400" initial={{ width: '0%' }} animate={{ width: step >= 1 ? '88%' : '0%' }} />
+             </div>
+
+             <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: step >= 1 ? 1 : 0, scale: step >= 1 ? 1 : 0.8 }}
+                className="mt-2 pt-2 border-t border-border/50 text-center"
+             >
+                <div className="text-[9px] text-text-muted font-mono tracking-widest">SESSION_SCORE</div>
+                <div className="text-2xl font-black text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] leading-none mt-1">92</div>
+             </motion.div>
+          </div>
+        </div>
+
+        {/* Panel 3: Leaderboard Climb */}
+        <div className={`hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col gap-2 border border-border-accent/20 transition-all duration-500 overflow-hidden ${step >= 2 ? 'shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30 scale-[1.03]' : 'opacity-70 grayscale-[50%]'}`}>
+          <div className="flex items-center justify-between border-b border-border/50 pb-1.5">
+            <span className="font-mono text-[10px] text-text-muted flex items-center gap-1.5">
+              <Trophy className="w-2.5 h-2.5" /> GLOBAL_RANK
+            </span>
+            <span className="text-[9px] text-accent font-mono animate-pulse">UPDATING...</span>
+          </div>
+          
+          <div className="relative h-[6rem] mt-1 flex flex-col gap-1.5">
+            {/* 
+              By using standard flex column layout and conditionally changing the order of elements based on step, 
+              framer-motion's layout prop handles the smooth vertical sliding automatically. 
+            */}
+            
+            {step < 2 ? (
+              // Before Climb
+              <>
+                <motion.div layout className="w-full flex justify-between items-center p-2 rounded bg-bg-surface-2/50 text-xs font-mono">
+                  <span className="text-text-muted">1. 0xNeural</span>
+                  <span>91</span>
+                </motion.div>
+                <motion.div layout className="w-full flex justify-between items-center p-2 rounded bg-bg-surface-2/50 text-xs font-mono">
+                  <span className="text-text-muted">2. CyberDev</span>
+                  <span>89</span>
+                </motion.div>
+                <motion.div 
+                  layout 
+                  initial={{ opacity: 0, scale: 0.9 }} 
+                  animate={{ opacity: step === 1 ? 1 : 0, scale: 1 }} 
+                  className="w-full flex justify-between items-center p-2 rounded bg-accent/10 border border-accent/30 text-xs font-mono"
+                >
+                  <span className="text-accent font-bold">3. You</span>
+                  <span className="text-accent font-bold">92</span>
+                </motion.div>
+              </>
+            ) : (
+              // After Climb
+              <>
+                <motion.div 
+                  layout 
+                  initial={{ scale: 1 }}
+                  animate={{ scale: step === 2 ? [1, 1.05, 1] : 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-full flex justify-between items-center p-2 rounded bg-accent/10 border border-accent/30 text-xs font-mono z-10 shadow-[0_0_15px_rgba(var(--accent-rgb),0.2)]"
+                >
+                  <span className="text-accent font-bold flex items-center gap-2">
+                    <TrendingUp className="w-3 h-3" />
+                    1. You
+                  </span>
+                  <span className="text-accent font-bold">92</span>
+                </motion.div>
+                <motion.div layout className="w-full flex justify-between items-center p-2 rounded bg-bg-surface-2/50 text-xs font-mono opacity-50">
+                  <span className="text-text-muted">2. 0xNeural</span>
+                  <span>91</span>
+                </motion.div>
+                <motion.div layout className="w-full flex justify-between items-center p-2 rounded bg-bg-surface-2/50 text-xs font-mono opacity-50">
+                  <span className="text-text-muted">3. CyberDev</span>
+                  <span>89</span>
+                </motion.div>
+              </>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page Components                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -377,26 +555,28 @@ export default function LandingPage() {
 
       <main className="relative z-10 pb-32">
         {/* ── Hero ── */}
-        <section className="relative pt-32 md:pt-48 pb-16 px-6 flex flex-col justify-center items-center overflow-x-hidden min-h-[90vh]">
-          <div className="max-w-5xl mx-auto text-center w-full flex flex-col items-center mb-20 relative z-10">
-            <div className="flex flex-col items-center w-full">
+        <section className="relative pt-24 lg:pt-28 pb-12 px-6 overflow-x-hidden min-h-[70vh] flex items-center">
+          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
+            
+            {/* Left Content */}
+            <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
               
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-4 py-1.5 rounded-full mb-8 inline-flex items-center gap-3">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-6 inline-flex items-center gap-2">
                 <Activity className="w-3 h-3 text-accent" />
-                <span className="text-xs font-mono text-text-secondary tracking-widest">PROFILING_ACTIVE</span>
+                <span className="text-[10px] font-mono text-text-secondary tracking-widest">PROFILING_ACTIVE</span>
               </motion.div>
 
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter text-text-primary leading-[1.2] sm:leading-[1.25] mb-8"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-text-primary leading-[1.05] sm:leading-[1.1] mb-6"
               >
                 KNOW HOW YOU <br className="hidden md:block" />
-                <span className="gradient-text-accent italic inline-block py-2 pr-4">CODE WITH AI</span>
+                <span className="gradient-text-accent italic inline-block py-1 pr-4">CODE WITH AI</span>
               </motion.h1>
 
               <motion.p 
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-lg md:text-xl text-text-muted max-w-2xl text-center mb-12 leading-relaxed font-light"
+                className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-xl mb-8 leading-relaxed font-light"
               >
                 Capture every AI session across any tool. Turn raw activity into an actionable 
                 intelligence profile. <span className="text-text-primary font-medium">Measure, improve, and dominate the leaderboard.</span>
@@ -404,33 +584,27 @@ export default function LandingPage() {
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-xl mx-auto mt-2"
+                className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl"
               >
-                <CopyCommand command="npx @devness/useai@latest" className="w-full sm:w-auto shrink-0" />
-                <span className="text-text-muted font-mono text-xs hidden sm:block">OR</span>
-                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-3 px-8 py-3.5 bg-text-primary text-bg-base font-bold text-sm tracking-wider uppercase transition-colors hover:bg-white/90">
-                  View Dashboard
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <CopyCommand command="npx @devness/useai@latest" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
+                <span className="text-text-muted font-mono text-[10px] hidden sm:block">OR</span>
+                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-bold text-xs tracking-wider uppercase transition-colors hover:bg-white/90">
+                  Dashboard
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </motion.div>
             </div>
-          </div>
 
-          {/* Scrolling Tool Strip */}
-          <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-4 opacity-70 relative z-10 transition-transform transform-gpu">
-            <span className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">// Supported Integrations</span>
-            <div className="flex w-max animate-marquee">
-              {[1, 2].map((group) => (
-                <div key={group} className="flex gap-6 whitespace-nowrap pr-6">
-                  {[...AI_TOOLS, ...AI_TOOLS].map((tool, idx) => (
-                    <div key={`${tool.name}-${idx}`} className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-accent/40 bg-bg-surface-1/90 transform-gpu will-change-transform">
-                      <div className="w-2 h-2 rounded-full" style={{ background: tool.color, boxShadow: `0 0 10px ${tool.glow}` }} />
-                      <span className="font-mono text-xs text-text-secondary">{tool.name}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+            {/* Right Content - Dashboard Interactive Animation */}
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="w-full relative z-10 lg:-translate-y-4"
+            >
+              <HeroDashboardAnimation />
+            </motion.div>
+            
           </div>
         </section>
 
