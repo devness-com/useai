@@ -7,4 +7,4 @@ export {
   TOOL_ICONS,
   TOOL_INITIALS,
   type SupportedAiTool,
-} from '@useai/shared';
+} from '@useai/shared/constants/tools';

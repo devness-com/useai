@@ -320,7 +320,7 @@ function HeroDashboardAnimation() {
     { id: 'you', rank: 3, name: 'You', score: 89, isYou: true },
   ];
 
-  const smoothTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] };
+  const smoothTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
     <div className="w-full relative z-10 px-4 md:px-0 mt-6 md:mt-0">

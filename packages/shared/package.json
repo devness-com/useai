@@ -19,6 +19,10 @@
       "types": "./dist/constants/index.d.ts",
       "import": "./dist/constants/index.js"
     },
+    "./constants/tools": {
+      "types": "./dist/constants/tools.d.ts",
+      "import": "./dist/constants/tools.js"
+    },
     "./crypto": {
       "types": "./dist/crypto/index.d.ts",
       "import": "./dist/crypto/index.js"
