@@ -303,8 +303,54 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
 }
 
 /* ------------------------------------------------------------------ */
-/*  Page Component                                                     */
+/*  Page Components                                                    */
 /* ------------------------------------------------------------------ */
+
+function TopNav() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    
+    // Check initial state
+    handleScroll();
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b transform-gpu ${
+      scrolled 
+        ? 'bg-bg-base/80 backdrop-blur-md border-border shadow-sm' 
+        : 'bg-transparent border-transparent shadow-none'
+    }`}>
+      <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center gap-3">
+          <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
+          <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-accent/5 text-[10px] text-accent font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
+            SYSTEM_ONLINE
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-8">
+          <a href="#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
+            // FEATURES
+          </a>
+          <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
+            // LEADERBOARD
+          </Link>
+          <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-white border border-accent flex items-center gap-2">
+            ACCESS_TERM <Terminal className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+}
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
@@ -324,37 +370,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
-      <div className="blur-blob bg-accent/20 w-[600px] h-[600px] top-[-10%] left-[-10%]" />
-      <div className="blur-blob bg-blue-500/10 w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s' }} />
+      <div className="blur-blob w-[600px] h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), 0.15) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
+      <div className="blur-blob w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 70%)' }} />
 
-      {/* ── Nav ── */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
-        scrolled 
-          ? 'bg-bg-base/80 backdrop-blur-md border-border shadow-sm' 
-          : 'bg-transparent border-transparent shadow-none'
-      }`}>
-        <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
-            <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-accent/5 text-[10px] text-accent font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
-              SYSTEM_ONLINE
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-8">
-            <a href="#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
-              // FEATURES
-            </a>
-            <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
-              // LEADERBOARD
-            </Link>
-            <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-white border border-accent flex items-center gap-2">
-              ACCESS_TERM <Terminal className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <TopNav />
 
       <main className="relative z-10 pb-32">
         {/* ── Hero ── */}
@@ -398,20 +417,20 @@ export default function LandingPage() {
           </div>
 
           {/* Scrolling Tool Strip */}
-          <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-4 opacity-70 relative z-10">
+          <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-4 opacity-70 relative z-10 transition-transform transform-gpu">
             <span className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">// Supported Integrations</span>
-            <motion.div 
-              className="flex gap-6 whitespace-nowrap"
-              animate={{ x: [0, -1000] }}
-              transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
-            >
-              {[...AI_TOOLS, ...AI_TOOLS].map((tool, idx) => (
-                <div key={`${tool.name}-${idx}`} className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-accent/40 bg-bg-surface-1/30 backdrop-blur-sm mix-blend-normal">
-                  <div className="w-2 h-2 rounded-full" style={{ background: tool.color, boxShadow: `0 0 10px ${tool.glow}` }} />
-                  <span className="font-mono text-xs text-text-secondary">{tool.name}</span>
+            <div className="flex w-max animate-marquee">
+              {[1, 2].map((group) => (
+                <div key={group} className="flex gap-6 whitespace-nowrap pr-6">
+                  {[...AI_TOOLS, ...AI_TOOLS].map((tool, idx) => (
+                    <div key={`${tool.name}-${idx}`} className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-accent/40 bg-bg-surface-1/90 transform-gpu will-change-transform">
+                      <div className="w-2 h-2 rounded-full" style={{ background: tool.color, boxShadow: `0 0 10px ${tool.glow}` }} />
+                      <span className="font-mono text-xs text-text-secondary">{tool.name}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
         </section>
 
@@ -441,7 +460,7 @@ export default function LandingPage() {
                 <motion.div 
                   key={m.title} 
                   variants={fadeUp} 
-                  className="hud-border rounded-xl p-6 bg-bg-surface-1/50 backdrop-blur hover:bg-bg-surface-2 transition-colors group"
+                  className="hud-border rounded-xl p-6 bg-bg-surface-1/80 hover:bg-bg-surface-2 transition-colors group"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-12 h-12 rounded-xl bg-bg-surface-2 flex items-center justify-center border border-border-accent relative overflow-hidden">

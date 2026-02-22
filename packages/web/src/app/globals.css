@@ -251,7 +251,6 @@ body {
 .blur-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
   z-index: -1;
   opacity: 0.4;
   animation: float-blob 10s ease-in-out infinite alternate;
@@ -259,8 +258,18 @@ body {
   transform: translateZ(0);
 }
 @keyframes float-blob {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(50px, -50px) scale(1.1); }
-  66% { transform: translate(-30px, 20px) scale(0.9); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(50px, -50px, 0) scale(1.1); }
+  66% { transform: translate3d(-30px, 20px, 0) scale(0.9); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
 }
