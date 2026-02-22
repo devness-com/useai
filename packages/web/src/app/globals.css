@@ -26,7 +26,7 @@
   --border-accent: rgba(var(--accent-rgb), 0.3);
   --glass-bg: rgba(14, 14, 17, 0.6);
   --glass-border: rgba(255, 255, 255, 0.05);
-  --grid-color: rgba(255, 255, 255, 0.03);
+  --grid-color: rgba(255, 255, 255, 0.08);
   --glow-opacity: 0.15;
   --glow-blue: rgba(59, 130, 246, 0.15);
   --shadow-glow: rgba(var(--accent-rgb), 0.1);
