@@ -31,8 +31,8 @@ const TYPEWRITER_CHAR_COUNT = TYPEWRITER_LINES.join(' ').length;
 const TYPEWRITER_DURATION = TYPEWRITER_CHAR_COUNT * CHAR_STAGGER;
 /** When USING AI starts its entrance (after typewriter finishes) */
 const GLITCH_ENTRANCE_DELAY = TYPEWRITER_DELAY + TYPEWRITER_DURATION + 0.15;
-/** How long the speed trails linger after the text lands (ms) */
-const SPEED_TRAIL_MS = 800;
+/** How long the speed trails + shake linger after the text lands (ms) */
+const SPEED_TRAIL_MS = 1800;
 /** Pause (ms) after the full cycle before restarting */
 const LOOP_PAUSE_MS = 2500;
 /** Fade-out duration (ms) before restart */

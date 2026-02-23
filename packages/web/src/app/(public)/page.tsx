@@ -644,7 +644,7 @@ export default function LandingPage() {
               
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-6 inline-flex items-center gap-2">
                 <Activity className="w-3 h-3 text-accent" />
-                <span className="text-[10px] font-mono text-text-secondary tracking-widest">TRACKING 10+ AI TOOLS</span>
+                <span className="text-[10px] font-mono text-text-secondary tracking-widest">TRACKING 20+ AI TOOLS EFFICIENTLY</span>
               </motion.div>
 
               <HeroHeading onAnimationComplete={onHeroComplete} />

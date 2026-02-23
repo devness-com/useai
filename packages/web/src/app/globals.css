@@ -320,7 +320,7 @@ body {
   pointer-events: none;
   filter: blur(6px);
   opacity: 0.5;
-  animation: ghost-fade 0.5s ease-out forwards;
+  animation: ghost-fade 1.2s ease-out forwards;
 }
 
 @keyframes ghost-fade {
@@ -346,7 +346,7 @@ body {
   left: -25%;
   height: 2px;
   border-radius: 2px;
-  animation: speed-streak 0.7s cubic-bezier(0, 0, 0.2, 1) forwards;
+  animation: speed-streak 0.6s cubic-bezier(0, 0, 0.2, 1) forwards;
   will-change: transform, opacity;
 }
 

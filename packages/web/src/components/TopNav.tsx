@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Terminal } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { UseAILogo } from './UseAILogo';
 import { StatusBadge } from '@/components/StatusBadge';
 import { usePresence } from '@/hooks/usePresence';
@@ -41,15 +41,18 @@ export function TopNav() {
           />
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           <Link href="/#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
             // FEATURES
+          </Link>
+          <Link href="/explore" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
+            // EXPLORE
           </Link>
           <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
             // LEADERBOARD
           </Link>
           <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-bg-base border border-accent flex items-center gap-2">
-            ACCESS_TERM <Terminal className="w-3 h-3" />
+            DASHBOARD <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       </div>
