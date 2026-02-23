@@ -40,6 +40,7 @@ WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages/web/.next ./packages/web/.next
+COPY --from=build /app/packages/web/public ./packages/web/public
 COPY --from=build /app/packages/web/package.json ./packages/web/package.json
 COPY --from=build /app/packages/web/node_modules ./packages/web/node_modules
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
