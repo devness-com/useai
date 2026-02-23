@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, ArrowRight, Loader2, Shield, Terminal, KeyRound } from 'lucide-react';
@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('useai_token');
+    if (token) router.replace('/dashboard');
+  }, [router]);
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
