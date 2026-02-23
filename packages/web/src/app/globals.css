@@ -294,105 +294,150 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────────── *\
-/*  Hero Heading — Glitch Effect                                      */
+/*  Hero Heading — Speed Rush Effect                                   */
 /* ────────────────────────────────────────────────────────────────── */
 
-.hero-glitch {
-  position: relative;
-  animation:
-    glitch-jitter 0.08s steps(2) infinite,
-    glitch-skew  0.5s  steps(1) infinite;
+/* Shake — rapid micro-vibration like high-speed turbulence */
+.speed-shake {
+  animation: speed-shake 0.06s steps(2) infinite;
 }
 
-/* Chromatic aberration + scanline slicing pseudo-layers */
-.hero-glitch::before,
-.hero-glitch::after {
-  content: attr(data-text);
+@keyframes speed-shake {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1.5px); }
+  50%  { transform: translate(1.5px, -1px); }
+  75%  { transform: translate(-1px, -2px); }
+  100% { transform: translate(2px, 0.5px); }
+}
+
+/* Motion blur ghost — a blurred copy that trails and fades */
+.speed-blur-ghost {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: inherit;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
   pointer-events: none;
+  filter: blur(6px);
+  opacity: 0.5;
+  animation: ghost-fade 0.5s ease-out forwards;
 }
 
-/* Red-shift layer — rapid scanline slicing top half */
-.hero-glitch::before {
-  animation: glitch-slice-top 0.2s steps(2) infinite;
+@keyframes ghost-fade {
+  0%   { opacity: 0.5; transform: translateX(-20px); filter: blur(8px); }
+  40%  { opacity: 0.25; transform: translateX(-8px); filter: blur(4px); }
+  100% { opacity: 0; transform: translateX(0); filter: blur(0px); }
+}
+
+/* Container for speed trail lines */
+.speed-trails {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Individual speed lines — horizontal streaks */
+.speed-line {
+  position: absolute;
+  left: -25%;
+  height: 2px;
+  border-radius: 2px;
+  animation: speed-streak 0.7s cubic-bezier(0, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Vary vertical position, width, color, thickness, and delay for each line */
+.speed-line-1 {
+  top: 8%;
+  width: 90%;
+  background: linear-gradient(to left, var(--accent), transparent 75%);
+  animation-delay: 0s;
+  opacity: 0.9;
+  height: 2.5px;
+}
+.speed-line-2 {
+  top: 22%;
+  width: 120%;
+  background: linear-gradient(to left, var(--accent-bright), transparent 65%);
+  animation-delay: 0.02s;
   opacity: 0.8;
-  filter: hue-rotate(-40deg) brightness(1.4) saturate(1.5);
+  height: 3px;
+}
+.speed-line-3 {
+  top: 38%;
+  width: 70%;
+  background: linear-gradient(to left, var(--accent), transparent 80%);
+  animation-delay: 0.05s;
+  opacity: 0.6;
+}
+.speed-line-4 {
+  top: 50%;
+  width: 130%;
+  background: linear-gradient(to left, var(--accent-bright), transparent 60%);
+  animation-delay: 0.01s;
+  opacity: 0.85;
+  height: 3.5px;
+}
+.speed-line-5 {
+  top: 65%;
+  width: 85%;
+  background: linear-gradient(to left, var(--accent), transparent 70%);
+  animation-delay: 0.04s;
+  opacity: 0.7;
+  height: 2px;
+}
+.speed-line-6 {
+  top: 78%;
+  width: 105%;
+  background: linear-gradient(to left, var(--accent-bright), transparent 72%);
+  animation-delay: 0.03s;
+  opacity: 0.75;
+  height: 2.5px;
+}
+.speed-line-7 {
+  top: 92%;
+  width: 55%;
+  background: linear-gradient(to left, var(--accent), transparent 85%);
+  animation-delay: 0.06s;
+  opacity: 0.5;
+  height: 1.5px;
 }
 
-/* Blue-shift layer — rapid scanline slicing bottom half */
-.hero-glitch::after {
-  animation: glitch-slice-bot 0.25s steps(3) infinite reverse;
-  opacity: 0.8;
-  filter: hue-rotate(40deg) brightness(1.4) saturate(1.5);
+/* Speed lines shrink from left and fade out */
+@keyframes speed-streak {
+  0% {
+    transform: translateX(0) scaleX(1);
+    opacity: var(--speed-line-opacity, 0.8);
+  }
+  50% {
+    transform: translateX(25%) scaleX(0.5);
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateX(50%) scaleX(0);
+    opacity: 0;
+  }
 }
 
-/* Main element jitter — fast micro-shake */
-@keyframes glitch-jitter {
-  0%   { transform: translate(0, 0); }
-  20%  { transform: translate(-3px, 2px); }
-  40%  { transform: translate(2px, -1px); }
-  60%  { transform: translate(-1px, -3px); }
-  80%  { transform: translate(3px, 1px); }
-  100% { transform: translate(-2px, -1px); }
-}
-
-/* Periodic skew — occasional larger distortion */
-@keyframes glitch-skew {
-  0%   { transform: skewX(0deg); }
-  20%  { transform: skewX(0deg); }
-  21%  { transform: skewX(-4deg) translate(4px, 0); }
-  24%  { transform: skewX(2deg) translate(-2px, 0); }
-  25%  { transform: skewX(0deg); }
-  65%  { transform: skewX(0deg); }
-  66%  { transform: skewX(3deg) translate(-3px, 0); }
-  68%  { transform: skewX(-2deg) translate(2px, 0); }
-  69%  { transform: skewX(0deg); }
-  100% { transform: skewX(0deg); }
-}
-
-/* Top scanline layer — horizontal slices that jump around */
-@keyframes glitch-slice-top {
-  0%   { clip-path: inset(5% 0 80% 0);  transform: translate(6px, 0); }
-  25%  { clip-path: inset(25% 0 55% 0);  transform: translate(-8px, 0); }
-  50%  { clip-path: inset(10% 0 70% 0);  transform: translate(5px, 0); }
-  75%  { clip-path: inset(40% 0 35% 0);  transform: translate(-6px, 0); }
-  100% { clip-path: inset(0% 0 85% 0);   transform: translate(4px, 0); }
-}
-
-/* Bottom scanline layer — offset horizontal slices */
-@keyframes glitch-slice-bot {
-  0%   { clip-path: inset(60% 0 10% 0);  transform: translate(-7px, 0); }
-  20%  { clip-path: inset(75% 0 5% 0);   transform: translate(5px, 0); }
-  40%  { clip-path: inset(50% 0 20% 0);  transform: translate(-4px, 0); }
-  60%  { clip-path: inset(70% 0 15% 0);  transform: translate(8px, 0); }
-  80%  { clip-path: inset(55% 0 25% 0);  transform: translate(-5px, 0); }
-  100% { clip-path: inset(65% 0 5% 0);   transform: translate(6px, 0); }
-}
-
-/* Settled glow after glitch phase ends */
+/* Settled glow after speed trails fade */
 .hero-glow-settled {
   filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.4))
           drop-shadow(0 0 40px rgba(var(--accent-rgb), 0.15));
   transition: filter 0.8s ease-out;
 }
 
-/* ── Reduced motion — skip all hero heading animations ── */
+/* ── Reduced motion — skip speed effects ── */
 @media (prefers-reduced-motion: reduce) {
-  .hero-glitch,
-  .hero-glitch::before,
-  .hero-glitch::after {
+  .speed-shake {
     animation: none !important;
-    transform: none !important;
-    clip-path: none !important;
-    opacity: 0 !important;
+  }
+  .speed-trails,
+  .speed-blur-ghost {
+    display: none !important;
   }
   .hero-glow-settled {
     filter: none;

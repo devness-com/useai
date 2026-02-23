@@ -31,8 +31,8 @@ const TYPEWRITER_CHAR_COUNT = TYPEWRITER_LINES.join(' ').length;
 const TYPEWRITER_DURATION = TYPEWRITER_CHAR_COUNT * CHAR_STAGGER;
 /** When USING AI starts its entrance (after typewriter finishes) */
 const GLITCH_ENTRANCE_DELAY = TYPEWRITER_DELAY + TYPEWRITER_DURATION + 0.15;
-/** How long the glitch CSS effect runs before settling */
-const GLITCH_SETTLE_MS = 1500;
+/** How long the speed trails linger after the text lands (ms) */
+const SPEED_TRAIL_MS = 800;
 /** Pause (ms) after the full cycle before restarting */
 const LOOP_PAUSE_MS = 2500;
 /** Fade-out duration (ms) before restart */
@@ -44,35 +44,34 @@ const FADE_OUT_MS = 600;
 
 export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
   const prefersReduced = useReducedMotion();
-  const [glitchActive, setGlitchActive] = useState(false);
+  const [speedTrails, setSpeedTrails] = useState(false);
   const [settled, setSettled] = useState(false);
   const [loopKey, setLoopKey] = useState(0);
   const [fading, setFading] = useState(false);
   const [completedOnce, setCompletedOnce] = useState(false);
 
   const restartLoop = useCallback(() => {
-    // Fade out, then reset and remount
     setFading(true);
     setTimeout(() => {
-      setGlitchActive(false);
+      setSpeedTrails(false);
       setSettled(false);
       setFading(false);
       setLoopKey((k) => k + 1);
     }, FADE_OUT_MS);
   }, []);
 
-  const handleGlitchEntrance = useCallback(() => {
-    setGlitchActive(true);
+  const handleSpeedEntrance = useCallback(() => {
+    // Show speed trails as soon as the text lands
+    setSpeedTrails(true);
     setTimeout(() => {
-      setGlitchActive(false);
+      setSpeedTrails(false);
       setSettled(true);
       if (!completedOnce) {
         setCompletedOnce(true);
         onAnimationComplete?.();
       }
-      // Schedule next loop
       setTimeout(restartLoop, LOOP_PAUSE_MS);
-    }, GLITCH_SETTLE_MS);
+    }, SPEED_TRAIL_MS);
   }, [onAnimationComplete, completedOnce, restartLoop]);
 
   // For reduced-motion: fire completion immediately after mount
@@ -183,24 +182,45 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
 
         <br />
 
-        {/* Glitch line — "USING AI" snap entrance + glitch */}
-        <motion.span
-          aria-hidden
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{
-            delay: GLITCH_ENTRANCE_DELAY,
-            duration: 0.15,
-            ease: [0.2, 0, 0, 1],
-          }}
-          onAnimationComplete={handleGlitchEntrance}
-          className={`gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl ${
-            glitchActive ? 'hero-glitch' : ''
-          } ${settled ? 'hero-glow-settled' : ''}`}
-          style={glitchActive ? { willChange: 'transform, clip-path' } : undefined}
-        >
-          {GLITCH_LINE}
-        </motion.span>
+        {/* Speed line — "USING AI" rushes in from the left */}
+        <span className="relative block overflow-visible">
+          <motion.span
+            aria-hidden
+            initial={{ opacity: 0, x: '-100vw' }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              delay: GLITCH_ENTRANCE_DELAY,
+              duration: 0.35,
+              ease: [0.0, 0.0, 0.1, 1],
+            }}
+            onAnimationComplete={handleSpeedEntrance}
+            className={`gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl ${
+              speedTrails ? 'speed-shake' : ''
+            } ${settled ? 'hero-glow-settled' : ''}`}
+          >
+            {GLITCH_LINE}
+          </motion.span>
+          {/* Speed trail lines */}
+          {speedTrails && (
+            <span className="speed-trails" aria-hidden>
+              <span className="speed-line speed-line-1" />
+              <span className="speed-line speed-line-2" />
+              <span className="speed-line speed-line-3" />
+              <span className="speed-line speed-line-4" />
+              <span className="speed-line speed-line-5" />
+              <span className="speed-line speed-line-6" />
+              <span className="speed-line speed-line-7" />
+            </span>
+          )}
+          {/* Motion blur ghost that fades quickly */}
+          {speedTrails && (
+            <span className="speed-blur-ghost" aria-hidden>
+              <span className="gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl">
+                {GLITCH_LINE}
+              </span>
+            </span>
+          )}
+        </span>
       </span>
     </h1>
   );
