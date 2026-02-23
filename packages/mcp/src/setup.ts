@@ -171,22 +171,47 @@ function showManualHints(installedTools: AiTool[]): void {
   console.log();
 }
 
+// ── Spinner ─────────────────────────────────────────────────────────────────
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+function startSpinner(message: string): { stop: (finalMessage: string) => void } {
+  let frame = 0;
+  const interval = setInterval(() => {
+    const symbol = chalk.cyan(SPINNER_FRAMES[frame % SPINNER_FRAMES.length]);
+    process.stdout.write(`\r  ${symbol} ${chalk.dim(message)}`);
+    frame++;
+  }, 80);
+
+  return {
+    stop(finalMessage: string) {
+      clearInterval(interval);
+      process.stdout.write(`\r${' '.repeat(message.length + 10)}\r`); // clear line
+      console.log(finalMessage);
+    },
+  };
+}
+
 // ── Daemon-first install (default) ──────────────────────────────────────────
 
 async function daemonInstallFlow(tools: AiTool[], autoYes: boolean, explicit: boolean): Promise<void> {
   // 1. Ensure daemon is running
-  console.log(chalk.dim('  Ensuring UseAI daemon is running...'));
+  const spinner = startSpinner('Starting UseAI daemon...');
   const daemonOk = await ensureDaemon();
 
-  let useDaemon = true;
-  if (daemonOk) {
-    console.log(chalk.green(`  \u2713 Daemon running on port ${DAEMON_PORT}`));
-    console.log(chalk.dim(`    Dashboard: http://127.0.0.1:${DAEMON_PORT}/dashboard`));
-  } else {
-    useDaemon = false;
-    console.log(chalk.red(`  \u2717 Could not start daemon \u2014 falling back to stdio config`));
-    console.log(chalk.dim(`  (Run with --foreground to debug: npx @devness/useai@latest daemon --port ${DAEMON_PORT})`));
+  if (!daemonOk) {
+    spinner.stop(chalk.red(`  \u2717 Could not start daemon on port ${DAEMON_PORT}`));
+    console.log();
+    console.log(chalk.bold('  To debug, run the daemon in foreground mode:'));
+    console.log(chalk.cyan(`    npx @devness/useai@latest daemon --port ${DAEMON_PORT}`));
+    console.log();
+    console.log(chalk.dim('  If you need stdio mode (e.g. containers/CI), use: npx @devness/useai mcp --stdio'));
+    return;
   }
+
+  const useDaemon = true;
+  spinner.stop(chalk.green(`  \u2713 Daemon running on port ${DAEMON_PORT}`));
+  console.log(chalk.dim(`    Dashboard: http://127.0.0.1:${DAEMON_PORT}/dashboard`));
 
   // 2. Install auto-start (only if daemon is working)
   if (useDaemon) {

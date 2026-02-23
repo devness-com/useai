@@ -2,18 +2,34 @@
 
 export {};
 
-const subcommand = process.argv[2];
+let command = process.argv[2];
 
-// CLI mode: handle setup commands before MCP server initialization
-if (subcommand === 'mcp' || subcommand?.startsWith('--') || (!subcommand && process.stdin.isTTY)) {
-  const args = subcommand === 'mcp' ? process.argv.slice(3) : process.argv.slice(2);
+// CLI mode: handle explicit setup commands (mcp command or --flags)
+if (command === 'mcp' || command?.startsWith('--')) {
+  const args = command === 'mcp' ? process.argv.slice(3) : process.argv.slice(2);
   const { runSetup } = await import('./setup.js');
   await runSetup(args);
   process.exit(0);
 }
 
+// No command + TTY: if already installed → update, otherwise → first-time setup
+if (!command && process.stdin.isTTY) {
+  const { AI_TOOLS } = await import('./tools.js');
+  const isInstalled = AI_TOOLS.some((t) => {
+    try { return t.isConfigured(); } catch { return false; }
+  });
+
+  if (isInstalled) {
+    command = 'update';
+  } else {
+    const { runSetup } = await import('./setup.js');
+    await runSetup([]);
+    process.exit(0);
+  }
+}
+
 // Update mode: check for new version, remove MCP configs, restart daemon, reinstall configs
-if (subcommand === 'update') {
+if (command === 'update') {
   const { default: chalk } = await import('chalk');
   const { fetchLatestVersion, fetchDaemonHealth, killDaemon, ensureDaemon, installClaudeCodeHooks, VERSION } =
     await import('@useai/shared');
@@ -77,18 +93,9 @@ if (subcommand === 'update') {
 
   if (!daemonOk) {
     console.log(chalk.red('  ✗ Failed to start updated daemon'));
-    // Still reinstall tools in stdio mode so the user isn't left broken
-    if (configuredTools.length > 0) {
-      console.log(chalk.dim('\n  Reinstalling MCP configs (stdio fallback)...'));
-      for (const tool of configuredTools) {
-        try {
-          tool.install();
-          console.log(chalk.green(`  ✓ ${tool.name} → ${chalk.dim('stdio')}`));
-        } catch {
-          console.log(chalk.red(`  ✗ ${tool.name}`));
-        }
-      }
-    }
+    console.log();
+    console.log(chalk.bold('  To debug, run the daemon in foreground mode:'));
+    console.log(chalk.cyan('    npx @devness/useai@latest daemon --port 19200'));
     process.exit(1);
   }
 
@@ -129,7 +136,7 @@ if (subcommand === 'update') {
 }
 
 // Daemon mode: start HTTP server with StreamableHTTP transport
-if (subcommand === 'daemon') {
+if (command === 'daemon') {
   const { startDaemon } = await import('./daemon.js');
   const portArg = process.argv.indexOf('--port');
   const port = portArg !== -1 ? parseInt(process.argv[portArg + 1]!, 10) : undefined;
@@ -138,9 +145,9 @@ if (subcommand === 'daemon') {
   await new Promise(() => {}); // block forever
 }
 
-// Unknown subcommand guard — prevent falling into stdio mode accidentally
-if (subcommand) {
-  console.error(`Unknown subcommand: "${subcommand}"`);
+// Unknown command guard — prevent falling into stdio mode accidentally
+if (command) {
+  console.error(`Unknown command: "${command}"`);
   console.error('Available commands: mcp, daemon, update');
   process.exit(1);
 }

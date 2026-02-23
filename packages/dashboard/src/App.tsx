@@ -194,8 +194,9 @@ export function App() {
   );
 
   const outsideWindowCounts = useMemo(() => {
-    if (isLive) return undefined;
     const counts = countSessionsOutsideWindow(sessions, windowStart, windowEnd);
+    // In live mode, only show older navigation (nothing newer than now)
+    if (isLive && counts.before === 0) return undefined;
     const step = SCALE_MS[timeScale];
     const scaleLabel = SCALE_LABELS[timeScale];
     const fmt = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -205,12 +206,16 @@ export function App() {
     };
     const isMultiDay = step >= 86400000; // 24h+
     const label = isMultiDay ? fmtDate : fmt;
-    const newerEnd = windowEnd + step;
     const olderStart = windowStart - step;
+    const olderLabel = `View prev ${scaleLabel} · ${label(olderStart)} – ${label(windowStart)}`;
+    if (isLive) {
+      return { before: counts.before, after: 0, olderLabel };
+    }
+    const newerEnd = windowEnd + step;
     return {
       ...counts,
       newerLabel: `View next ${scaleLabel} · ${label(windowEnd)} – ${label(newerEnd)}`,
-      olderLabel: `View prev ${scaleLabel} · ${label(olderStart)} – ${label(windowStart)}`,
+      olderLabel,
     };
   }, [sessions, windowStart, windowEnd, isLive, timeScale]);
 

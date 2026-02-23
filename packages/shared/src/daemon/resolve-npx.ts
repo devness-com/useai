@@ -18,14 +18,32 @@ const KNOWN_PATHS = isWindows
 /**
  * Resolve the absolute path to npx.
  * launchd/systemd don't inherit the user's PATH, so we resolve at install time.
+ * On Windows, `where npx` may return a path without `.cmd` — we ensure the
+ * returned path ends with `.cmd` so that `spawn()` can find the executable.
  */
 export function resolveNpxPath(): string {
   // 1. `which npx` (or `where npx` on Windows)
-  const whichCmd = isWindows ? 'where npx' : 'which npx';
+  const whichCmd = isWindows ? 'where npx.cmd' : 'which npx';
   try {
     const result = execSync(whichCmd, { stdio: ['pipe', 'pipe', 'ignore'], encoding: 'utf-8' }).trim();
     if (result) return result.split('\n')[0]!.trim();
   } catch { /* not found */ }
+
+  // 1b. Fallback: try `where npx` and append .cmd if needed
+  if (isWindows) {
+    try {
+      const result = execSync('where npx', { stdio: ['pipe', 'pipe', 'ignore'], encoding: 'utf-8' }).trim();
+      if (result) {
+        const first = result.split('\n')[0]!.trim();
+        // If the resolved path doesn't end with .cmd, check if .cmd variant exists
+        if (!first.toLowerCase().endsWith('.cmd')) {
+          const cmdPath = first + '.cmd';
+          if (existsSync(cmdPath)) return cmdPath;
+        }
+        return first;
+      }
+    } catch { /* not found */ }
+  }
 
   // 2. Login shell fallback (picks up nvm/volta)
   if (!isWindows && process.env['SHELL']) {

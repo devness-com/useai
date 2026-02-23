@@ -53,9 +53,24 @@ export async function fetchDaemonHealth(port?: number): Promise<Record<string, u
   }
 }
 
-/** Find PIDs listening on a given port using lsof (macOS/Linux). */
+/** Find PIDs listening on a given port. Uses lsof on macOS/Linux, netstat on Windows. */
 export function findPidsByPort(port: number): number[] {
   try {
+    if (process.platform === 'win32') {
+      const output = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, {
+        encoding: 'utf-8',
+        timeout: 5000,
+        shell: 'cmd.exe',
+      });
+      const pids = new Set<number>();
+      for (const line of output.trim().split('\n')) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parseInt(parts[parts.length - 1]!, 10);
+        if (!isNaN(pid) && pid > 0) pids.add(pid);
+      }
+      return [...pids];
+    }
+
     const output = execSync(`lsof -ti :${port}`, { encoding: 'utf-8', timeout: 3000 });
     return output
       .trim()
@@ -142,11 +157,25 @@ export async function ensureDaemon(options?: EnsureDaemonOptions): Promise<boole
   }
 
   // 3. Spawn new daemon
+  //
+  // On Windows, .cmd files (like npx.cmd) can only be executed through
+  // cmd.exe, so we need shell: true. However, passing a full path with
+  // spaces (e.g. "C:\Program Files\nodejs\npx.cmd") to shell: true
+  // breaks cmd.exe parsing. Instead, use bare 'npx' and let cmd.exe
+  // resolve it via PATHEXT.
+  //
+  // On macOS/Linux, we resolve the full path because launchd/systemd
+  // may not have the user's PATH available.
+  const isWindows = process.platform === 'win32';
   let npxPath: string;
-  try {
-    npxPath = resolveNpxPath();
-  } catch {
-    npxPath = 'npx'; // fallback to PATH lookup
+  if (isWindows) {
+    npxPath = 'npx';
+  } else {
+    try {
+      npxPath = resolveNpxPath();
+    } catch {
+      npxPath = 'npx';
+    }
   }
 
   // Always use --prefer-online so the daemon auto-updates on every spawn.
@@ -156,9 +185,15 @@ export async function ensureDaemon(options?: EnsureDaemonOptions): Promise<boole
   if (usePreferOnline) npxArgs.push('--prefer-online');
   npxArgs.push('@devness/useai@latest', 'daemon', '--port', String(DAEMON_PORT));
 
+  // On Windows, detached: true always creates a visible console window
+  // (cmd.exe allocates one). We skip it because Windows child processes
+  // survive parent exit by default — unlike Unix which needs detached
+  // to prevent SIGHUP. windowsHide prevents any window flash.
   const child = spawn(npxPath, npxArgs, {
-    detached: true,
+    detached: !isWindows,
     stdio: 'ignore',
+    shell: isWindows,
+    windowsHide: true,
   });
   child.unref();
 

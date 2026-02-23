@@ -39,6 +39,7 @@ const startCommand = new Command('start')
     if (opts.foreground) {
       const child = spawn('npx', ['-y', '@devness/useai@latest', 'daemon', '--port', String(port)], {
         stdio: 'inherit',
+        shell: true, // Required on Windows for npx.cmd; harmless on macOS/Linux
       });
 
       child.on('exit', (code) => {

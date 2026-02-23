@@ -300,17 +300,18 @@ describe('runSetup', () => {
       expect(mockToolB.installHttp).not.toHaveBeenCalled();
     });
 
-    it('falls back to stdio for all tools when daemon fails to start', async () => {
+    it('exits with error when daemon fails to start', async () => {
       (ensureDaemon as Mock).mockResolvedValue(false);
 
       await runSetup(['-y']);
 
-      expect(mockToolA.install).toHaveBeenCalled();
+      // Should NOT install any tools
+      expect(mockToolA.install).not.toHaveBeenCalled();
       expect(mockToolA.installHttp).not.toHaveBeenCalled();
-      expect(mockToolB.install).toHaveBeenCalled();
+      expect(mockToolB.install).not.toHaveBeenCalled();
       const output = capturedOutput();
       expect(output).toContain('Could not start daemon');
-      expect(output).toContain('stdio');
+      expect(output).toContain('foreground');
     });
 
     it('installs autostart service when daemon succeeds and platform is supported', async () => {
@@ -393,14 +394,18 @@ describe('runSetup', () => {
       expect(output).toContain('daemon mode');
     });
 
-    it('prints done summary with stdio mode when daemon fails', async () => {
+    it('exits without configuring tools when daemon fails', async () => {
       (ensureDaemon as Mock).mockResolvedValue(false);
 
       await runSetup(['-y']);
 
       const output = capturedOutput();
-      expect(output).toContain('Done!');
-      expect(output).toContain('stdio mode');
+      expect(output).toContain('Could not start daemon');
+      expect(output).toContain('foreground');
+      // Should NOT print done summary or install any tools
+      expect(output).not.toContain('Done!');
+      expect(mockToolA.install).not.toHaveBeenCalled();
+      expect(mockToolA.installHttp).not.toHaveBeenCalled();
     });
   });
 
