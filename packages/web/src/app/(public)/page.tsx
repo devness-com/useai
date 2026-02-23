@@ -16,13 +16,11 @@ import {
   Clock,
   Target,
   Gauge,
-  Sparkles,
   TrendingUp,
   Lock,
   Database,
   Fingerprint,
   Trophy,
-  ChevronRight,
   Zap,
   Activity
 } from 'lucide-react';
@@ -44,41 +42,41 @@ const AI_TOOLS = [
   { name: 'Amp', color: '#f87171', glow: 'rgba(248, 113, 113, 0.4)' },
 ];
 
-const METRICS = [
+const FEATURES = [
   {
-    icon: Brain,
-    title: 'Session Intelligence',
-    description: 'Every session captured: duration, model, tool, milestones, and AI-evaluated quality scores.',
+    icon: Clock,
+    title: 'Session Log',
+    description: 'Every AI session recorded — what you worked on, how long it took, which tool you used, and the milestones you hit. Your searchable development history.',
     accent: 'var(--accent)',
   },
   {
     icon: Target,
-    title: 'Task Distribution',
-    description: 'See how your time splits across coding, debugging, testing, planning, and reviewing.',
+    title: 'Output Breakdown',
+    description: 'Features shipped. Bugs fixed. Refactors completed. Reviews done. See your real output — categorized by type and complexity, not just lines of code.',
     accent: '#3b82f6',
   },
   {
-    icon: Sparkles,
-    title: 'SPACE Evaluation',
-    description: 'Sessions scored using the SPACE developer productivity framework — prompt quality, context, independence, and scope.',
+    icon: BarChart3,
+    title: 'Time Allocation',
+    description: 'Are you mostly debugging or mostly building? See exactly where your AI hours go — by task type, by day, by week, by month.',
     accent: '#8b5cf6',
   },
   {
     icon: Gauge,
-    title: 'Output Velocity',
-    description: 'Files touched, milestones hit, and tools leveraged per session. Track your throughput.',
+    title: 'Complexity Profile',
+    description: 'Not all work is equal. Track whether you\'re tackling complex architecture or quick fixes. Understand your output fingerprint.',
     accent: 'var(--accent)',
   },
   {
-    icon: Clock,
-    title: 'Time Patterns',
-    description: 'Heatmaps of your most productive hours and days. Find your flow state.',
+    icon: TrendingUp,
+    title: 'Skill Growth',
+    description: 'Sessions scored with the SPACE framework — prompt quality, context, independence, and scope. Watch your scores improve over weeks and months.',
     accent: '#f59e0b',
   },
   {
-    icon: TrendingUp,
-    title: 'AI Independence',
-    description: 'How self-directed are you? Track the ratio of clear specs to back-and-forth clarifications.',
+    icon: Activity,
+    title: 'Time Investment',
+    description: 'How many hours did you spend with AI this week? This month? Finally have a real number for how AI fits into your workflow.',
     accent: '#34d399',
   },
 ];
@@ -86,20 +84,20 @@ const METRICS = [
 const STEPS = [
   {
     step: '01',
-    title: 'Initialize Uplink',
-    description: 'One command seamlessly integrates UseAI into your existing MCP workflow.',
+    title: 'Install',
+    description: 'One command sets up the MCP server. Works with Claude Code, Cursor, Copilot, Windsurf, and 10+ AI tools.',
     command: 'npx @devness/useai',
   },
   {
     step: '02',
-    title: 'Execute & Track',
-    description: 'Write code. UseAI runs silently in the background capturing actionable telemetry.',
-    command: 'Tracking protocol activated...',
+    title: 'Work',
+    description: 'Just code. UseAI runs as a silent background daemon — no extra tabs, no context switching, no manual logging.',
+    command: 'Daemon running silently...',
   },
   {
     step: '03',
-    title: 'Analyze & Dominate',
-    description: 'Review your performance matrix and rise up the global AI proficiency ranks.',
+    title: 'Discover',
+    description: 'Open your dashboard. See what you\'ve built, where your time went, and how your skills are trending.',
     command: 'npx @devness/useai stats',
   },
 ];
@@ -217,35 +215,35 @@ function TerminalMockup() {
         {lines > 0 && (
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mt-4 text-text-primary space-y-2">
             <div className="flex justify-between border-b border-border-accent pb-2">
-              <span className="text-text-secondary">FRAMEWORK:</span>
-              <span className="text-accent text-[10px] bg-[var(--accent-alpha)] px-2 py-0.5 rounded-md border border-accent/20">SPACE</span>
+              <span className="text-text-secondary">THIS WEEK</span>
+              <span className="text-accent text-[10px] bg-[var(--accent-alpha)] px-2 py-0.5 rounded-md border border-accent/20">12 sessions</span>
             </div>
-            
+
             {lines > 1 && (
               <div className="flex items-center gap-4 py-2">
-                <Gauge className="w-4 h-4 text-accent" />
-                <span>AI Proficiency Score: <span className="text-accent font-bold">78</span>/100</span>
+                <Clock className="w-4 h-4 text-accent" />
+                <span>Active Time: <span className="text-accent font-bold">8h 42m</span></span>
               </div>
             )}
-            
+
             {lines > 2 && (
               <div className="flex items-center gap-4 py-2">
                 <Target className="w-4 h-4 text-blue-400" />
-                <span>Prompt Quality: <span className="text-text-primary">4.1</span> <span className="text-text-muted">/ 5.0</span></span>
+                <span>Output: <span className="text-text-primary">6 features</span> <span className="text-text-muted">· 3 bug fixes · 2 refactors</span></span>
               </div>
             )}
-            
+
             {lines > 3 && (
               <div className="flex items-center gap-4 py-2">
-                <Terminal className="w-4 h-4 text-purple-400" />
-                <span>Top Tool Interface: <span className="text-text-primary">Claude Code</span></span>
+                <Gauge className="w-4 h-4 text-purple-400" />
+                <span>Complexity: <span className="text-text-primary">4 complex</span> <span className="text-text-muted">· 5 medium · 2 simple</span></span>
               </div>
             )}
-            
+
             {lines > 4 && (
               <div className="flex items-center gap-4 py-2 text-accent">
-                <Zap className="w-4 h-4" />
-                <span className="animate-pulse">Global Rank: #4,092 — Top 12%</span>
+                <TrendingUp className="w-4 h-4" />
+                <span className="animate-pulse">SPACE: 82 — Rank #4,092 (Top 12%)</span>
               </div>
             )}
           </motion.div>
@@ -395,7 +393,7 @@ function HeroDashboardAnimation() {
           </AnimatePresence>
         </div>
 
-        {/* Panel 2: Metric Extraction */}
+        {/* Panel 2: Session Output */}
         <div 
           onClick={() => setActivePanel(1)}
           className={`cursor-pointer hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col border transition-all duration-500 overflow-hidden ${
@@ -406,7 +404,7 @@ function HeroDashboardAnimation() {
         >
            <div className={`flex items-center justify-between transition-all duration-500 ${activePanel === 1 ? 'border-b border-border/50 pb-1.5 mb-2' : ''}`}>
             <span className={`font-mono text-[10px] flex items-center gap-1.5 transition-colors ${activePanel === 1 ? 'text-accent' : 'text-text-muted'}`}>
-              <Brain className="w-2.5 h-2.5" /> TELEMETRY_EXTRACT
+              <Brain className="w-2.5 h-2.5" /> SESSION_CAPTURED
             </span>
             <motion.div 
               animate={{ rotate: activePanel === 1 ? 360 : 0 }} 
@@ -427,24 +425,25 @@ function HeroDashboardAnimation() {
               >
                 <div className="space-y-1.5 pt-1">
                   {[
-                    { label: 'PROMPT_QUALITY', score: '9.4', pct: '94%', color: 'bg-blue-400', delay: 0.2 },
-                    { label: 'CONTEXT_SCORE', score: '8.8', pct: '88%', color: 'bg-purple-400', delay: 0.3 },
-                    { label: 'SCOPE_PRECISION', score: '9.0', pct: '90%', color: 'bg-green-400', delay: 0.4 },
-                    { label: 'INDEPENDENCE', score: '8.5', pct: '85%', color: 'bg-yellow-400', delay: 0.5 },
-                    { label: 'TOOL_USAGE', score: '9.2', pct: '92%', color: 'bg-orange-400', delay: 0.6 },
+                    { label: 'DURATION', value: '2h 14m', delay: 0.2 },
+                    { label: 'OUTPUT', value: '3 features · 1 bug fix', delay: 0.3 },
+                    { label: 'COMPLEXITY', value: 'High', delay: 0.4 },
+                    { label: 'LANGUAGES', value: 'TypeScript, Python', delay: 0.5 },
+                    { label: 'TOOL', value: 'Claude Code', delay: 0.6 },
                   ].map((m) => (
-                    <div key={m.label} className="space-y-1">
-                      <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono">
-                        <span className="text-text-secondary">{m.label}</span>
-                        <span className="text-text-primary">{m.score}/10</span>
-                      </div>
-                      <div className="w-full bg-bg-surface-2 h-1 rounded-full overflow-hidden">
-                        <motion.div className={`h-full ${m.color}`} initial={{ width: '0%' }} animate={{ width: activePanel === 1 ? m.pct : '0%' }} transition={{ duration: 0.8, delay: m.delay }}/>
-                      </div>
-                    </div>
+                    <motion.div
+                      key={m.label}
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: activePanel === 1 ? 1 : 0, x: activePanel === 1 ? 0 : -5 }}
+                      transition={{ duration: 0.4, delay: m.delay }}
+                      className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono py-1 border-b border-border/20"
+                    >
+                      <span className="text-text-muted">{m.label}</span>
+                      <span className="text-text-primary">{m.value}</span>
+                    </motion.div>
                   ))}
 
-                   <motion.div 
+                   <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.8 }}
@@ -537,23 +536,23 @@ export default function LandingPage() {
               
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-6 inline-flex items-center gap-2">
                 <Activity className="w-3 h-3 text-accent" />
-                <span className="text-[10px] font-mono text-text-secondary tracking-widest">PROFILING_ACTIVE</span>
+                <span className="text-[10px] font-mono text-text-secondary tracking-widest">TRACKING 10+ AI TOOLS</span>
               </motion.div>
 
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-text-primary leading-[1.05] sm:leading-[1.1] mb-6"
               >
-                KNOW HOW YOU <br className="hidden md:block" />
-                <span className="gradient-text-accent italic inline-block py-1 pr-4">CODE WITH AI</span>
+                YOUR COMPLETE AI <br className="hidden md:block" />
+                <span className="gradient-text-accent italic inline-block py-1 pr-4">DEVELOPMENT STORY</span>
               </motion.h1>
 
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-xl mb-8 leading-relaxed font-light"
               >
-                Capture every AI session across any tool. Turn raw activity into an actionable 
-                intelligence profile. <span className="text-text-primary font-medium">Measure, improve, and dominate the leaderboard.</span>
+                Every feature you ship, every hour you invest, every skill you sharpen — automatically
+                captured across all your AI tools. <span className="text-text-primary font-medium">See what you build. Know where your time goes. Prove what you&#39;re capable of.</span>
               </motion.p>
 
               <motion.div 
@@ -585,26 +584,26 @@ export default function LandingPage() {
         {/* ── Visual Break ── */}
         <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-10 max-w-7xl mx-auto px-6" />
 
-        {/* ── Intelligence Grid (Features) ── */}
+        {/* ── Your AI Journal ── */}
         <section id="features" className="max-w-7xl mx-auto px-6 py-24">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="grid lg:grid-cols-12 gap-12">
             
             <motion.div variants={fadeUp} className="lg:col-span-4 flex flex-col justify-center">
-              <div className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">TELEMETRY_DATABANKS</div>
+              <div className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">YOUR_AI_JOURNAL</div>
               <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-6">
-                Quantify <br/><span className="gradient-text">Your Process</span>
+                Everything You Build, <br/><span className="gradient-text">Nothing You Forget</span>
               </h2>
               <p className="text-text-muted leading-relaxed mb-8">
-                Raw output isn't enough. UseAI monitors how you orchestrate AI tools—analyzing 
-                prompt complexity, task scoping, and autonomy.
+                What did you build today? How complex was it? Where did your hours go? UseAI captures
+                your complete AI development activity — the output you shipped and the skills behind it.
               </p>
               <Link href="/explore#metrics" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
-                Explore Metric Definitions <ArrowRight className="w-4 h-4" />
+                Explore All Metrics <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
 
             <motion.div variants={stagger} className="lg:col-span-8 grid sm:grid-cols-2 gap-4">
-              {METRICS.map((m, i) => (
+              {FEATURES.map((m, i) => (
                 <motion.div 
                   key={m.title} 
                   variants={fadeUp} 
@@ -625,7 +624,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* ── Architecture / Terminal Section ── */}
+        {/* ── Setup ── */}
         <section className="bg-bg-surface-1/30 py-32 relative border-y border-border/50">
           <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
             
@@ -635,13 +634,13 @@ export default function LandingPage() {
 
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="space-y-12">
               <div>
-                <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">INITIALIZATION</motion.div>
+                <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">ZERO_FRICTION</motion.div>
                 <motion.h2 variants={fadeUp} className="text-4xl font-black uppercase tracking-tight text-text-primary mb-6">
-                  Frictionless <span className="gradient-text-accent">Integration</span>
+                  One Command. <span className="gradient-text-accent">Zero Friction.</span>
                 </motion.h2>
                 <motion.p variants={fadeUp} className="text-text-muted leading-relaxed">
-                  We built UseAI to be completely invisible during your workflow. No context switching, 
-                  no extra tabs. Just code, and let the daemon handle the telemetry.
+                  UseAI is completely invisible during your workflow. No context switching,
+                  no extra tabs, no manual logging. Just code — the daemon captures everything.
                 </motion.p>
               </div>
 
@@ -665,7 +664,40 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Compete Section ── */}
+        {/* ── Your AI Identity ── */}
+        <section className="max-w-7xl mx-auto px-6 py-24">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}
+            className="text-center mb-16 max-w-3xl mx-auto"
+          >
+            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4">VISIBILITY</motion.div>
+            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-6">
+              Your AI Developer <br/><span className="gradient-text">Identity</span>
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-text-muted leading-relaxed">
+              GitHub shows your commits. UseAI shows what you built with AI and how well you wield it.
+              A verified profile that proves you&#39;re not just using AI — you&#39;re proficient with it.
+            </motion.p>
+          </motion.div>
+
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Globe, title: 'PUBLIC PROFILE', desc: 'A shareable page showing your AI activity — tools used, languages, output volume, complexity distribution, and SPACE scores. Your AI development resume.' },
+              { icon: Fingerprint, title: 'VERIFIED MILESTONES', desc: 'Every milestone is cryptographically signed with Ed25519. Not self-reported. Not inflatable. Provable proof of what you shipped.' },
+              { icon: Users, title: 'PROFESSIONAL SIGNAL', desc: 'In a world where every developer "uses AI," show you actually know how to wield it. Visible to recruiters, teams, and the community.' },
+            ].map(item => (
+              <motion.div key={item.title} variants={fadeUp} className="hud-border rounded-xl p-8 bg-bg-surface-1/60 text-center">
+                <div className="w-14 h-14 rounded-xl bg-[var(--accent-alpha)] flex items-center justify-center border border-accent/20 mx-auto mb-6">
+                  <item.icon className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="font-mono font-bold text-sm text-text-primary mb-3">{item.title}</h3>
+                <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+
+        {/* ── Leaderboard Section ── */}
         <section className="max-w-7xl mx-auto px-6 py-32">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} 
@@ -675,10 +707,10 @@ export default function LandingPage() {
                <Trophy className="w-12 h-12 text-accent drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-black uppercase tracking-tight text-text-primary mb-6">
-              Global <span className="gradient-text">Leaderboard</span>
+              See Where You <span className="gradient-text">Stand</span>
             </motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-text-muted leading-relaxed">
-              Coding is a multiplayer game. Compare your AI Proficiency Score (APS) against top developers globally. Prove your efficiency.
+              Once you know your numbers, see how they compare. The global leaderboard ranks developers by AI Proficiency Score — a composite of output, efficiency, prompt quality, consistency, and breadth.
             </motion.p>
           </motion.div>
 
@@ -700,7 +732,7 @@ export default function LandingPage() {
                   { rank: 1, name: "0xNeural", score: 98, level: "AI Prime" },
                   { rank: 2, name: "CyberDev", score: 94, level: "Architect" },
                   { rank: 3, name: "NeonCoder", score: 91, level: "Architect" },
-                  { rank: 4, name: "You (Soon)", score: "--", level: "Initiate" },
+                  { rank: 4, name: "You", score: "--", level: "Get Started" },
                 ].map((user, idx) => (
                   <motion.div key={user.name} variants={fadeUp} className={`flex items-center justify-between p-3 rounded-xl bg-bg-surface-2/50 border ${idx === 0 ? 'border-accent/40' : 'border-transparent'}`}>
                     <div className="flex items-center gap-4">
