@@ -232,11 +232,12 @@ export async function handleLocalSync(req: IncomingMessage, res: ServerResponse)
       }
     }
 
-    // Publish milestones in chunks
+    // Publish milestones
+    const MILESTONE_CHUNK = 50;
     const milestones = readJson<Milestone[]>(MILESTONES_FILE, []);
 
-    for (let i = 0; i < milestones.length; i += CHUNK_SIZE) {
-      const chunk = milestones.slice(i, i + CHUNK_SIZE);
+    for (let i = 0; i < milestones.length; i += MILESTONE_CHUNK) {
+      const chunk = milestones.slice(i, i + MILESTONE_CHUNK);
       const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
         method: 'POST',
         headers,
