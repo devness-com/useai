@@ -113,8 +113,16 @@ export function TimeTravelPanel({
 
   const handleJump = (deltaMs: number) => {
     const base = effectiveTime;
-    const newTime = Math.min(base + deltaMs, Date.now());
-    onChange(newTime);
+    const newTime = base + deltaMs;
+    // Use 60s threshold: when in history mode the `now` timer stops, so
+    // effectiveTime is stale by however long the user waited before clicking.
+    // 60s handles any realistic delay while being negligible vs the smallest
+    // window scale (15m = 900s).
+    if (newTime >= Date.now() - 60_000) {
+      onChange(null); // snap to live
+    } else {
+      onChange(newTime);
+    }
   };
 
   const startEditingTime = () => {

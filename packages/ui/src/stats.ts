@@ -104,6 +104,23 @@ export function calculateStreak(sessions: SessionSeal[]): number {
   return streak;
 }
 
+/** Count sessions that fall entirely outside a time window */
+export function countSessionsOutsideWindow(
+  allSessions: SessionSeal[],
+  windowStart: number,
+  windowEnd: number,
+): { before: number; after: number } {
+  let before = 0;
+  let after = 0;
+  for (const s of allSessions) {
+    const sEnd = new Date(s.ended_at).getTime();
+    const sStart = new Date(s.started_at).getTime();
+    if (sEnd < windowStart) before++;
+    else if (sStart > windowEnd) after++;
+  }
+  return { before, after };
+}
+
 /** Filter sessions that overlap with a time window */
 export function filterSessionsByWindow(
   sessions: SessionSeal[],

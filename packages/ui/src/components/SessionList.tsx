@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Clock, Lock, Shield, Eye, EyeOff, Flag, FolderKanban } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Lock, Shield, Eye, EyeOff, Flag, FolderKanban } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 import type { Filters } from '../types';
@@ -258,6 +258,9 @@ interface SessionListProps {
   globalShowPublic?: boolean;
   showFullDate?: boolean;
   highlightWords?: string[];
+  outsideWindowCounts?: { before: number; after: number; newerLabel?: string; olderLabel?: string };
+  onNavigateNewer?: () => void;
+  onNavigateOlder?: () => void;
   onDeleteSession?: (sessionId: string) => void;
   onDeleteConversation?: (conversationId: string) => void;
   onDeleteMilestone?: (milestoneId: string) => void;
@@ -265,7 +268,7 @@ interface SessionListProps {
 
 const BATCH_SIZE = 25;
 
-export function SessionList({ sessions, milestones, filters, globalShowPublic, showFullDate, highlightWords, onDeleteSession, onDeleteConversation, onDeleteMilestone }: SessionListProps) {
+export function SessionList({ sessions, milestones, filters, globalShowPublic, showFullDate, highlightWords, outsideWindowCounts, onNavigateNewer, onNavigateOlder, onDeleteSession, onDeleteConversation, onDeleteMilestone }: SessionListProps) {
   // Filter sessions by client, language, project
   const filtered = useMemo(() => {
     return sessions.filter((s) => {
@@ -314,9 +317,35 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
   }, [conversations, visibleCount]);
 
   if (conversations.length === 0) {
+    const hasBefore = outsideWindowCounts && outsideWindowCounts.before > 0;
+    const hasAfter = outsideWindowCounts && outsideWindowCounts.after > 0;
     return (
-      <div className="text-center text-text-muted py-8 text-sm mb-4">
-        No sessions in this window
+      <div className="text-center text-text-muted py-8 text-sm mb-4 space-y-3">
+        {hasAfter && (
+          <button
+            onClick={onNavigateNewer}
+            className="flex flex-col items-center gap-0.5 mx-auto text-[11px] text-text-muted/60 hover:text-accent transition-colors group"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+            <span>{outsideWindowCounts!.after} newer session{outsideWindowCounts!.after !== 1 ? 's' : ''}</span>
+            {outsideWindowCounts!.newerLabel && (
+              <span className="text-[10px] opacity-70 group-hover:opacity-100">{outsideWindowCounts!.newerLabel}</span>
+            )}
+          </button>
+        )}
+        <div>No sessions in this window</div>
+        {hasBefore && (
+          <button
+            onClick={onNavigateOlder}
+            className="flex flex-col items-center gap-0.5 mx-auto text-[11px] text-text-muted/60 hover:text-accent transition-colors group"
+          >
+            {outsideWindowCounts!.olderLabel && (
+              <span className="text-[10px] opacity-70 group-hover:opacity-100">{outsideWindowCounts!.olderLabel}</span>
+            )}
+            <span>{outsideWindowCounts!.before} older session{outsideWindowCounts!.before !== 1 ? 's' : ''}</span>
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     );
   }
@@ -326,6 +355,19 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
 
   return (
     <div className="space-y-1.5 mb-4">
+      {outsideWindowCounts && outsideWindowCounts.after > 0 && (
+        <button
+          onClick={onNavigateNewer}
+          className="flex flex-col items-center gap-0.5 w-full text-[11px] text-text-muted/60 hover:text-accent py-1.5 transition-colors group"
+        >
+          <ChevronUp className="w-3.5 h-3.5" />
+          <span>{outsideWindowCounts.after} newer session{outsideWindowCounts.after !== 1 ? 's' : ''}</span>
+          {outsideWindowCounts.newerLabel && (
+            <span className="text-[10px] opacity-70 group-hover:opacity-100">{outsideWindowCounts.newerLabel}</span>
+          )}
+        </button>
+      )}
+
       {visible.map((conv) => (
         <ConversationCard
           key={conv.conversationId ?? conv.sessions[0]!.session.session_id}
@@ -358,6 +400,19 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
             </button>
           )}
         </div>
+      )}
+
+      {outsideWindowCounts && outsideWindowCounts.before > 0 && (
+        <button
+          onClick={onNavigateOlder}
+          className="flex flex-col items-center gap-0.5 w-full text-[11px] text-text-muted/60 hover:text-accent py-1.5 transition-colors group"
+        >
+          {outsideWindowCounts.olderLabel && (
+            <span className="text-[10px] opacity-70 group-hover:opacity-100">{outsideWindowCounts.olderLabel}</span>
+          )}
+          <span>{outsideWindowCounts.before} older session{outsideWindowCounts.before !== 1 ? 's' : ''}</span>
+          <ChevronDown className="w-3.5 h-3.5" />
+        </button>
       )}
     </div>
   );

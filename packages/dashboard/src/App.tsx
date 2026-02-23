@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDashboardStore, SCALE_MS } from './store';
-import { computeStats, calculateStreak, filterSessionsByWindow, filterMilestonesByWindow, getTimeContextLabel } from '@useai/ui/stats';
+import { computeStats, calculateStreak, filterSessionsByWindow, filterMilestonesByWindow, getTimeContextLabel, countSessionsOutsideWindow } from '@useai/ui/stats';
 import { Header } from './components/Header';
 import {
   StatsBar,
@@ -17,8 +17,11 @@ import {
   RecentMilestones,
 } from '@useai/ui';
 import type { StatCardType, Filters } from '@useai/ui';
+import { SCALE_LABELS } from '@useai/ui';
 import { SearchOverlay } from './components/SearchOverlay';
 import { SyncFooter } from './components/SyncFooter';
+import { ImprovementTips } from './components/ImprovementTips';
+import { ComplexityDistribution } from './components/ComplexityDistribution';
 import { Filter, Eye, EyeOff } from 'lucide-react';
 import type { SessionSeal, Milestone } from './lib/api';
 
@@ -33,6 +36,9 @@ function SessionsTab({
   globalShowPublic,
   onToggleShowPublic,
   showFullDate,
+  outsideWindowCounts,
+  onNavigateNewer,
+  onNavigateOlder,
 }: {
   filteredSessions: SessionSeal[];
   filteredMilestones: Milestone[];
@@ -44,6 +50,9 @@ function SessionsTab({
   globalShowPublic: boolean;
   onToggleShowPublic: () => void;
   showFullDate?: boolean;
+  outsideWindowCounts?: { before: number; after: number; newerLabel?: string; olderLabel?: string };
+  onNavigateNewer?: () => void;
+  onNavigateOlder?: () => void;
 }) {
   const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilter = filters.client !== 'all' || filters.language !== 'all' || filters.project !== 'all';
@@ -98,6 +107,9 @@ function SessionsTab({
         filters={filters}
         globalShowPublic={globalShowPublic}
         showFullDate={showFullDate}
+        outsideWindowCounts={outsideWindowCounts}
+        onNavigateNewer={onNavigateNewer}
+        onNavigateOlder={onNavigateOlder}
         onDeleteSession={onDeleteSession}
         onDeleteConversation={onDeleteConversation}
         onDeleteMilestone={onDeleteMilestone}
@@ -181,6 +193,44 @@ export function App() {
     [milestones, windowStart, windowEnd],
   );
 
+  const outsideWindowCounts = useMemo(() => {
+    if (isLive) return undefined;
+    const counts = countSessionsOutsideWindow(sessions, windowStart, windowEnd);
+    const step = SCALE_MS[timeScale];
+    const scaleLabel = SCALE_LABELS[timeScale];
+    const fmt = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+    const fmtDate = (ts: number) => {
+      const d = new Date(ts);
+      return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${fmt(ts)}`;
+    };
+    const isMultiDay = step >= 86400000; // 24h+
+    const label = isMultiDay ? fmtDate : fmt;
+    const newerEnd = windowEnd + step;
+    const olderStart = windowStart - step;
+    return {
+      ...counts,
+      newerLabel: `View next ${scaleLabel} · ${label(windowEnd)} – ${label(newerEnd)}`,
+      olderLabel: `View prev ${scaleLabel} · ${label(olderStart)} – ${label(windowStart)}`,
+    };
+  }, [sessions, windowStart, windowEnd, isLive, timeScale]);
+
+  const handleNavigateNewer = useCallback(() => {
+    const step = SCALE_MS[timeScale];
+    const next = effectiveTime + step;
+    // 60s threshold: effectiveTime is stale by however long the user waited
+    // since entering history mode (the live timer stops in history).
+    if (next >= Date.now() - 60_000) {
+      setTimeTravelTime(null); // snap to live
+    } else {
+      setTimeTravelTime(next);
+    }
+  }, [effectiveTime, timeScale, setTimeTravelTime]);
+
+  const handleNavigateOlder = useCallback(() => {
+    const step = SCALE_MS[timeScale];
+    setTimeTravelTime(effectiveTime - step);
+  }, [effectiveTime, timeScale, setTimeTravelTime]);
+
   // Compute stats from filtered data
   const stats = useMemo(() => computeStats(filteredSessions, filteredMilestones), [filteredSessions, filteredMilestones]);
 
@@ -198,6 +248,41 @@ export function App() {
     if (isLive) return undefined;
     return new Date(effectiveTime).toISOString().slice(0, 10);
   }, [isLive, effectiveTime]);
+
+  // ── Computed data for v2 components ──────────────────────────────────────
+
+  // Evaluation averages for improvement tips
+  const evalAverages = useMemo(() => {
+    const evaluated = filteredSessions.filter((s) => s.evaluation != null);
+    if (evaluated.length === 0) return null;
+
+    let pq = 0, cp = 0, sq = 0, il = 0;
+    for (const s of evaluated) {
+      const ev = s.evaluation!;
+      pq += ev.prompt_quality;
+      cp += ev.context_provided;
+      sq += ev.scope_quality;
+      il += ev.independence_level;
+    }
+    const n = evaluated.length;
+    return {
+      prompt_quality: Math.round((pq / n) * 10) / 10,
+      context_provided: Math.round((cp / n) * 10) / 10,
+      scope_quality: Math.round((sq / n) * 10) / 10,
+      independence_level: Math.round((il / n) * 10) / 10,
+    };
+  }, [filteredSessions]);
+
+  // Complexity distribution
+  const complexityData = useMemo(() => {
+    let simple = 0, medium = 0, complex = 0;
+    for (const m of filteredMilestones) {
+      if (m.complexity === 'simple') simple++;
+      else if (m.complexity === 'medium') medium++;
+      else if (m.complexity === 'complex') complex++;
+    }
+    return { simple, medium, complex };
+  }, [filteredMilestones]);
 
   const handleDayClick = (date: string) => {
     // Right-edge anchored: set to end of day so the full day is visible
@@ -264,6 +349,9 @@ export function App() {
               globalShowPublic={globalShowPublic}
               onToggleShowPublic={() => setGlobalShowPublic((v) => !v)}
               showFullDate={timeScale === '7d' || timeScale === '30d'}
+              outsideWindowCounts={outsideWindowCounts}
+              onNavigateNewer={handleNavigateNewer}
+              onNavigateOlder={handleNavigateOlder}
             />
           )}
 
@@ -275,6 +363,8 @@ export function App() {
                 isLive={isLive}
                 windowStart={windowStart}
                 windowEnd={windowEnd}
+                allSessions={sessions}
+                allMilestones={milestones}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,6 +374,11 @@ export function App() {
                   milestones={filteredMilestones}
                   streak={globalStreak}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ComplexityDistribution data={complexityData} />
+                {evalAverages && <ImprovementTips evaluation={evalAverages} />}
               </div>
 
               <TaskTypeBreakdown byTaskType={stats.byTaskType} />
