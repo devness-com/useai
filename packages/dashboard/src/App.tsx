@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDashboardStore } from './store';
 import { Header } from './components/Header';
-import { SyncFooter } from './components/SyncFooter';
 import { DashboardBody, SearchOverlay } from '@useai/ui';
 
 export function App() {
@@ -63,7 +62,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-bg-base selection:bg-accent/30 selection:text-text-primary">
-      <Header health={health} updateInfo={updateInfo} onSearchOpen={() => setSearchOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header health={health} updateInfo={updateInfo} onSearchOpen={() => setSearchOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} config={config} onRefresh={loadAll} />
       <div className="max-w-[1000px] mx-auto px-6 pb-6">
         <SearchOverlay
           open={searchOpen}
@@ -84,8 +83,6 @@ export function App() {
           activeTab={activeTab}
           onActiveTabChange={setActiveTab}
         />
-
-        <SyncFooter config={config} onRefresh={loadAll} />
       </div>
     </div>
   );

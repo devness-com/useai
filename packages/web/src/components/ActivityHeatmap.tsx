@@ -11,6 +11,13 @@ interface ActivityHeatmapProps {
   data?: DayData[];
 }
 
+const DURATION_OPTIONS = [
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '6M', days: 180 },
+  { label: '1Y', days: 364 },
+] as const;
+
 function generateMockData(): DayData[] {
   const days: DayData[] = [];
   const today = new Date();
@@ -18,7 +25,6 @@ function generateMockData(): DayData[] {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    // Generate semi-random but deterministic data based on date
     const seed = d.getDay() + d.getDate() + d.getMonth();
     const random = Math.abs(Math.sin(seed * 9301 + 49297) * 233280) % 1;
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -48,6 +54,7 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; hours: number } | null>(
     null,
   );
+  const [durationDays, setDurationDays] = useState(364);
 
   const dayData = useMemo(() => data ?? generateMockData(), [data]);
 
@@ -60,14 +67,14 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     return map;
   }, [dayData]);
 
-  // Build weeks grid (52 weeks + partial)
+  // Build weeks grid based on selected duration
   const grid = useMemo(() => {
     const weeks: { date: string; hours: number; dayOfWeek: number }[][] = [];
     const today = new Date();
 
-    // Find the start: go back 364 days, then back to the previous Sunday
     const start = new Date(today);
-    start.setDate(start.getDate() - 364);
+    start.setDate(start.getDate() - durationDays);
+    // Align to previous Sunday
     while (start.getDay() !== 0) {
       start.setDate(start.getDate() - 1);
     }
@@ -94,7 +101,7 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     }
 
     return weeks;
-  }, [dataMap]);
+  }, [dataMap, durationDays]);
 
   // Month labels
   const monthLabels = useMemo(() => {
@@ -119,33 +126,64 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
 
   const totalWidth = LABEL_WIDTH + grid.length * (CELL_SIZE + CELL_GAP);
   const totalHeight = HEADER_HEIGHT + 7 * (CELL_SIZE + CELL_GAP);
-  const totalHours = dayData.reduce((sum, d) => sum + d.hours, 0);
+
+  // Compute hours for the visible window
+  const today = new Date();
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - durationDays);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  const visibleHours = dayData
+    .filter((d) => d.date >= cutoffStr)
+    .reduce((sum, d) => sum + d.hours, 0);
+
+  const durationLabel = DURATION_OPTIONS.find((o) => o.days === durationDays)?.label ?? '1Y';
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-mono text-text-muted tracking-wider">
-          {Math.round(totalHours)}h total in the last year
+          {Math.round(visibleHours)}h total in the last {durationLabel === '1Y' ? 'year' : durationLabel === '6M' ? '6 months' : durationLabel === '3M' ? '3 months' : 'month'}
         </span>
-        <div className="flex items-center gap-1 text-[10px] text-text-muted font-mono">
-          <span>Less</span>
-          {[0, 1, 2, 4, 6].map((h) => (
-            <div
-              key={h}
-              className="w-[10px] h-[10px] rounded-[2px]"
-              style={{ backgroundColor: getColor(h) }}
-            />
-          ))}
-          <span>More</span>
+        <div className="flex items-center gap-3">
+          {/* Duration selector */}
+          <div className="flex items-center gap-0.5">
+            {DURATION_OPTIONS.map((opt) => (
+              <button
+                key={opt.days}
+                onClick={() => setDurationDays(opt.days)}
+                className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-md transition-colors ${
+                  durationDays === opt.days
+                    ? 'bg-accent/15 text-accent border border-accent/30'
+                    : 'text-text-muted hover:text-text-secondary border border-transparent'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {/* Legend */}
+          <div className="flex items-center gap-1 text-[10px] text-text-muted font-mono">
+            <span>Less</span>
+            {[0, 1, 2, 4, 6].map((h) => (
+              <div
+                key={h}
+                className="w-[10px] h-[10px] rounded-[2px]"
+                style={{ backgroundColor: getColor(h) }}
+              />
+            ))}
+            <span>More</span>
+          </div>
         </div>
       </div>
 
       <div className="overflow-x-auto pb-2">
         <svg
+          width={totalWidth}
+          height={totalHeight}
           viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-          className="w-full min-w-[700px]"
+          className="max-w-full"
           role="img"
-          aria-label="Activity heatmap showing coding hours over the past year"
+          aria-label={`Activity heatmap showing coding hours over the past ${durationLabel}`}
         >
           {/* Month labels */}
           {monthLabels.map((m) => (

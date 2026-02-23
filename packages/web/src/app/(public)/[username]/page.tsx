@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Clock, Zap, Code2, Trophy, Calendar, Timer, Shield, Flame, CheckCircle2 } from 'lucide-react';
-import { TopNav } from '@/components/TopNav';
-import { Footer } from '@/components/Footer';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { Badge } from '@/components/Badge';
+import { StatusBadge } from '@/components/StatusBadge';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -107,10 +106,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const isVerified = (profile.verification_rate ?? 0) > 0.8;
 
   return (
-    <>
-      <TopNav />
-      <div className="min-h-screen bg-bg-base">
-        <div className="max-w-5xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-5xl mx-auto px-6 pt-28 pb-16">
           {/* ── Header ── */}
           <section className="flex flex-col md:flex-row md:items-start gap-6 mb-10">
             {/* Avatar */}
@@ -131,13 +127,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-3xl font-black text-text-primary tracking-tight">{name}</h1>
                 {isVerified && (
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-accent/10 text-accent border border-accent/20"
-                    title="Cryptographically verified profile"
-                  >
-                    <Shield className="w-3 h-3" />
-                    VERIFIED
-                  </span>
+                  <StatusBadge label="VERIFIED" color="accent" icon={<Shield className="w-3 h-3" />} />
                 )}
               </div>
               <p className="text-sm text-text-muted mt-0.5">@{profile.username}</p>
@@ -229,7 +219,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
               ACTIVITY_HEATMAP
             </div>
-            <ActivityHeatmap data={activity.length > 0 ? activity : undefined} />
+            <ActivityHeatmap data={activity} />
           </section>
 
           {/* ── Languages + AI Tools + Task Types ── */}
@@ -380,9 +370,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
               </div>
             </section>
           )}
-        </div>
       </div>
-      <Footer />
-    </>
   );
 }

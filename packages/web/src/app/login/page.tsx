@@ -7,6 +7,7 @@ import { Mail, ArrowRight, Loader2, Shield, Terminal, KeyRound } from 'lucide-re
 import { useAuthStore } from '@/store/auth-store';
 import { apiFetch } from '@/lib/api-client';
 import { UseAILogo } from '@/components/UseAILogo';
+import { StatusBadge } from '@/components/StatusBadge';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,12 +73,12 @@ export default function LoginPage() {
             <UseAILogo className="h-8 drop-shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]" />
           </Link>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/20 bg-[var(--accent-alpha)] mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] font-mono text-text-secondary tracking-widest">
-              {step === 'email' ? 'AUTHENTICATE' : 'VERIFY_CODE'}
-            </span>
-          </div>
+          <StatusBadge
+            label={step === 'email' ? 'AUTHENTICATE' : 'VERIFY_CODE'}
+            color="accent"
+            dot
+            className="mb-3"
+          />
 
           <p className="text-sm text-text-muted">
             {step === 'email'

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RotateCcw, ChevronLeft, ChevronRight, Edit2, Calendar, Clock } from 'lucide-react';
+import { StatusBadge } from '../StatusBadge';
 import { TimeScrubber } from './TimeScrubber';
 import { SCALE_MS, SCALE_LABELS } from './types';
 import type { TimeScale } from './types';
@@ -259,14 +260,9 @@ export function TimeTravelPanel({
             </div>
 
             {isLive ? (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-success/10 text-success rounded-full border border-success/20" style={{ boxShadow: '0 0 10px rgba(var(--accent-rgb), 0.1)' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                Live
-              </div>
+              <StatusBadge label="Live" color="success" dot glow />
             ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-history/10 text-history rounded-full border border-history/20">
-                History
-              </div>
+              <StatusBadge label="History" color="muted" />
             )}
           </div>
 

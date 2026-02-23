@@ -2,17 +2,15 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight,
-  Terminal,
   BarChart3,
   Users,
   Shield,
   Globe,
   Clipboard,
   Check,
-  Brain,
   Clock,
   Target,
   Gauge,
@@ -21,9 +19,9 @@ import {
   Database,
   Fingerprint,
   Trophy,
-  Zap,
   Activity
 } from 'lucide-react';
+import { SUPPORTED_AI_TOOLS, TOOL_ICONS, TOOL_COLORS } from '@useai/shared/constants/tools';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -283,237 +281,337 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
 /*  Hero Dashboard Animation                                           */
 /* ------------------------------------------------------------------ */
 
-import { AnimatePresence } from 'motion/react';
+/* ------------------------------------------------------------------ */
+/*  Tool Marquee                                                       */
+/* ------------------------------------------------------------------ */
 
-function HeroDashboardAnimation() {
-  const [activePanel, setActivePanel] = useState(0);
-  const [panel3Climbed, setPanel3Climbed] = useState(false);
+/** Pick a curated subset of major tools for the marquee. */
+const MARQUEE_TOOLS = SUPPORTED_AI_TOOLS.filter(t =>
+  ['claude-code', 'cursor', 'windsurf', 'github-copilot', 'codex', 'gemini-cli', 'aider', 'amazon-q-cli', 'zed', 'cline', 'augment', 'amp', 'goose', 'vscode'].includes(t.key)
+);
+
+function ToolMarquee() {
+  // Duplicate the list for seamless looping
+  const items = [...MARQUEE_TOOLS, ...MARQUEE_TOOLS];
+
+  return (
+    <div className="mt-4 px-4 md:px-0">
+      <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full overflow-hidden relative">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
+
+        <div
+          className="flex gap-4 animate-marquee"
+          style={{
+            width: 'max-content',
+            animationDuration: `${MARQUEE_TOOLS.length * 2.5}s`,
+          }}
+        >
+          {items.map((tool, i) => {
+            const color = TOOL_COLORS[tool.key] ?? '#91919a';
+            const iconSrc = TOOL_ICONS[tool.key];
+            const iconMask = iconSrc
+              ? {
+                  WebkitMaskImage: `url("${iconSrc}")`,
+                  maskImage: `url("${iconSrc}")`,
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  backgroundColor: color,
+                } as React.CSSProperties
+              : undefined;
+
+            return (
+              <div
+                key={`${tool.key}-${i}`}
+                className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-lg border border-border/30 bg-bg-surface-1/50"
+              >
+                {iconSrc ? (
+                  <span className="w-4 h-4 block shrink-0" style={iconMask} />
+                ) : (
+                  <span className="text-[9px] font-black shrink-0" style={{ color }}>{tool.name.slice(0, 2).toUpperCase()}</span>
+                )}
+                <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">{tool.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Hero Dashboard Animation                                           */
+/* ------------------------------------------------------------------ */
+
+const DASHBOARD_SECTIONS = [
+  {
+    key: 'activity',
+    label: 'THIS WEEK',
+    badge: 'FEB 17 – 23',
+    summary: '12 sessions · 8h 42m · 11 milestones',
+  },
+  {
+    key: 'output',
+    label: 'OUTPUT',
+    badge: '11 shipped',
+    summary: '6 features · 3 fixes · 2 refactors',
+  },
+  {
+    key: 'growth',
+    label: 'GROWTH',
+    badge: '+6 pts',
+    summary: 'SPACE 82 / 100 · Rank #4,092',
+  },
+] as const;
+
+function HeroDashboardPreview() {
+  const [activeSection, setActiveSection] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActivePanel((p) => (p + 1) % 3);
-    }, 4000); // 4 seconds per panel
-
+      setActiveSection((s) => (s + 1) % 3);
+    }, 4000);
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    if (activePanel === 2) {
-      setPanel3Climbed(false);
-      timeout = setTimeout(() => setPanel3Climbed(true), 1200);
-    } else {
-      setPanel3Climbed(false);
-    }
-    return () => clearTimeout(timeout);
-  }, [activePanel]);
-
-  const leaderboardUsers = panel3Climbed ? [
-    { id: '0xNeural', rank: 1, name: '0xNeural', score: 96, isYou: false },
-    { id: 'you', rank: 2, name: 'You', score: 92, isYou: true },
-    { id: 'CyberDev', rank: 3, name: 'CyberDev', score: 91, isYou: false },
-  ] : [
-    { id: '0xNeural', rank: 1, name: '0xNeural', score: 96, isYou: false },
-    { id: 'CyberDev', rank: 2, name: 'CyberDev', score: 91, isYou: false },
-    { id: 'you', rank: 3, name: 'You', score: 89, isYou: true },
-  ];
-
-  const smoothTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const };
-
   return (
-    <div className="w-full relative z-10 px-4 md:px-0 mt-6 md:mt-0">
-      <div className="flex flex-col gap-3 relative max-w-lg mx-auto lg:mx-0 lg:ml-auto w-full min-h-[340px]">
-        {/* Connecting Lines (Desktop only) */}
-        <div className="hidden lg:block absolute -right-6 top-[2.5rem] bottom-[4rem] w-px bg-border-accent/30 -z-10">
-          <motion.div 
-            className="w-full bg-accent/80 origin-top"
-            initial={{ height: '33%' }}
-            animate={{ height: activePanel === 0 ? '33%' : activePanel === 1 ? '66%' : '100%' }}
-            transition={smoothTransition}
-          />
-        </div>
-
-        {/* Panel 1: Code / Prompt Input */}
-        <div 
-          onClick={() => setActivePanel(0)}
-          className={`cursor-pointer hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col border transition-all duration-500 overflow-hidden ${
-            activePanel === 0 
-              ? 'border-accent/40 shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30' 
-              : 'border-border-accent/20 opacity-50 hover:opacity-70 grayscale-[50%]'
-          }`}
-        >
-          <div className={`flex items-center justify-between transition-all duration-500 ${activePanel === 0 ? 'border-b border-border/50 pb-1.5 mb-2' : ''}`}>
-            <span className={`font-mono text-[10px] flex items-center gap-1.5 transition-colors ${activePanel === 0 ? 'text-accent' : 'text-text-muted'}`}>
-              <Terminal className="w-2.5 h-2.5" /> IDE_ACTIVITY
+    <div className="w-full relative z-10 px-4 md:px-0">
+      <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full">
+        <div className="hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md overflow-hidden shadow-[0_0_30px_var(--shadow-glow)]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-bg-surface-2">
+            <span className="text-[10px] font-mono text-text-muted tracking-widest flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              USEAI_DASHBOARD
             </span>
-            <div className="flex gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400/50" />
+            <div className="flex gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-border" />
+              <div className="w-2 h-2 rounded-full bg-border" />
+              <div className="w-2 h-2 rounded-full bg-accent/60 shadow-[0_0_4px_var(--accent)]" />
             </div>
           </div>
-          <AnimatePresence initial={false}>
-            {activePanel === 0 && (
-              <motion.div 
-                key="panel-1-content"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={smoothTransition}
-                className="overflow-hidden"
-              >
-                <div className="font-mono text-xs space-y-2 leading-relaxed">
-                  <p className="text-text-primary"><span className="text-text-muted select-none">&gt;</span> "Refactor auth logic to use JWT"</p>
-                  
-                  <div className="relative h-[6.5rem] w-full mt-2">
-                    <motion.div 
-                      key="ide-results"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4 }}
-                      className="text-[10px] sm:text-xs text-text-secondary bg-bg-surface-2 p-2.5 rounded-lg absolute top-0 left-0 w-full pointer-events-none space-y-2 border border-border-accent/30 shadow-inner"
-                    >
-                      <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" /> <span>Call <span className="text-purple-400 font-bold">useai_start</span></span>
-                      </motion.div>
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="flex items-center gap-2 pl-[14px]">
-                        <span className="text-text-muted">... refactoring 4 files</span>
-                      </motion.div>
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.0 }} className="flex items-center gap-2 pl-[14px]">
-                        <span className="text-green-400">✔</span> <span>All tests passed</span>
-                      </motion.div>
-                      <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.6 }} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" /> <span>Call <span className="text-purple-400 font-bold">useai_end</span></span>
-                      </motion.div>
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* Panel 2: Session Output */}
-        <div 
-          onClick={() => setActivePanel(1)}
-          className={`cursor-pointer hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col border transition-all duration-500 overflow-hidden ${
-            activePanel === 1 
-              ? 'border-accent/40 shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30' 
-              : 'border-border-accent/20 opacity-50 hover:opacity-70 grayscale-[50%]'
-          }`}
-        >
-           <div className={`flex items-center justify-between transition-all duration-500 ${activePanel === 1 ? 'border-b border-border/50 pb-1.5 mb-2' : ''}`}>
-            <span className={`font-mono text-[10px] flex items-center gap-1.5 transition-colors ${activePanel === 1 ? 'text-accent' : 'text-text-muted'}`}>
-              <Brain className="w-2.5 h-2.5" /> SESSION_CAPTURED
-            </span>
-            <motion.div 
-              animate={{ rotate: activePanel === 1 ? 360 : 0 }} 
-              transition={{ duration: 2, repeat: activePanel === 1 ? Infinity : 0, ease: 'linear' }}
-            >
-              <Zap className={`w-2.5 h-2.5 ${activePanel === 1 ? 'text-accent' : 'text-text-muted'}`} />
-            </motion.div>
+          <div className="p-4 sm:p-5 space-y-0">
+            {DASHBOARD_SECTIONS.map((section, idx) => {
+              const isActive = activeSection === idx;
+              return (
+                <div key={section.key}>
+                  {/* Section Header — always visible */}
+                  <button
+                    onClick={() => setActiveSection(idx)}
+                    className={`w-full flex items-center justify-between py-2.5 cursor-pointer transition-colors duration-300 ${
+                      isActive ? 'opacity-100' : 'opacity-50 hover:opacity-70'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <motion.div
+                        animate={{ scale: isActive ? 1 : 0.7, backgroundColor: isActive ? 'var(--accent)' : 'var(--border)' }}
+                        transition={{ duration: 0.3 }}
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                      />
+                      <span className="text-[9px] font-mono text-text-muted tracking-widest">{section.label}</span>
+                    </div>
+                    <AnimatePresence mode="wait">
+                      {!isActive && (
+                        <motion.span
+                          key="summary"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 0.6, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.25 }}
+                          className="text-[9px] font-mono text-text-muted"
+                        >
+                          {section.summary}
+                        </motion.span>
+                      )}
+                      {isActive && (
+                        <motion.span
+                          key="badge"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.25 }}
+                          className="text-[9px] font-mono text-accent"
+                        >
+                          {section.badge}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </button>
+
+                  {/* Expanded Content */}
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.div
+                        key={`content-${section.key}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.3, delay: 0.05 } }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pb-3">
+                          {/* Activity Content */}
+                          {section.key === 'activity' && (
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { value: '12', label: 'SESSIONS', highlight: false },
+                                { value: '8h 42m', label: 'ACTIVE', highlight: true },
+                                { value: '11', label: 'MILESTONES', highlight: false },
+                              ].map((stat, i) => (
+                                <motion.div
+                                  key={stat.label}
+                                  initial={{ opacity: 0, y: 12 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.35, delay: i * 0.08 }}
+                                  className={`bg-bg-surface-2/80 rounded-lg p-2 sm:p-2.5 text-center border ${stat.highlight ? 'border-accent/20' : 'border-border/30'}`}
+                                >
+                                  <motion.div
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 0.3, delay: 0.15 + i * 0.08 }}
+                                    className={`text-base sm:text-lg font-black leading-none mb-0.5 ${stat.highlight ? 'text-accent' : 'text-text-primary'}`}
+                                  >
+                                    {stat.value}
+                                  </motion.div>
+                                  <div className="text-[7px] sm:text-[8px] font-mono text-text-muted tracking-wider">{stat.label}</div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Output Content */}
+                          {section.key === 'output' && (
+                            <div>
+                              <div className="space-y-2">
+                                {[
+                                  { label: 'Features', count: 6, pct: 55, color: 'bg-accent' },
+                                  { label: 'Bug Fixes', count: 3, pct: 27, color: 'bg-blue-400' },
+                                  { label: 'Refactors', count: 2, pct: 18, color: 'bg-purple-400' },
+                                ].map((item, i) => (
+                                  <motion.div
+                                    key={item.label}
+                                    initial={{ opacity: 0, x: -16 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                                    className="flex items-center gap-2.5"
+                                  >
+                                    <span className="text-[10px] font-mono text-text-secondary w-16 shrink-0">{item.label}</span>
+                                    <div className="flex-1 bg-bg-surface-2 h-1.5 rounded-full overflow-hidden">
+                                      <motion.div
+                                        className={`h-full ${item.color} rounded-full`}
+                                        initial={{ width: '0%' }}
+                                        animate={{ width: `${item.pct}%` }}
+                                        transition={{ duration: 0.8, delay: 0.2 + i * 0.12, ease: [0.4, 0, 0.2, 1] }}
+                                      />
+                                    </div>
+                                    <motion.span
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ duration: 0.3, delay: 0.5 + i * 0.1 }}
+                                      className="text-[10px] font-mono font-bold text-text-primary w-3 text-right shrink-0"
+                                    >
+                                      {item.count}
+                                    </motion.span>
+                                  </motion.div>
+                                ))}
+                              </div>
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3, delay: 0.6 }}
+                                className="flex gap-3 mt-2.5"
+                              >
+                                {[
+                                  { label: '4 complex', color: 'text-accent' },
+                                  { label: '5 medium', color: 'text-blue-400' },
+                                  { label: '2 simple', color: 'text-text-muted' },
+                                ].map(c => (
+                                  <span key={c.label} className={`text-[9px] font-mono ${c.color}`}>{c.label}</span>
+                                ))}
+                              </motion.div>
+                            </div>
+                          )}
+
+                          {/* Growth Content */}
+                          {section.key === 'growth' && (
+                            <div className="flex items-end justify-between">
+                              <motion.div
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.35, delay: 0.05 }}
+                              >
+                                <div className="flex items-baseline gap-1.5">
+                                  <motion.span
+                                    initial={{ scale: 0.6, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.15, type: 'spring', stiffness: 200 }}
+                                    className="text-2xl sm:text-3xl font-black text-accent leading-none"
+                                  >
+                                    82
+                                  </motion.span>
+                                  <span className="text-[10px] font-mono text-text-muted">/ 100</span>
+                                </div>
+                                <motion.div
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.3 }}
+                                  className="text-[10px] font-mono text-green-400 mt-1 flex items-center gap-1"
+                                >
+                                  <TrendingUp className="w-3 h-3" /> +6 from last week
+                                </motion.div>
+                              </motion.div>
+                              <motion.div
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.35, delay: 0.15 }}
+                                className="text-right"
+                              >
+                                <motion.div
+                                  initial={{ scale: 0.8 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ duration: 0.3, delay: 0.25 }}
+                                  className="text-base sm:text-lg font-black text-text-primary font-mono leading-none"
+                                >
+                                  #4,092
+                                </motion.div>
+                                <div className="text-[9px] font-mono text-text-muted mt-1">Top 12% globally</div>
+                              </motion.div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Divider between sections */}
+                  {idx < DASHBOARD_SECTIONS.length - 1 && (
+                    <div className="h-px bg-border/30" />
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Progress bar indicator */}
+            <div className="pt-2">
+              <div className="h-0.5 bg-bg-surface-2 rounded-full overflow-hidden">
+                <motion.div
+                  key={activeSection}
+                  className="h-full bg-accent/60 rounded-full"
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 4, ease: 'linear' }}
+                />
+              </div>
+            </div>
           </div>
-          <AnimatePresence initial={false}>
-            {activePanel === 1 && (
-              <motion.div 
-                key="panel-2-content"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={smoothTransition}
-                className="overflow-hidden"
-              >
-                <div className="space-y-1.5 pt-1">
-                  {[
-                    { label: 'DURATION', value: '2h 14m', delay: 0.2 },
-                    { label: 'OUTPUT', value: '3 features · 1 bug fix', delay: 0.3 },
-                    { label: 'COMPLEXITY', value: 'High', delay: 0.4 },
-                    { label: 'LANGUAGES', value: 'TypeScript, Python', delay: 0.5 },
-                    { label: 'TOOL', value: 'Claude Code', delay: 0.6 },
-                  ].map((m) => (
-                    <motion.div
-                      key={m.label}
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: activePanel === 1 ? 1 : 0, x: activePanel === 1 ? 0 : -5 }}
-                      transition={{ duration: 0.4, delay: m.delay }}
-                      className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono py-1 border-b border-border/20"
-                    >
-                      <span className="text-text-muted">{m.label}</span>
-                      <span className="text-text-primary">{m.value}</span>
-                    </motion.div>
-                  ))}
-
-                   <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.8 }}
-                      className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between"
-                   >
-                      <div className="text-[10px] text-text-muted font-mono tracking-widest">SPACE_SCORE</div>
-                      <div className="text-xl font-black text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] leading-none">92</div>
-                   </motion.div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-
-        {/* Panel 3: Leaderboard Climb */}
-        <div 
-          onClick={() => setActivePanel(2)}
-          className={`cursor-pointer hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md p-3 flex flex-col border transition-all duration-500 overflow-hidden ${
-            activePanel === 2 
-              ? 'border-accent/40 shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] ring-1 ring-accent/30' 
-              : 'border-border-accent/20 opacity-50 hover:opacity-70 grayscale-[50%]'
-          }`}
-        >
-          <div className={`flex items-center justify-between transition-all duration-500 ${activePanel === 2 ? 'border-b border-border/50 pb-1.5 mb-2' : ''}`}>
-            <span className={`font-mono text-[10px] flex items-center gap-1.5 transition-colors ${activePanel === 2 ? 'text-accent' : 'text-text-muted'}`}>
-              <Trophy className="w-2.5 h-2.5" /> GLOBAL_RANK
-            </span>
-            <span className={`text-[9px] font-mono ${activePanel === 2 ? 'text-accent animate-pulse' : 'text-text-muted'}`}>
-              {activePanel === 2 ? 'UPDATING...' : 'WAITING'}
-            </span>
-          </div>
-          
-          <AnimatePresence initial={false}>
-            {activePanel === 2 && (
-              <motion.div 
-                key="panel-3-content"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={smoothTransition}
-                className="overflow-hidden"
-              >
-                <div className="relative pt-1 flex flex-col gap-1.5">
-                  {leaderboardUsers.map(user => (
-                    <motion.div
-                      layout
-                      key={`user-${user.id}`}
-                      className={`w-full flex justify-between items-center p-2 rounded text-xs font-mono ${user.isYou ? 'bg-accent/10 border border-accent/30 z-10' : 'bg-bg-surface-2/50 opacity-80'}`}
-                      style={{ transformOrigin: "top" }}
-                      initial={user.isYou && !panel3Climbed ? { opacity: 0, scale: 0.9 } : { scale: 1, opacity: 1 }}
-                      animate={
-                        user.isYou 
-                          ? (panel3Climbed ? { scale: [1, 1.05, 1], opacity: 1 } : { scale: 1, opacity: 1 })
-                          : { opacity: panel3Climbed ? 0.5 : 1 }
-                      }
-                      transition={{ duration: 0.4 }}
-                    >
-                      <span className={`${user.isYou ? 'text-accent font-bold flex items-center gap-2' : 'text-text-muted'}`}>
-                        {user.isYou && panel3Climbed && <TrendingUp className="w-3 h-3" />}
-                        {user.rank}. {user.name}
-                      </span>
-                      <span className={user.isYou ? 'text-accent font-bold' : ''}>{user.score}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
       </div>
     </div>
   );
@@ -541,18 +639,18 @@ export default function LandingPage() {
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-text-primary leading-[1.05] sm:leading-[1.1] mb-6"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
               >
-                YOUR COMPLETE AI <br className="hidden md:block" />
-                <span className="gradient-text-accent italic inline-block py-1 pr-4">DEVELOPMENT STORY</span>
+                YOUR COMPLETE <br className="hidden sm:block" />
+                <span className="gradient-text-accent italic inline-block pr-3">AI DEVELOPMENT STORY</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-xl mb-8 leading-relaxed font-light"
+                className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-lg mb-7 leading-relaxed font-light"
               >
-                Every feature you ship, every hour you invest, every skill you sharpen — automatically
-                captured across all your AI tools. <span className="text-text-primary font-medium">See what you build. Know where your time goes. Prove what you&#39;re capable of.</span>
+                Every session captured. Every milestone tracked. See what you build,
+                where your time goes, and how your skills grow — <span className="text-text-primary font-medium">across all your AI tools.</span>
               </motion.p>
 
               <motion.div 
@@ -568,14 +666,15 @@ export default function LandingPage() {
               </motion.div>
             </div>
 
-            {/* Right Content - Dashboard Interactive Animation */}
-            <motion.div 
+            {/* Right Content - Dashboard Preview + Tool Marquee */}
+            <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="w-full relative z-10 lg:-translate-y-4"
+              className="w-full relative z-10"
             >
-              <HeroDashboardAnimation />
+              <HeroDashboardPreview />
+              <ToolMarquee />
             </motion.div>
             
           </div>

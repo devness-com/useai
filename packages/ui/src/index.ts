@@ -20,6 +20,7 @@ export { TabBar } from './components/TabBar';
 export { TaskTypeBreakdown } from './components/TaskTypeBreakdown';
 export { UseAILogo } from './components/UseAILogo';
 export { SearchOverlay } from './components/SearchOverlay';
+export { StatusBadge } from './components/StatusBadge';
 
 // TimeTravel
 export { TimeTravelPanel } from './components/TimeTravel/TimeTravelPanel';

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { HealthInfo, UpdateInfo } from '../lib/api';
+import type { HealthInfo, UpdateInfo, LocalConfig } from '../lib/api';
 import { ArrowUpCircle, Copy, Check, Search } from 'lucide-react';
-import { UseAILogo, TabBar } from '@useai/ui';
+import { UseAILogo, TabBar, StatusBadge } from '@useai/ui';
 import type { ActiveTab } from '@useai/ui';
+import { ProfileDropdown } from './ProfileDropdown';
 
 const UPDATE_COMMAND = 'npx -y @devness/useai@latest update';
 
@@ -57,14 +58,23 @@ interface HeaderProps {
   onSearchOpen?: () => void;
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
+  config: LocalConfig | null;
+  onRefresh: () => void;
 }
 
-export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange }: HeaderProps) {
+export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange, config, onRefresh }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-4">
       <div className="max-w-[1000px] mx-auto px-6 py-3 flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           <UseAILogo className="h-6" />
+          {health && health.active_sessions > 0 && (
+            <StatusBadge
+              label={`${health.active_sessions} active session${health.active_sessions !== 1 ? 's' : ''}`}
+              color="success"
+              dot
+            />
+          )}
         </div>
 
         <div className="absolute left-1/2 -translate-x-1/2">
@@ -87,17 +97,7 @@ export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChang
           {updateInfo?.update_available && (
             <UpdateBanner updateInfo={updateInfo} />
           )}
-          {health && health.active_sessions > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
-              <div className="relative">
-                <div className="w-2 h-2 rounded-full bg-success animate-ping absolute inset-0" />
-                <div className="w-2 h-2 rounded-full bg-success relative" />
-              </div>
-              <span className="text-xs font-medium text-success">
-                {health.active_sessions} active session{health.active_sessions !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
+          <ProfileDropdown config={config} onRefresh={onRefresh} />
         </div>
       </div>
     </header>
