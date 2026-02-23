@@ -41,7 +41,7 @@ export default function LoginPage() {
     try {
       const data = await apiFetch<{ token: string; user: any }>('/api/auth/verify-otp', {
         method: 'POST',
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, code: otp }),
       });
       setAuth(data.token, data.user);
       router.push('/dashboard');
@@ -53,11 +53,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-base px-4 relative overflow-hidden">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg-base px-4 relative overflow-hidden">
       {/* Background effects matching landing page */}
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
-      <div className="blur-blob w-[500px] h-[500px] top-[-15%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
-      <div className="blur-blob w-[400px] h-[400px] bottom-[-10%] right-[-10%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
+      <div className="fixed blur-blob w-[500px] h-[500px] top-[-15%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
+      <div className="fixed blur-blob w-[400px] h-[400px] bottom-[-10%] right-[-10%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo + header */}
@@ -81,7 +81,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="hud-border rounded-xl bg-bg-surface-1/80 backdrop-blur-md p-6 border border-border-accent/20 shadow-[0_0_40px_rgba(var(--accent-rgb),0.05)]">
+        <div className="rounded-xl bg-bg-surface-1/80 backdrop-blur-md p-6 border border-border shadow-[0_0_40px_rgba(var(--accent-rgb),0.05)]">
           {step === 'email' ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div>
