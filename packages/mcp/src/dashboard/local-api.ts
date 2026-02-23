@@ -183,21 +183,51 @@ export async function handleLocalSync(req: IncomingMessage, res: ServerResponse)
       'Authorization': `Bearer ${token}`,
     };
 
-    // Sync sessions in chunks to avoid 413 payload limits
-    const CHUNK_SIZE = 50;
+    // Group sessions by date and build per-day sync payloads
     const sessions = deduplicateSessions(readJson<SessionSeal[]>(SESSIONS_FILE, []));
+    const byDate = new Map<string, SessionSeal[]>();
 
-    for (let i = 0; i < sessions.length; i += CHUNK_SIZE) {
-      const chunk = sessions.slice(i, i + CHUNK_SIZE);
+    for (const s of sessions) {
+      const date = s.started_at.slice(0, 10);
+      const arr = byDate.get(date);
+      if (arr) arr.push(s);
+      else byDate.set(date, [s]);
+    }
+
+    for (const [date, daySessions] of byDate) {
+      let totalSeconds = 0;
+      const clients: Record<string, number> = {};
+      const taskTypes: Record<string, number> = {};
+      const languages: Record<string, number> = {};
+
+      for (const s of daySessions) {
+        totalSeconds += s.duration_seconds;
+        clients[s.client] = (clients[s.client] ?? 0) + s.duration_seconds;
+        taskTypes[s.task_type] = (taskTypes[s.task_type] ?? 0) + s.duration_seconds;
+        for (const lang of s.languages) {
+          languages[lang] = (languages[lang] ?? 0) + s.duration_seconds;
+        }
+      }
+
+      const payload = {
+        date,
+        total_seconds: totalSeconds,
+        clients,
+        task_types: taskTypes,
+        languages,
+        sessions: daySessions,
+        sync_signature: '',
+      };
+
       const sessionsRes = await fetch(`${USEAI_API}/api/sync`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ sessions: chunk }),
+        body: JSON.stringify(payload),
       });
 
       if (!sessionsRes.ok) {
         const errBody = await sessionsRes.text();
-        json(res, 502, { success: false, error: `Sessions sync failed (chunk ${Math.floor(i / CHUNK_SIZE) + 1}): ${sessionsRes.status} ${errBody}` });
+        json(res, 502, { success: false, error: `Sessions sync failed (${date}): ${sessionsRes.status} ${errBody}` });
         return;
       }
     }
