@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import HeroHeading from '@/components/HeroHeading';
 import {
   ArrowRight,
   BarChart3,
@@ -624,6 +625,9 @@ function HeroDashboardPreview() {
 }
 
 export default function LandingPage() {
+  const [heroReady, setHeroReady] = useState(false);
+  const onHeroComplete = useCallback(() => setHeroReady(true), []);
+
   return (
     <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
@@ -643,32 +647,25 @@ export default function LandingPage() {
                 <span className="text-[10px] font-mono text-text-secondary tracking-widest">TRACKING 10+ AI TOOLS</span>
               </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
-              >
-                YOUR COMPLETE <span className="">STORY</span> OF<br className="hidden sm:block" />
-                <span className="gradient-text-accent italic inline-block pr-6 text-7xl sm:text-8xl md:text-8xl lg:text-9xl">USING AI</span>
-              </motion.h1>
+              <HeroHeading onAnimationComplete={onHeroComplete} />
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.5 }}
                 className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-lg mb-7 leading-relaxed font-light"
               >
                 Every session captured. Every milestone tracked. See what you build,
                 where your time goes, and how your skills grow — <span className="text-text-primary font-medium">across all your AI tools.</span>
               </motion.p>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
                 className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl"
               >
                 <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
-                <span className="text-text-muted font-mono text-[10px] hidden sm:block">OR</span>
-                <Link href="/login" className="cyber-button rounded-xl w-full sm:w-auto shrink-0 group inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-bold text-xs tracking-wider uppercase transition-opacity hover:opacity-80">
-                  Dashboard
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                </Link>
               </motion.div>
             </div>
 

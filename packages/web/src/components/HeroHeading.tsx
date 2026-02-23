@@ -1,0 +1,208 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface HeroHeadingProps {
+  /** Called once all entrance animations have finished so the parent can fade-in subtitle / CTA. */
+  onAnimationComplete?: () => void;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+/** Each entry becomes its own line in the heading. */
+const TYPEWRITER_LINES = ['YOUR COMPLETE', 'STORY OF'];
+const GLITCH_LINE = 'USING AI';
+const FULL_TEXT = [...TYPEWRITER_LINES, GLITCH_LINE].join(' ');
+
+/** Per-character stagger (seconds) */
+const CHAR_STAGGER = 0.03;
+/** Delay before the typewriter begins */
+const TYPEWRITER_DELAY = 0.3;
+/** Total character count across all typewriter lines (including spaces) */
+const TYPEWRITER_CHAR_COUNT = TYPEWRITER_LINES.join(' ').length;
+/** Total typewriter duration */
+const TYPEWRITER_DURATION = TYPEWRITER_CHAR_COUNT * CHAR_STAGGER;
+/** When USING AI starts its entrance (after typewriter finishes) */
+const GLITCH_ENTRANCE_DELAY = TYPEWRITER_DELAY + TYPEWRITER_DURATION + 0.15;
+/** How long the glitch CSS effect runs before settling */
+const GLITCH_SETTLE_MS = 1500;
+/** Pause (ms) after the full cycle before restarting */
+const LOOP_PAUSE_MS = 2500;
+/** Fade-out duration (ms) before restart */
+const FADE_OUT_MS = 600;
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
+export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
+  const prefersReduced = useReducedMotion();
+  const [glitchActive, setGlitchActive] = useState(false);
+  const [settled, setSettled] = useState(false);
+  const [loopKey, setLoopKey] = useState(0);
+  const [fading, setFading] = useState(false);
+  const [completedOnce, setCompletedOnce] = useState(false);
+
+  const restartLoop = useCallback(() => {
+    // Fade out, then reset and remount
+    setFading(true);
+    setTimeout(() => {
+      setGlitchActive(false);
+      setSettled(false);
+      setFading(false);
+      setLoopKey((k) => k + 1);
+    }, FADE_OUT_MS);
+  }, []);
+
+  const handleGlitchEntrance = useCallback(() => {
+    setGlitchActive(true);
+    setTimeout(() => {
+      setGlitchActive(false);
+      setSettled(true);
+      if (!completedOnce) {
+        setCompletedOnce(true);
+        onAnimationComplete?.();
+      }
+      // Schedule next loop
+      setTimeout(restartLoop, LOOP_PAUSE_MS);
+    }, GLITCH_SETTLE_MS);
+  }, [onAnimationComplete, completedOnce, restartLoop]);
+
+  // For reduced-motion: fire completion immediately after mount
+  useEffect(() => {
+    if (prefersReduced) {
+      const t = setTimeout(() => onAnimationComplete?.(), 400);
+      return () => clearTimeout(t);
+    }
+  }, [prefersReduced, onAnimationComplete]);
+
+  /* ── Reduced-motion: simple fade ── */
+  if (prefersReduced) {
+    return (
+      <h1
+        aria-label={FULL_TEXT}
+        className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
+      >
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          {TYPEWRITER_LINES.map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < TYPEWRITER_LINES.length - 1 && <br />}
+            </span>
+          ))}
+        </motion.span>
+        <br />
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl"
+        >
+          {GLITCH_LINE}
+        </motion.span>
+      </h1>
+    );
+  }
+
+  /* ── Full animation ── */
+  return (
+    <h1
+      aria-label={FULL_TEXT}
+      className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary italic leading-[1.05] sm:leading-[1.1] mb-5"
+    >
+      <span
+        key={loopKey}
+        style={{
+          opacity: fading ? 0 : 1,
+          transition: `opacity ${FADE_OUT_MS}ms ease-out`,
+          display: 'inline',
+        }}
+      >
+        {/* Typewriter lines — per-character blur→sharp, with explicit <br> between lines */}
+        <motion.span
+          aria-hidden
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: CHAR_STAGGER, delayChildren: TYPEWRITER_DELAY } },
+          }}
+          className="inline"
+        >
+          {TYPEWRITER_LINES.map((line, li) => (
+            <span key={li} style={{ whiteSpace: 'nowrap' }} className="inline-block">
+              {line.split(' ').map((word, wi, words) => (
+                <span key={wi} className="inline">
+                  <span style={{ display: 'inline-block' }}>
+                    {word.split('').map((char, ci) => (
+                      <motion.span
+                        key={`${li}-${wi}-${ci}`}
+                        variants={{
+                          hidden: { opacity: 0, filter: 'blur(8px)' },
+                          visible: {
+                            opacity: 1,
+                            filter: 'blur(0px)',
+                            transition: { duration: 0.15, ease: 'easeOut' },
+                          },
+                        }}
+                        className="inline-block"
+                      >
+                        {char}
+                      </motion.span>
+                    ))}
+                  </span>
+                  {wi < words.length - 1 && (
+                    <motion.span
+                      key={`space-${li}-${wi}`}
+                      variants={{
+                        hidden: { opacity: 0 },
+                        visible: { opacity: 1, transition: { duration: 0.01 } },
+                      }}
+                      className="inline"
+                    >
+                      {' '}
+                    </motion.span>
+                  )}
+                </span>
+              ))}
+              {li < TYPEWRITER_LINES.length - 1 && <br />}
+            </span>
+          ))}
+        </motion.span>
+
+        <br />
+
+        {/* Glitch line — "USING AI" entrance + glitch */}
+        <motion.span
+          aria-hidden
+          initial={{ opacity: 0, scale: 0.85, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{
+            delay: GLITCH_ENTRANCE_DELAY,
+            type: 'spring',
+            stiffness: 180,
+            damping: 18,
+          }}
+          onAnimationComplete={handleGlitchEntrance}
+          className={`gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl ${
+            glitchActive ? 'hero-glitch' : ''
+          } ${settled ? 'hero-glow-settled' : ''}`}
+          style={glitchActive ? { willChange: 'transform, clip-path' } : undefined}
+        >
+          {GLITCH_LINE}
+        </motion.span>
+      </span>
+    </h1>
+  );
+}
