@@ -1,14 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
+import { useDashboardStore } from '@/store/dashboard-store';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Search } from 'lucide-react';
+import { UseAILogo, TabBar, SearchOverlay } from '@useai/ui';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { token, user, hydrate, logout } = useAuthStore();
+  const { sessions, milestones, activeTab, setActiveTab } = useDashboardStore();
+  const isDashboardRoot = pathname === '/dashboard';
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -24,6 +31,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearTimeout(timer);
   }, [router]);
 
+  // Cmd+K / Ctrl+K to toggle search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-base">
@@ -34,34 +53,59 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <nav className="flex items-center justify-between max-w-[1000px] mx-auto px-6 py-4 border-b border-border/50">
-        <Link href="/dashboard" className="text-xl font-black tracking-tight text-text-primary">
-          use<span className="text-accent">AI</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 text-xs font-bold text-text-muted hover:text-text-primary transition-colors"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            Dashboard
+      <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-4">
+        <div className="max-w-[1000px] mx-auto px-6 py-3 flex items-center justify-between relative">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <UseAILogo className="h-6" />
           </Link>
-          <Link
-            href="/dashboard/settings"
-            className="flex items-center gap-1.5 text-xs font-bold text-text-muted hover:text-text-primary transition-colors"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            Settings
-          </Link>
-          <button
-            onClick={logout}
-            className="flex items-center gap-1.5 text-xs font-bold text-text-muted hover:text-error transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+
+          {isDashboardRoot && (
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
+            >
+              <Search className="w-3 h-3" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1 py-0.5 rounded border border-border bg-bg-surface-2 text-[10px] font-mono text-text-muted">
+                ⌘K
+              </kbd>
+            </button>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
+            >
+              <LayoutDashboard className="w-3 h-3" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
+            >
+              <Settings className="w-3 h-3" />
+              <span className="hidden sm:inline">Settings</span>
+            </Link>
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-error hover:border-error/30 transition-colors text-xs"
+            >
+              <LogOut className="w-3 h-3" />
+            </button>
+          </div>
         </div>
-      </nav>
-      <div className="max-w-[1000px] mx-auto px-6 py-6">
+      </header>
+      <SearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        sessions={sessions}
+        milestones={milestones}
+      />
+      <div className="max-w-[1000px] mx-auto px-6 pb-6">
         {children}
       </div>
     </div>

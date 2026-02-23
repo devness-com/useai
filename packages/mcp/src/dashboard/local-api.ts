@@ -18,7 +18,7 @@ function json(res: ServerResponse, status: number, data: unknown): void {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   });
   res.end(body);
@@ -334,6 +334,65 @@ export async function handleLocalVerifyOtp(req: IncomingMessage, res: ServerResp
   }
 }
 
+// ── Save Auth (used by dev dashboard to save token after direct cloud auth) ──
+
+export async function handleLocalSaveAuth(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+
+    if (!body.token || !body.user) {
+      json(res, 400, { error: 'Missing token or user' });
+      return;
+    }
+
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {
+      milestone_tracking: true,
+      auto_sync: true,
+      sync_interval_hours: 24,
+    } as UseaiConfig);
+
+    config.auth = {
+      token: body.token,
+      user: {
+        id: body.user.id,
+        email: body.user.email,
+        username: body.user.username,
+      },
+    };
+
+    writeJson(CONFIG_FILE, config);
+    json(res, 200, { success: true });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── Auth Token (returns saved token for dev sync) ────────────────────────────
+
+export function handleLocalAuthToken(_req: IncomingMessage, res: ServerResponse): void {
+  try {
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {} as UseaiConfig);
+    json(res, 200, { token: config.auth?.token ?? null });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── Sync Mark (updates last_sync_at without actually syncing) ────────────────
+
+export async function handleLocalSyncMark(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    await readBody(req);
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {} as UseaiConfig);
+    config.last_sync_at = new Date().toISOString();
+    writeJson(CONFIG_FILE, config);
+    json(res, 200, { success: true, last_sync_at: config.last_sync_at });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
 // ── Logout ───────────────────────────────────────────────────────────────────
 
 export async function handleLocalLogout(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -352,6 +411,73 @@ export async function handleLocalLogout(req: IncomingMessage, res: ServerRespons
     json(res, 200, { success: true });
   } catch (err) {
     json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── User Profile (proxy to useai.dev API) ────────────────────────────────────
+
+export async function handleLocalCheckUsername(
+  _req: IncomingMessage,
+  res: ServerResponse,
+  username: string,
+): Promise<void> {
+  try {
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {} as UseaiConfig);
+    if (!config.auth?.token) {
+      json(res, 401, { error: 'Not authenticated' });
+      return;
+    }
+
+    const apiRes = await fetch(
+      `${USEAI_API}/api/users/check-username/${encodeURIComponent(username)}`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${config.auth.token}` },
+      },
+    );
+
+    const data = await apiRes.json();
+    json(res, apiRes.ok ? 200 : apiRes.status, data);
+  } catch (err) {
+    const status = (err as Error).message.includes('fetch') ? 502 : 500;
+    json(res, status, { error: (err as Error).message });
+  }
+}
+
+export async function handleLocalUpdateUser(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {} as UseaiConfig);
+    if (!config.auth?.token) {
+      json(res, 401, { error: 'Not authenticated' });
+      return;
+    }
+
+    const apiRes = await fetch(`${USEAI_API}/api/users/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.auth.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await apiRes.json() as Record<string, unknown>;
+
+    if (apiRes.ok && data['username'] && config.auth.user) {
+      config.auth.user.username = data['username'] as string;
+      writeJson(CONFIG_FILE, config);
+    }
+
+    json(res, apiRes.ok ? 200 : apiRes.status, data);
+  } catch (err) {
+    const status = (err as Error).message.includes('fetch') ? 502 : 500;
+    json(res, status, { error: (err as Error).message });
   }
 }
 

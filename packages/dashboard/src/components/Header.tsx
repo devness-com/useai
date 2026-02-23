@@ -1,26 +1,8 @@
 import { useState } from 'react';
 import type { HealthInfo, UpdateInfo } from '../lib/api';
+import { ArrowUpCircle, Copy, Check, Search } from 'lucide-react';
+import { UseAILogo, TabBar } from '@useai/ui';
 import type { ActiveTab } from '@useai/ui';
-import { Activity, ArrowUpCircle, Copy, Check, Search } from 'lucide-react';
-import { TabBar } from '@useai/ui';
-
-function UseAILogo({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 611.54 143.47" className={className}>
-      {/* USE */}
-      <g fill="var(--text-primary)">
-        <path d="M21.4,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v76.64c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h27.87c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25V17.23c0-3.1,1.55-4.65,4.64-4.65h25.55c3.1,0,4.65,1.55,4.65,4.65v88.25c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85H37.78c-6.35,0-11.81-2.28-16.37-6.85Z"/>
-        <path d="M146.93,124.06v-13.93c0-3.1,1.55-4.65,4.64-4.65h69.67c3.25,0,6-1.12,8.25-3.37,2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-51.09c-6.35,0-11.81-2.28-16.37-6.85-4.57-4.57-6.85-10.02-6.85-16.37v-23.22c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h92.9c3.1,0,4.65,1.55,4.65,4.65v13.94c0,3.1-1.55,4.65-4.65,4.65h-69.67c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25s1.12,6,3.37,8.25c2.24,2.25,4.99,3.37,8.25,3.37h51.09c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-92.9c-3.1,0-4.64-1.55-4.64-4.65Z"/>
-        <path d="M286.16,121.85c-4.57-4.57-6.85-10.02-6.85-16.37V35.81c0-6.35,2.28-11.81,6.85-16.37,4.56-4.57,10.02-6.85,16.37-6.85h74.32c6.35,0,11.8,2.29,16.37,6.85,4.57,4.57,6.85,10.03,6.85,16.37v23.22c0,6.35-2.29,11.81-6.85,16.37-4.57,4.57-10.03,6.85-16.37,6.85h-62.71v11.61c0,3.25,1.12,6,3.37,8.25,2.24,2.25,4.99,3.37,8.25,3.37h69.67c3.1,0,4.65,1.55,4.65,4.65v13.93c0,3.1-1.55,4.65-4.65,4.65h-92.9c-6.35,0-11.81-2.28-16.37-6.85ZM361.87,55.66c2.24-2.24,3.37-4.99,3.37-8.25s-1.12-6-3.37-8.25c-2.25-2.24-4.99-3.37-8.25-3.37h-27.87c-3.25,0-6,1.12-8.25,3.37-2.25,2.25-3.37,4.99-3.37,8.25v11.61h39.48c3.25,0,6-1.12,8.25-3.37Z"/>
-      </g>
-      {/* AI */}
-      <g fill="var(--accent)">
-        <path d="M432.08,126.44c-4.76-4.76-7.14-10.44-7.14-17.06v-24.2c0-6.61,2.38-12.3,7.14-17.06,4.76-4.76,10.44-7.14,17.06-7.14h65.34v-12.1c0-3.39-1.17-6.25-3.51-8.59-2.34-2.34-5.2-3.51-8.59-3.51h-72.6c-3.23,0-4.84-1.61-4.84-4.84v-14.52c0-3.23,1.61-4.84,4.84-4.84h96.8c6.61,0,12.3,2.38,17.06,7.14,4.76,4.76,7.14,10.45,7.14,17.06v72.6c0,6.62-2.38,12.3-7.14,17.06-4.76,4.76-10.45,7.14-17.06,7.14h-77.44c-6.62,0-12.3-2.38-17.06-7.14ZM510.97,105.87c2.34-2.34,3.51-5.2,3.51-8.59v-12.1h-41.14c-3.39,0-6.25,1.17-8.59,3.51-2.34,2.34-3.51,5.2-3.51,8.59s1.17,6.25,3.51,8.59c2.34,2.34,5.2,3.51,8.59,3.51h29.04c3.39,0,6.25-1.17,8.59-3.51Z"/>
-        <path d="M562.87,128.74V17.42c0-3.23,1.61-4.84,4.84-4.84h26.62c3.23,0,4.84,1.61,4.84,4.84v111.32c0,3.23-1.61,4.84-4.84,4.84h-26.62c-3.23,0-4.84-1.61-4.84-4.84Z"/>
-      </g>
-    </svg>
-  );
-}
 
 const UPDATE_COMMAND = 'npx -y @devness/useai@latest update';
 
@@ -72,19 +54,19 @@ function UpdateBanner({ updateInfo }: { updateInfo: UpdateInfo }) {
 interface HeaderProps {
   health: HealthInfo | null;
   updateInfo: UpdateInfo | null;
-  timeContextLabel: string;
+  onSearchOpen?: () => void;
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
-  onSearchOpen?: () => void;
 }
 
-export function Header({ health, updateInfo, timeContextLabel, activeTab, onTabChange, onSearchOpen }: HeaderProps) {
+export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-4">
       <div className="max-w-[1000px] mx-auto px-6 py-3 flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           <UseAILogo className="h-6" />
         </div>
+
         <div className="absolute left-1/2 -translate-x-1/2">
           <TabBar activeTab={activeTab} onTabChange={onTabChange} />
         </div>
@@ -116,10 +98,6 @@ export function Header({ health, updateInfo, timeContextLabel, activeTab, onTabC
               </span>
             </div>
           )}
-          <div className="flex items-center gap-2 text-xs text-text-muted font-mono bg-bg-surface-1 px-3 py-1.5 rounded-md border border-border">
-            <Activity className="w-3 h-3" />
-            {timeContextLabel}
-          </div>
         </div>
       </div>
     </header>

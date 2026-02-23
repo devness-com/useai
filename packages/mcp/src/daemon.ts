@@ -44,6 +44,11 @@ import {
   handleLocalSendOtp,
   handleLocalVerifyOtp,
   handleLocalLogout,
+  handleLocalSaveAuth,
+  handleLocalAuthToken,
+  handleLocalSyncMark,
+  handleLocalCheckUsername,
+  handleLocalUpdateUser,
   handleDeleteSession,
   handleDeleteConversation,
   handleDeleteMilestone,
@@ -1066,6 +1071,9 @@ export async function startDaemon(port?: number): Promise<void> {
       if (url.pathname === '/api/local/milestones') { handleLocalMilestones(req, res); return; }
       if (url.pathname === '/api/local/config') { handleLocalConfig(req, res); return; }
       if (url.pathname === '/api/local/update-check') { await handleUpdateCheck(res); return; }
+
+      const usernameMatch = url.pathname.match(/^\/api\/local\/users\/check-username\/(.+)$/);
+      if (usernameMatch) { await handleLocalCheckUsername(req, res, decodeURIComponent(usernameMatch[1]!)); return; }
     }
     if (url.pathname === '/api/local/sync' && req.method === 'POST') {
       await handleLocalSync(req, res);
@@ -1081,6 +1089,24 @@ export async function startDaemon(port?: number): Promise<void> {
     }
     if (url.pathname === '/api/local/auth/logout' && req.method === 'POST') {
       await handleLocalLogout(req, res);
+      return;
+    }
+    if (url.pathname === '/api/local/auth/save' && req.method === 'POST') {
+      await handleLocalSaveAuth(req, res);
+      return;
+    }
+    if (url.pathname === '/api/local/auth/token' && req.method === 'GET') {
+      handleLocalAuthToken(req, res);
+      return;
+    }
+    if (url.pathname === '/api/local/sync/mark' && req.method === 'POST') {
+      await handleLocalSyncMark(req, res);
+      return;
+    }
+
+    // Local API — PATCH
+    if (url.pathname === '/api/local/users/me' && req.method === 'PATCH') {
+      await handleLocalUpdateUser(req, res);
       return;
     }
 
@@ -1118,7 +1144,7 @@ export async function startDaemon(port?: number): Promise<void> {
     if ((url.pathname.startsWith('/api/local/') || url.pathname === '/api/seal-active') && req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       });
       res.end();

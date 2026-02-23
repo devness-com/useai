@@ -31,7 +31,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc --watch",
-    "daemon": "pnpm run build && node dist/index.js daemon --port 19201",
+    "daemon": "pnpm run build && node dist/index.js daemon",
     "bundle": "tsup",
     "prepublishOnly": "pnpm run bundle",
     "test": "vitest run",

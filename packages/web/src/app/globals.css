@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@source "../../ui/src/**/*.tsx";
+@source "../../../ui/src/**/*.tsx";
 
 :root {
   /* Dark theme (default) — matches dashboard */

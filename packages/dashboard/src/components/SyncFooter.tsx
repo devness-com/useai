@@ -101,7 +101,7 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
           <button
             onClick={handleSync}
             disabled={loading}
-            className="group flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-bright text-white text-xs font-bold rounded-lg transition-all duration-300 shadow-lg shadow-accent/20 disabled:opacity-50 cursor-pointer overflow-hidden relative"
+            className="group flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-bright text-bg-base text-xs font-bold rounded-lg transition-all duration-300 shadow-lg shadow-accent/20 disabled:opacity-50 cursor-pointer overflow-hidden relative"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             {loading ? 'Syncing...' : 'Sync Now'}
@@ -170,7 +170,7 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
             <button
               onClick={handleVerifyOtp}
               disabled={loading || otp.length !== 6}
-              className="px-4 py-2 bg-accent hover:bg-accent-bright text-white text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 bg-accent hover:bg-accent-bright text-bg-base text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loading ? '...' : 'Verify'}
             </button>

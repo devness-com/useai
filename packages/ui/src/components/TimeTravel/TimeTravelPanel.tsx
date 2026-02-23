@@ -248,7 +248,7 @@ export function TimeTravelPanel({
                 className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
                   isEditingTime
                     ? isLive
-                      ? 'bg-accent text-white hover:bg-accent-bright'
+                      ? 'bg-accent text-bg-base hover:bg-accent-bright'
                       : 'bg-history text-white hover:brightness-110'
                     : 'text-text-muted hover:text-text-primary hover:bg-bg-surface-2'
                 }`}

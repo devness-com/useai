@@ -23,7 +23,7 @@ function Chip({
       onClick={onClick}
       className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer border ${
         active
-          ? 'bg-accent text-white border-accent scale-105'
+          ? 'bg-accent text-bg-base border-accent scale-105'
           : 'bg-bg-surface-1 border-border text-text-muted hover:text-text-primary hover:border-text-muted/50'
       }`}
       style={active ? { boxShadow: '0 2px 10px rgba(var(--accent-rgb), 0.4)' } : undefined}

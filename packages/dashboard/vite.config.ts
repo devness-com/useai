@@ -7,6 +7,13 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      // Cloud API proxy (dev only) — auth & sync bypass the daemon
+      '/cloud-api': {
+        target: 'http://localhost:3010',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/cloud-api/, ''),
+      },
+      // Everything else goes to the production daemon
       '/api': {
         target: 'http://127.0.0.1:19200',
         changeOrigin: true,
