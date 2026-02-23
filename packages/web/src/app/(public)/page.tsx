@@ -529,8 +529,8 @@ export default function LandingPage() {
 
       <main className="relative z-10 pb-32">
         {/* ── Hero ── */}
-        <section className="relative pt-24 lg:pt-28 pb-12 px-6 overflow-x-hidden min-h-[calc(100vh-90px)] lg:min-h-screen flex items-center">
-          <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
+        <section className="relative pt-28 lg:pt-36 pb-12 overflow-x-hidden min-h-[calc(100vh-90px)] xl:min-h-0 flex items-center">
+          <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
             
             {/* Left Content */}
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
@@ -583,7 +583,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Visual Break ── */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-10 max-w-7xl mx-auto" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-10 max-w-7xl mx-auto px-6" />
 
         {/* ── Intelligence Grid (Features) ── */}
         <section id="features" className="max-w-7xl mx-auto px-6 py-24">

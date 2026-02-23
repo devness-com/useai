@@ -110,7 +110,6 @@ body {
   overflow-x: hidden;
   overscroll-behavior-y: none;
   text-rendering: optimizeLegibility;
-  backface-visibility: hidden;
 }
 
 ::selection {
