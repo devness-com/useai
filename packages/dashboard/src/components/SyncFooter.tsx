@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { LocalConfig } from '../lib/api';
-import { postSendOtp, postVerifyOtp, postSync, postLogout } from '../lib/api';
-import { RefreshCw, User, Mail, ShieldCheck, LogOut } from 'lucide-react';
+import { postSendOtp, postVerifyOtp, postSync, postLogout, checkUsername, updateUsername } from '../lib/api';
+import { RefreshCw, User, Mail, ShieldCheck, LogOut, Link, Pencil, Loader2, Check, X } from 'lucide-react';
 
 interface SyncFooterProps {
   config: LocalConfig | null;
@@ -18,6 +18,180 @@ function formatLastSync(iso: string | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+const USERNAME_REGEX = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+function sanitizeUsername(input: string): string {
+  return input.toLowerCase().replace(/[^a-z0-9-]/g, '');
+}
+
+function clientValidateUsername(value: string): { valid: boolean; reason?: string } {
+  if (value.length === 0) return { valid: false };
+  if (value.length < 3) return { valid: false, reason: 'At least 3 characters' };
+  if (value.length > 32) return { valid: false, reason: 'At most 32 characters' };
+  if (!USERNAME_REGEX.test(value)) return { valid: false, reason: 'No leading/trailing hyphens' };
+  return { valid: true };
+}
+
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
+function UsernameRow({ config, onRefresh }: { config: LocalConfig; onRefresh: () => void }) {
+  const hasUsername = !!config.username;
+  const [editing, setEditing] = useState(!hasUsername);
+  const [input, setInput] = useState(config.username ?? '');
+  const [status, setStatus] = useState<UsernameStatus>('idle');
+  const [reason, setReason] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const abortRef = useRef<AbortController>(undefined);
+
+  // Reset state when config changes (e.g. after save)
+  useEffect(() => {
+    if (config.username) {
+      setEditing(false);
+      setInput(config.username);
+    }
+  }, [config.username]);
+
+  const handleChange = useCallback((raw: string) => {
+    const value = sanitizeUsername(raw);
+    setInput(value);
+    setReason(undefined);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+
+    if (!value) {
+      setStatus('idle');
+      return;
+    }
+
+    const local = clientValidateUsername(value);
+    if (!local.valid) {
+      setStatus('invalid');
+      setReason(local.reason);
+      return;
+    }
+
+    // Same as current username — no need to check server
+    if (value === config.username) {
+      setStatus('idle');
+      return;
+    }
+
+    setStatus('checking');
+    debounceRef.current = setTimeout(async () => {
+      abortRef.current = new AbortController();
+      try {
+        const result = await checkUsername(value);
+        if (result.available) {
+          setStatus('available');
+          setReason(undefined);
+        } else {
+          setStatus('taken');
+          setReason(result.reason);
+        }
+      } catch {
+        setStatus('invalid');
+        setReason('Check failed');
+      }
+    }, 400);
+  }, [config.username]);
+
+  const handleSave = useCallback(async () => {
+    if (status !== 'available') return;
+    setSaving(true);
+    try {
+      await updateUsername(input);
+      onRefresh();
+    } catch (err) {
+      setStatus('invalid');
+      setReason((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }, [input, status, onRefresh]);
+
+  const handleCancel = useCallback(() => {
+    setEditing(false);
+    setInput(config.username ?? '');
+    setStatus('idle');
+    setReason(undefined);
+  }, [config.username]);
+
+  const handleStartEdit = useCallback(() => {
+    setEditing(true);
+    setInput(config.username ?? '');
+    setStatus('idle');
+    setReason(undefined);
+  }, [config.username]);
+
+  // Display mode
+  if (!editing && hasUsername) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link className="w-3.5 h-3.5 text-text-muted" />
+        <a
+          href={`https://useai.dev/${config.username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-bold text-accent hover:text-accent-bright transition-colors"
+        >
+          useai.dev/{config.username}
+        </a>
+        <button
+          onClick={handleStartEdit}
+          className="p-1 rounded hover:bg-bg-surface-2 text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+          title="Edit username"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  }
+
+  // Edit/claim mode
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-text-muted whitespace-nowrap">useai.dev/</span>
+      <div className="flex items-center bg-bg-base border border-border rounded-lg overflow-hidden focus-within:border-accent/50 transition-all">
+        <input
+          type="text"
+          placeholder="username"
+          value={input}
+          onChange={(e) => handleChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          autoFocus={editing}
+          maxLength={32}
+          className="px-2 py-1.5 text-xs bg-transparent text-text-primary outline-none w-28 placeholder:text-text-muted/50"
+        />
+      </div>
+      <div className="w-4 h-4 flex items-center justify-center">
+        {status === 'checking' && <Loader2 className="w-3.5 h-3.5 text-text-muted animate-spin" />}
+        {status === 'available' && <Check className="w-3.5 h-3.5 text-success" />}
+        {(status === 'taken' || status === 'invalid') && input.length > 0 && <X className="w-3.5 h-3.5 text-error" />}
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={status !== 'available' || saving}
+        className="px-3 py-1.5 bg-accent hover:bg-accent-bright text-bg-base text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+      >
+        {saving ? '...' : hasUsername ? 'Save' : 'Claim'}
+      </button>
+      {hasUsername && (
+        <button
+          onClick={handleCancel}
+          className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+      )}
+      {reason && (
+        <span className="text-[10px] text-error/80 truncate max-w-[140px]" title={reason}>{reason}</span>
+      )}
+    </div>
+  );
 }
 
 export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
@@ -80,8 +254,8 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
 
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-12 bg-bg-surface-1/50 rounded-2xl border border-border/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20 shrink-0">
             <User className="w-4 h-4 text-accent" />
           </div>
           <div className="flex flex-col">
@@ -90,6 +264,8 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
               Last sync: {formatLastSync(config.last_sync_at)}
             </span>
           </div>
+          <div className="w-px h-6 bg-border/50 mx-1 hidden sm:block" />
+          <UsernameRow config={config} onRefresh={onRefresh} />
         </div>
 
         <div className="flex items-center gap-2">

@@ -246,7 +246,7 @@ export async function handleLocalSync(req: IncomingMessage, res: ServerResponse)
 
       if (!milestonesRes.ok) {
         const errBody = await milestonesRes.text();
-        json(res, 502, { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / CHUNK_SIZE) + 1}): ${milestonesRes.status} ${errBody}` });
+        json(res, 502, { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` });
         return;
       }
     }
