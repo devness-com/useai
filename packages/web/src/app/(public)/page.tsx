@@ -285,60 +285,66 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
 /*  Tool Marquee                                                       */
 /* ------------------------------------------------------------------ */
 
-/** Pick a curated subset of major tools for the marquee. */
-const MARQUEE_TOOLS = SUPPORTED_AI_TOOLS.filter(t =>
-  ['claude-code', 'cursor', 'windsurf', 'github-copilot', 'codex', 'gemini-cli', 'aider', 'amazon-q-cli', 'zed', 'cline', 'augment', 'amp', 'goose', 'vscode'].includes(t.key)
-);
+/** Split tools into two rows for dual marquee. */
+const MARQUEE_KEYS_ROW1 = ['claude-code', 'cursor', 'windsurf', 'github-copilot', 'codex', 'gemini-cli', 'aider'];
+const MARQUEE_KEYS_ROW2 = ['amazon-q-cli', 'zed', 'cline', 'augment', 'amp', 'goose', 'vscode'];
+const MARQUEE_ROW1 = SUPPORTED_AI_TOOLS.filter(t => MARQUEE_KEYS_ROW1.includes(t.key));
+const MARQUEE_ROW2 = SUPPORTED_AI_TOOLS.filter(t => MARQUEE_KEYS_ROW2.includes(t.key));
 
-function ToolMarquee() {
-  // Duplicate the list for seamless looping
-  const items = [...MARQUEE_TOOLS, ...MARQUEE_TOOLS];
+function ToolChip({ tool }: { tool: (typeof SUPPORTED_AI_TOOLS)[number] }) {
+  const color = TOOL_COLORS[tool.key] ?? '#91919a';
+  const iconSrc = TOOL_ICONS[tool.key];
+  const iconMask = iconSrc
+    ? {
+        WebkitMaskImage: `url("${iconSrc}")`,
+        maskImage: `url("${iconSrc}")`,
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+        WebkitMaskSize: 'contain',
+        maskSize: 'contain',
+        backgroundColor: color,
+      } as React.CSSProperties
+    : undefined;
 
   return (
-    <div className="mt-4 px-4 md:px-0">
+    <div className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-lg border border-border/30 bg-bg-surface-1/50">
+      {iconSrc ? (
+        <span className="w-4 h-4 block shrink-0" style={iconMask} />
+      ) : (
+        <span className="text-[9px] font-black shrink-0" style={{ color }}>{tool.name.slice(0, 2).toUpperCase()}</span>
+      )}
+      <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">{tool.name}</span>
+    </div>
+  );
+}
+
+function ToolMarquee() {
+  const row1 = [...MARQUEE_ROW1, ...MARQUEE_ROW1];
+  const row2 = [...MARQUEE_ROW2, ...MARQUEE_ROW2];
+
+  return (
+    <div className="mt-5 px-4 md:px-0">
       <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full overflow-hidden relative">
         {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
 
+        {/* Row 1 — scrolls left, slower */}
         <div
-          className="flex gap-4 animate-marquee"
-          style={{
-            width: 'max-content',
-            animationDuration: `${MARQUEE_TOOLS.length * 2.5}s`,
-          }}
+          className="flex gap-3 animate-marquee"
+          style={{ width: 'max-content', animationDuration: '35s' }}
         >
-          {items.map((tool, i) => {
-            const color = TOOL_COLORS[tool.key] ?? '#91919a';
-            const iconSrc = TOOL_ICONS[tool.key];
-            const iconMask = iconSrc
-              ? {
-                  WebkitMaskImage: `url("${iconSrc}")`,
-                  maskImage: `url("${iconSrc}")`,
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  backgroundColor: color,
-                } as React.CSSProperties
-              : undefined;
+          {row1.map((tool, i) => <ToolChip key={`r1-${tool.key}-${i}`} tool={tool} />)}
+        </div>
 
-            return (
-              <div
-                key={`${tool.key}-${i}`}
-                className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-lg border border-border/30 bg-bg-surface-1/50"
-              >
-                {iconSrc ? (
-                  <span className="w-4 h-4 block shrink-0" style={iconMask} />
-                ) : (
-                  <span className="text-[9px] font-black shrink-0" style={{ color }}>{tool.name.slice(0, 2).toUpperCase()}</span>
-                )}
-                <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">{tool.name}</span>
-              </div>
-            );
-          })}
+        {/* Row 2 — scrolls right, faster */}
+        <div
+          className="flex gap-3 mt-2 animate-marquee-reverse"
+          style={{ width: 'max-content', animationDuration: '25s' }}
+        >
+          {row2.map((tool, i) => <ToolChip key={`r2-${tool.key}-${i}`} tool={tool} />)}
         </div>
       </div>
     </div>
@@ -639,10 +645,10 @@ export default function LandingPage() {
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
               >
-                YOUR COMPLETE <br className="hidden sm:block" />
-                <span className="gradient-text-accent italic inline-block pr-3">AI DEVELOPMENT STORY</span>
+                YOUR COMPLETE <span className="">STORY</span> OF<br className="hidden sm:block" />
+                <span className="gradient-text-accent italic inline-block pr-6 text-7xl sm:text-8xl md:text-8xl lg:text-9xl">USING AI</span>
               </motion.h1>
 
               <motion.p
