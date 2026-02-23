@@ -53,7 +53,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-bg-base px-4 relative overflow-hidden">
+    <div className="min-h-dvh grid place-items-center bg-bg-base px-4 relative overflow-hidden">
       {/* Background effects matching landing page */}
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
       <div className="fixed blur-blob w-[500px] h-[500px] top-[-15%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
@@ -61,12 +61,12 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo + header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6">
-            <UseAILogo className="h-8 mx-auto drop-shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]" />
+        <div className="flex flex-col items-center mb-8">
+          <Link href="/" className="block mb-5">
+            <UseAILogo className="h-8 drop-shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]" />
           </Link>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/20 bg-[var(--accent-alpha)] mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/20 bg-[var(--accent-alpha)] mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             <span className="text-[10px] font-mono text-text-secondary tracking-widest">
               {step === 'email' ? 'AUTHENTICATE' : 'VERIFY_CODE'}
