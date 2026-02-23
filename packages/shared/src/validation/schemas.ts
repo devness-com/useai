@@ -1,74 +1,128 @@
 import { z } from 'zod';
 
-export const taskTypeSchema = z.enum([
-  'coding',
-  'debugging',
-  'testing',
-  'planning',
-  'reviewing',
-  'documenting',
-  'learning',
-  'deployment',
-  'devops',
-  'research',
-  'migration',
-  'design',
-  'data',
-  'security',
-  'configuration',
-  // aliases models commonly try
-  'code_review',
-  'code-review',
-  'investigation',
-  'infrastructure',
-  'analysis',
-  'ops',
-  'setup',
-  'refactoring',
-  'other',
-]);
+/**
+ * Creates an enum schema that normalizes common aliases before validation.
+ * Models often send close-but-not-exact values (e.g. "review" instead of "reviewing").
+ * The preprocess step maps known aliases to canonical values before the enum check,
+ * while unknown values still fail validation as expected.
+ */
+function enumWithAliases<T extends [string, ...string[]]>(
+  values: T,
+  aliases: Record<string, T[number]>,
+) {
+  return z.preprocess(
+    (val) => (typeof val === 'string' ? (aliases[val] ?? val) : val),
+    z.enum(values),
+  );
+}
 
-export const milestoneCategorySchema = z.enum([
-  'feature',
-  'bugfix',
-  'refactor',
-  'test',
-  'docs',
-  'setup',
-  'deployment',
-  // aliases models commonly try
-  'fix',
-  'bug_fix',
-  'testing',
-  'documentation',
-  'config',
-  'configuration',
-  'analysis',
-  'research',
-  'investigation',
-  'performance',
-  'cleanup',
-  'chore',
-  'security',
-  'migration',
-  'design',
-  'devops',
-  'other',
-]);
+export const taskTypeSchema = enumWithAliases(
+  [
+    'coding',
+    'debugging',
+    'testing',
+    'planning',
+    'reviewing',
+    'documenting',
+    'learning',
+    'deployment',
+    'devops',
+    'research',
+    'migration',
+    'design',
+    'data',
+    'security',
+    'configuration',
+    // aliases accepted directly in enum (visible in JSON Schema)
+    'code_review',
+    'code-review',
+    'investigation',
+    'infrastructure',
+    'analysis',
+    'ops',
+    'setup',
+    'refactoring',
+    'other',
+  ],
+  {
+    // verb/truncated forms → canonical gerund/noun
+    review: 'reviewing',
+    document: 'documenting',
+    debug: 'debugging',
+    test: 'testing',
+    code: 'coding',
+    learn: 'learning',
+    deploy: 'deployment',
+    plan: 'planning',
+    migrate: 'migration',
+    refactor: 'refactoring',
+    investigate: 'investigation',
+    configure: 'configuration',
+    designing: 'design',
+  },
+);
 
-export const complexitySchema = z.enum([
-  'simple',
-  'medium',
-  'complex',
-  // aliases models commonly try
-  'low',
-  'high',
-  'trivial',
-  'easy',
-  'moderate',
-  'hard',
-  'difficult',
-]);
+export const milestoneCategorySchema = enumWithAliases(
+  [
+    'feature',
+    'bugfix',
+    'refactor',
+    'test',
+    'docs',
+    'setup',
+    'deployment',
+    // aliases accepted directly in enum (visible in JSON Schema)
+    'fix',
+    'bug_fix',
+    'testing',
+    'documentation',
+    'config',
+    'configuration',
+    'analysis',
+    'research',
+    'investigation',
+    'performance',
+    'cleanup',
+    'chore',
+    'security',
+    'migration',
+    'design',
+    'devops',
+    'other',
+  ],
+  {
+    // common model shorthand → canonical
+    bug: 'bugfix',
+    'bug-fix': 'bugfix',
+    doc: 'docs',
+    document: 'docs',
+    documenting: 'docs',
+    feat: 'feature',
+    perf: 'performance',
+    refactoring: 'refactor',
+  },
+);
+
+export const complexitySchema = enumWithAliases(
+  [
+    'simple',
+    'medium',
+    'complex',
+    // aliases accepted directly in enum (visible in JSON Schema)
+    'low',
+    'high',
+    'trivial',
+    'easy',
+    'moderate',
+    'hard',
+    'difficult',
+  ],
+  {
+    basic: 'simple',
+    intermediate: 'medium',
+    advanced: 'complex',
+  },
+);
 
 export const milestoneInputSchema = z.object({
   title: z.string().min(1).max(500),

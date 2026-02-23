@@ -40,8 +40,28 @@ describe('taskTypeSchema', () => {
     expect(taskTypeSchema.parse(type)).toBe(type);
   });
 
-  it('rejects an invalid task type', () => {
-    expect(() => taskTypeSchema.parse('designing')).toThrow();
+  const aliases: [string, string][] = [
+    ['review', 'reviewing'],
+    ['document', 'documenting'],
+    ['debug', 'debugging'],
+    ['test', 'testing'],
+    ['code', 'coding'],
+    ['learn', 'learning'],
+    ['deploy', 'deployment'],
+    ['plan', 'planning'],
+    ['migrate', 'migration'],
+    ['refactor', 'refactoring'],
+    ['investigate', 'investigation'],
+    ['configure', 'configuration'],
+    ['designing', 'design'],
+  ];
+
+  it.each(aliases)('normalizes alias "%s" to "%s"', (alias, canonical) => {
+    expect(taskTypeSchema.parse(alias)).toBe(canonical);
+  });
+
+  it('rejects an unknown task type', () => {
+    expect(() => taskTypeSchema.parse('banana')).toThrow();
   });
 
   it('rejects an empty string', () => {
@@ -85,6 +105,21 @@ describe('milestoneCategorySchema', () => {
     expect(milestoneCategorySchema.parse(category)).toBe(category);
   });
 
+  const aliases: [string, string][] = [
+    ['bug', 'bugfix'],
+    ['bug-fix', 'bugfix'],
+    ['doc', 'docs'],
+    ['document', 'docs'],
+    ['documenting', 'docs'],
+    ['feat', 'feature'],
+    ['perf', 'performance'],
+    ['refactoring', 'refactor'],
+  ];
+
+  it.each(aliases)('normalizes alias "%s" to "%s"', (alias, canonical) => {
+    expect(milestoneCategorySchema.parse(alias)).toBe(canonical);
+  });
+
   it('rejects an invalid category', () => {
     expect(() => milestoneCategorySchema.parse('enhancement')).toThrow();
   });
@@ -101,6 +136,16 @@ describe('complexitySchema', () => {
       expect(complexitySchema.parse(complexity)).toBe(complexity);
     },
   );
+
+  const aliases: [string, string][] = [
+    ['basic', 'simple'],
+    ['intermediate', 'medium'],
+    ['advanced', 'complex'],
+  ];
+
+  it.each(aliases)('normalizes alias "%s" to "%s"', (alias, canonical) => {
+    expect(complexitySchema.parse(alias)).toBe(canonical);
+  });
 
   it('rejects an invalid complexity value', () => {
     expect(() => complexitySchema.parse('impossible')).toThrow();

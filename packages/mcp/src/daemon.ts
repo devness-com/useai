@@ -43,6 +43,7 @@ import {
   handleLocalSync,
   handleLocalSendOtp,
   handleLocalVerifyOtp,
+  handleLocalLogout,
   handleDeleteSession,
   handleDeleteConversation,
   handleDeleteMilestone,
@@ -1076,6 +1077,10 @@ export async function startDaemon(port?: number): Promise<void> {
     }
     if (url.pathname === '/api/local/auth/verify-otp' && req.method === 'POST') {
       await handleLocalVerifyOtp(req, res);
+      return;
+    }
+    if (url.pathname === '/api/local/auth/logout' && req.method === 'POST') {
+      await handleLocalLogout(req, res);
       return;
     }
 

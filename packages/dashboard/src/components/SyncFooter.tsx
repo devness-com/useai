@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { LocalConfig } from '../lib/api';
-import { postSendOtp, postVerifyOtp, postSync } from '../lib/api';
-import { RefreshCw, User, Mail, ShieldCheck } from 'lucide-react';
+import { postSendOtp, postVerifyOtp, postSync, postLogout } from '../lib/api';
+import { RefreshCw, User, Mail, ShieldCheck, LogOut } from 'lucide-react';
 
 interface SyncFooterProps {
   config: LocalConfig | null;
@@ -26,6 +26,34 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  const handleSendOtp = useCallback(async () => {
+    if (!email.includes('@')) return;
+    setLoading(true);
+    setMsg(null);
+    try {
+      await postSendOtp(email);
+      setStep('otp');
+    } catch (err) {
+      setMsg((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [email]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (!/^\d{6}$/.test(otp)) return;
+    setLoading(true);
+    setMsg(null);
+    try {
+      await postVerifyOtp(email, otp);
+      onRefresh();
+    } catch (err) {
+      setMsg((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [email, otp, onRefresh]);
 
   if (!config) return null;
 
@@ -63,10 +91,10 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
             </span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-2">
           {msg && (
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${msg === 'Synced!' ? 'text-success' : 'text-error'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${msg === 'Synced!' ? 'text-success' : 'text-error'} mr-2`}>
               {msg}
             </span>
           )}
@@ -78,39 +106,20 @@ export function SyncFooter({ config, onRefresh }: SyncFooterProps) {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             {loading ? 'Syncing...' : 'Sync Now'}
           </button>
+          <button
+            onClick={async () => {
+              await postLogout();
+              onRefresh();
+            }}
+            title="Sign out"
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-border/50 hover:border-error/50 hover:bg-error/10 text-text-muted hover:text-error transition-all duration-200 cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     );
   }
-
-  // Unauthenticated: inline login
-  const handleSendOtp = useCallback(async () => {
-    if (!email.includes('@')) return;
-    setLoading(true);
-    setMsg(null);
-    try {
-      await postSendOtp(email);
-      setStep('otp');
-    } catch (err) {
-      setMsg((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [email]);
-
-  const handleVerifyOtp = useCallback(async () => {
-    if (!/^\d{6}$/.test(otp)) return;
-    setLoading(true);
-    setMsg(null);
-    try {
-      await postVerifyOtp(email, otp);
-      onRefresh();
-    } catch (err) {
-      setMsg((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [email, otp, onRefresh]);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-12 bg-bg-surface-1/50 rounded-2xl border border-border/50 backdrop-blur-sm">

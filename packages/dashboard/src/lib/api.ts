@@ -153,6 +153,10 @@ export function postSync(): Promise<{ success: boolean; last_sync_at?: string; e
   return post('/api/local/sync');
 }
 
+export function postLogout(): Promise<{ success: boolean }> {
+  return post('/api/local/auth/logout');
+}
+
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 export function deleteSession(sessionId: string): Promise<{ deleted: boolean; session_id: string; milestones_removed: number }> {

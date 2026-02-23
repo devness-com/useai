@@ -183,32 +183,41 @@ export async function handleLocalSync(req: IncomingMessage, res: ServerResponse)
       'Authorization': `Bearer ${token}`,
     };
 
-    // Sync sessions (deduplicated)
+    // Sync sessions in chunks to avoid 413 payload limits
+    const CHUNK_SIZE = 50;
     const sessions = deduplicateSessions(readJson<SessionSeal[]>(SESSIONS_FILE, []));
-    const sessionsRes = await fetch(`${USEAI_API}/api/sync`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ sessions }),
-    });
 
-    if (!sessionsRes.ok) {
-      const errBody = await sessionsRes.text();
-      json(res, 502, { success: false, error: `Sessions sync failed: ${sessionsRes.status} ${errBody}` });
-      return;
+    for (let i = 0; i < sessions.length; i += CHUNK_SIZE) {
+      const chunk = sessions.slice(i, i + CHUNK_SIZE);
+      const sessionsRes = await fetch(`${USEAI_API}/api/sync`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ sessions: chunk }),
+      });
+
+      if (!sessionsRes.ok) {
+        const errBody = await sessionsRes.text();
+        json(res, 502, { success: false, error: `Sessions sync failed (chunk ${Math.floor(i / CHUNK_SIZE) + 1}): ${sessionsRes.status} ${errBody}` });
+        return;
+      }
     }
 
-    // Publish milestones
+    // Publish milestones in chunks
     const milestones = readJson<Milestone[]>(MILESTONES_FILE, []);
-    const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ milestones }),
-    });
 
-    if (!milestonesRes.ok) {
-      const errBody = await milestonesRes.text();
-      json(res, 502, { success: false, error: `Milestones publish failed: ${milestonesRes.status} ${errBody}` });
-      return;
+    for (let i = 0; i < milestones.length; i += CHUNK_SIZE) {
+      const chunk = milestones.slice(i, i + CHUNK_SIZE);
+      const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ milestones: chunk }),
+      });
+
+      if (!milestonesRes.ok) {
+        const errBody = await milestonesRes.text();
+        json(res, 502, { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / CHUNK_SIZE) + 1}): ${milestonesRes.status} ${errBody}` });
+        return;
+      }
     }
 
     // Update last_sync_at
@@ -289,6 +298,27 @@ export async function handleLocalVerifyOtp(req: IncomingMessage, res: ServerResp
     }
 
     json(res, 200, { success: true, email: data.user?.email, username: data.user?.username });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── Logout ───────────────────────────────────────────────────────────────────
+
+export async function handleLocalLogout(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    await readBody(req);
+
+    const config = readJson<UseaiConfig>(CONFIG_FILE, {
+      milestone_tracking: true,
+      auto_sync: false,
+      sync_interval_hours: 24,
+    } as UseaiConfig);
+
+    delete config.auth;
+    writeJson(CONFIG_FILE, config);
+
+    json(res, 200, { success: true });
   } catch (err) {
     json(res, 500, { error: (err as Error).message });
   }
