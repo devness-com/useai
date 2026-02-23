@@ -299,10 +299,12 @@ body {
 
 .hero-glitch {
   position: relative;
-  animation: glitch-jitter 0.12s steps(2) infinite;
+  animation:
+    glitch-jitter 0.08s steps(2) infinite,
+    glitch-skew  0.5s  steps(1) infinite;
 }
 
-/* Chromatic aberration pseudo-layers */
+/* Chromatic aberration + scanline slicing pseudo-layers */
 .hero-glitch::before,
 .hero-glitch::after {
   content: attr(data-text);
@@ -311,7 +313,6 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Inherit all text styles from parent */
   background: inherit;
   -webkit-background-clip: text;
   background-clip: text;
@@ -319,46 +320,68 @@ body {
   pointer-events: none;
 }
 
+/* Red-shift layer — rapid scanline slicing top half */
 .hero-glitch::before {
-  animation: glitch-chromatic-r 0.15s steps(3) infinite;
-  clip-path: inset(0 0 50% 0);
-  opacity: 0.7;
-  filter: hue-rotate(-30deg) brightness(1.3);
+  animation: glitch-slice-top 0.2s steps(2) infinite;
+  opacity: 0.8;
+  filter: hue-rotate(-40deg) brightness(1.4) saturate(1.5);
 }
 
+/* Blue-shift layer — rapid scanline slicing bottom half */
 .hero-glitch::after {
-  animation: glitch-chromatic-b 0.18s steps(4) infinite reverse;
-  clip-path: inset(50% 0 0 0);
-  opacity: 0.7;
-  filter: hue-rotate(30deg) brightness(1.3);
+  animation: glitch-slice-bot 0.25s steps(3) infinite reverse;
+  opacity: 0.8;
+  filter: hue-rotate(40deg) brightness(1.4) saturate(1.5);
 }
 
+/* Main element jitter — fast micro-shake */
 @keyframes glitch-jitter {
-  0%  { transform: translate(0, 0); }
-  25% { transform: translate(-2px, 1px); }
-  50% { transform: translate(1px, -1px); }
-  75% { transform: translate(-1px, -2px); }
-  100%{ transform: translate(2px, 1px); }
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-3px, 2px); }
+  40%  { transform: translate(2px, -1px); }
+  60%  { transform: translate(-1px, -3px); }
+  80%  { transform: translate(3px, 1px); }
+  100% { transform: translate(-2px, -1px); }
 }
 
-@keyframes glitch-chromatic-r {
-  0%   { transform: translate(0); clip-path: inset(10% 0 60% 0); }
-  33%  { transform: translate(3px, -1px); clip-path: inset(30% 0 40% 0); }
-  66%  { transform: translate(-2px, 1px); clip-path: inset(55% 0 15% 0); }
-  100% { transform: translate(0); clip-path: inset(0 0 70% 0); }
+/* Periodic skew — occasional larger distortion */
+@keyframes glitch-skew {
+  0%   { transform: skewX(0deg); }
+  20%  { transform: skewX(0deg); }
+  21%  { transform: skewX(-4deg) translate(4px, 0); }
+  24%  { transform: skewX(2deg) translate(-2px, 0); }
+  25%  { transform: skewX(0deg); }
+  65%  { transform: skewX(0deg); }
+  66%  { transform: skewX(3deg) translate(-3px, 0); }
+  68%  { transform: skewX(-2deg) translate(2px, 0); }
+  69%  { transform: skewX(0deg); }
+  100% { transform: skewX(0deg); }
 }
 
-@keyframes glitch-chromatic-b {
-  0%   { transform: translate(0); clip-path: inset(65% 0 5% 0); }
-  33%  { transform: translate(-3px, 1px); clip-path: inset(20% 0 50% 0); }
-  66%  { transform: translate(2px, -1px); clip-path: inset(45% 0 25% 0); }
-  100% { transform: translate(0); clip-path: inset(75% 0 0 0); }
+/* Top scanline layer — horizontal slices that jump around */
+@keyframes glitch-slice-top {
+  0%   { clip-path: inset(5% 0 80% 0);  transform: translate(6px, 0); }
+  25%  { clip-path: inset(25% 0 55% 0);  transform: translate(-8px, 0); }
+  50%  { clip-path: inset(10% 0 70% 0);  transform: translate(5px, 0); }
+  75%  { clip-path: inset(40% 0 35% 0);  transform: translate(-6px, 0); }
+  100% { clip-path: inset(0% 0 85% 0);   transform: translate(4px, 0); }
+}
+
+/* Bottom scanline layer — offset horizontal slices */
+@keyframes glitch-slice-bot {
+  0%   { clip-path: inset(60% 0 10% 0);  transform: translate(-7px, 0); }
+  20%  { clip-path: inset(75% 0 5% 0);   transform: translate(5px, 0); }
+  40%  { clip-path: inset(50% 0 20% 0);  transform: translate(-4px, 0); }
+  60%  { clip-path: inset(70% 0 15% 0);  transform: translate(8px, 0); }
+  80%  { clip-path: inset(55% 0 25% 0);  transform: translate(-5px, 0); }
+  100% { clip-path: inset(65% 0 5% 0);   transform: translate(6px, 0); }
 }
 
 /* Settled glow after glitch phase ends */
 .hero-glow-settled {
-  filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.35));
-  transition: filter 0.6s ease-out;
+  filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.4))
+          drop-shadow(0 0 40px rgba(var(--accent-rgb), 0.15));
+  transition: filter 0.8s ease-out;
 }
 
 /* ── Reduced motion — skip all hero heading animations ── */

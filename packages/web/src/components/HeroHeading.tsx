@@ -183,16 +183,15 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
 
         <br />
 
-        {/* Glitch line — "USING AI" entrance + glitch */}
+        {/* Glitch line — "USING AI" snap entrance + glitch */}
         <motion.span
           aria-hidden
-          initial={{ opacity: 0, scale: 0.85, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{
             delay: GLITCH_ENTRANCE_DELAY,
-            type: 'spring',
-            stiffness: 180,
-            damping: 18,
+            duration: 0.15,
+            ease: [0.2, 0, 0, 1],
           }}
           onAnimationComplete={handleGlitchEntrance}
           className={`gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl ${

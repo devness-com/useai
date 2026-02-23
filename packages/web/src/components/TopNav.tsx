@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Terminal } from 'lucide-react';
 import { UseAILogo } from './UseAILogo';
+import { StatusBadge } from '@/components/StatusBadge';
+import { usePresence } from '@/hooks/usePresence';
 
 export function TopNav() {
   const [scrolled, setScrolled] = useState(false);
+  const { count } = usePresence();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,10 +33,12 @@ export function TopNav() {
           <Link href="/">
             <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
           </Link>
-          <div className="hidden md:flex items-center px-2 py-0.5 rounded-md border border-accent/20 bg-[var(--accent-alpha)] text-[10px] text-accent font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse mr-1.5" />
-            SYSTEM_ONLINE
-          </div>
+          <StatusBadge
+            label={count !== null ? `${count} ONLINE` : 'CONNECTING'}
+            color="success"
+            dot
+            className="hidden md:inline-flex"
+          />
         </div>
 
         <div className="flex items-center gap-8">
