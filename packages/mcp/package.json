@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai",
-  "version": "0.5.46",
+  "version": "0.5.47",
   "description": "Track your AI-assisted development workflow. MCP server that records usage metrics across all your AI tools.",
   "keywords": [
     "mcp",
