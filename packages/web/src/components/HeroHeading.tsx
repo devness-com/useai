@@ -51,13 +51,16 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
   const [completedOnce, setCompletedOnce] = useState(false);
 
   const restartLoop = useCallback(() => {
-    setFading(true);
+    // Remove glow first — transition fades it smoothly, then fade out
+    setSettled(false);
     setTimeout(() => {
-      setSpeedTrails(false);
-      setSettled(false);
-      setFading(false);
-      setLoopKey((k) => k + 1);
-    }, FADE_OUT_MS);
+      setFading(true);
+      setTimeout(() => {
+        setSpeedTrails(false);
+        setFading(false);
+        setLoopKey((k) => k + 1);
+      }, FADE_OUT_MS);
+    }, 3500);
   }, []);
 
   const handleSpeedEntrance = useCallback(() => {
@@ -87,7 +90,7 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
     return (
       <h1
         aria-label={FULL_TEXT}
-        className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-5"
+        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-text-primary leading-[1.05] sm:leading-[1.1] mb-4 sm:mb-5"
       >
         <motion.span
           initial={{ opacity: 0 }}
@@ -106,7 +109,7 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl"
+          className="gradient-text-accent italic inline-block pr-4 sm:pr-6 text-[2.75rem] sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {GLITCH_LINE}
         </motion.span>
@@ -118,7 +121,7 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
   return (
     <h1
       aria-label={FULL_TEXT}
-      className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl font-black tracking-tight text-text-primary italic leading-[1.05] sm:leading-[1.1] mb-5"
+      className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-text-primary italic leading-[1.05] sm:leading-[1.1] mb-4 sm:mb-5"
     >
       <span
         key={loopKey}
@@ -194,9 +197,15 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
               ease: [0.0, 0.0, 0.1, 1],
             }}
             onAnimationComplete={handleSpeedEntrance}
-            className={`gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl ${
+            className={`gradient-text-accent italic inline-block pr-4 sm:pr-6 text-[2.75rem] sm:text-6xl md:text-7xl lg:text-8xl ${
               speedTrails ? 'speed-shake' : ''
-            } ${settled ? 'hero-glow-settled' : ''}`}
+            }`}
+            style={{
+              filter: settled
+                ? 'drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.4)) drop-shadow(0 0 40px rgba(var(--accent-rgb), 0.15))'
+                : 'drop-shadow(0 0 0px transparent)',
+              transition: 'filter 0.8s ease-out',
+            }}
           >
             {GLITCH_LINE}
           </motion.span>
@@ -215,7 +224,7 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
           {/* Motion blur ghost that fades quickly */}
           {speedTrails && (
             <span className="speed-blur-ghost" aria-hidden>
-              <span className="gradient-text-accent italic inline-block pr-6 text-6xl sm:text-7xl md:text-8xl lg:text-8xl">
+              <span className="gradient-text-accent italic inline-block pr-4 sm:pr-6 text-[2.75rem] sm:text-6xl md:text-7xl lg:text-8xl">
                 {GLITCH_LINE}
               </span>
             </span>

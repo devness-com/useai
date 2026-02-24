@@ -28,10 +28,10 @@ export function TopNav() {
         ? 'bg-bg-base/80 backdrop-blur-md border-border shadow-sm'
         : 'bg-transparent border-transparent shadow-none'
     }`}>
-      <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
+      <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center gap-3">
           <Link href="/">
-            <UseAILogo className="h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
+            <UseAILogo className="h-4 sm:h-5 drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]" />
           </Link>
           <StatusBadge
             label={count !== null ? `${count} ONLINE` : 'CONNECTING'}
@@ -41,7 +41,7 @@ export function TopNav() {
           />
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/#features" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
             // FEATURES
           </Link>
@@ -51,7 +51,7 @@ export function TopNav() {
           <Link href="/leaderboard" className="hidden md:block text-xs font-mono tracking-widest text-text-muted hover:text-accent transition-colors">
             // LEADERBOARD
           </Link>
-          <Link href="/login" className="cyber-button px-5 py-2 rounded-lg text-xs font-bold font-mono tracking-widest bg-accent text-bg-base border border-accent flex items-center gap-2">
+          <Link href="/login" className="cyber-button px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold font-mono tracking-widest bg-accent text-bg-base border border-accent flex items-center gap-1.5 sm:gap-2">
             DASHBOARD <ArrowRight className="w-3 h-3" />
           </Link>
         </div>

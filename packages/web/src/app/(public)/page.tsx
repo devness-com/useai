@@ -145,7 +145,7 @@ function SkillRadar() {
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
 
   return (
-    <div className="relative w-full max-w-[320px] aspect-square flex items-center justify-center">
+    <div className="relative w-full max-w-[260px] sm:max-w-[320px] aspect-square flex items-center justify-center mx-auto">
       <div className="absolute inset-0 bg-[var(--accent-alpha)] rounded-full blur-3xl animate-pulse" />
       <div className="pulse-ring w-full h-full" />
       
@@ -198,15 +198,15 @@ function TerminalMockup() {
   return (
     <div className="hud-border rounded-xl bg-bg-surface-1 overflow-hidden shadow-[0_0_30px_var(--shadow-glow)] relative">
       <div className="scanner-line" />
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-surface-2">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border bg-bg-surface-2">
         <div className="flex gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-border" />
           <div className="w-2.5 h-2.5 rounded-full bg-border" />
           <div className="w-2.5 h-2.5 rounded-full bg-accent/60 shadow-[0_0_5px_var(--accent)]" />
         </div>
-        <span className="text-[10px] text-text-muted font-mono tracking-widest">USEAI_UPLINK_V1</span>
+        <span className="text-[9px] sm:text-[10px] text-text-muted font-mono tracking-widest">USEAI_UPLINK_V1</span>
       </div>
-      <div className="p-6 font-mono text-sm leading-relaxed min-h-[280px]">
+      <div className="p-4 sm:p-6 font-mono text-xs sm:text-sm leading-relaxed min-h-[220px] sm:min-h-[280px]">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-text-muted">
           <span className="text-accent">&gt;</span> npx @devness/useai stats
         </motion.div>
@@ -219,30 +219,30 @@ function TerminalMockup() {
             </div>
 
             {lines > 1 && (
-              <div className="flex items-center gap-4 py-2">
-                <Clock className="w-4 h-4 text-accent" />
+              <div className="flex items-center gap-2 sm:gap-4 py-2">
+                <Clock className="w-4 h-4 text-accent shrink-0" />
                 <span>Active Time: <span className="text-accent font-bold">8h 42m</span></span>
               </div>
             )}
 
             {lines > 2 && (
-              <div className="flex items-center gap-4 py-2">
-                <Target className="w-4 h-4 text-blue-400" />
-                <span>Output: <span className="text-text-primary">6 features</span> <span className="text-text-muted">· 3 bug fixes · 2 refactors</span></span>
+              <div className="flex items-center gap-2 sm:gap-4 py-2">
+                <Target className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="truncate">Output: <span className="text-text-primary">6 features</span> <span className="text-text-muted">· 3 fixes · 2 refactors</span></span>
               </div>
             )}
 
             {lines > 3 && (
-              <div className="flex items-center gap-4 py-2">
-                <Gauge className="w-4 h-4 text-purple-400" />
-                <span>Complexity: <span className="text-text-primary">4 complex</span> <span className="text-text-muted">· 5 medium · 2 simple</span></span>
+              <div className="flex items-center gap-2 sm:gap-4 py-2">
+                <Gauge className="w-4 h-4 text-purple-400 shrink-0" />
+                <span className="truncate">Complexity: <span className="text-text-primary">4 complex</span> <span className="text-text-muted">· 5 medium · 2 simple</span></span>
               </div>
             )}
 
             {lines > 4 && (
-              <div className="flex items-center gap-4 py-2 text-accent">
-                <TrendingUp className="w-4 h-4" />
-                <span className="animate-pulse">SPACE: 82 — Rank #4,092 (Top 12%)</span>
+              <div className="flex items-center gap-2 sm:gap-4 py-2 text-accent">
+                <TrendingUp className="w-4 h-4 shrink-0" />
+                <span className="animate-pulse truncate">SPACE: 82 — Rank #4,092 (Top 12%)</span>
               </div>
             )}
           </motion.div>
@@ -264,11 +264,11 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
   return (
     <button
       onClick={copy}
-      className={`group relative inline-flex items-center gap-4 px-6 py-3.5 rounded-xl border border-border-accent bg-bg-surface-1 font-mono text-sm text-text-secondary hover:text-accent transition-all cursor-pointer overflow-hidden ${className}`}
+      className={`group relative inline-flex items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl border border-border-accent bg-bg-surface-1 font-mono text-xs sm:text-sm text-text-secondary hover:text-accent transition-all cursor-pointer overflow-hidden ${className}`}
     >
       <div className="absolute inset-0 bg-[var(--accent-alpha)] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
       <span className="text-text-muted select-none group-hover:animate-pulse z-10">&gt;</span>
-      <span className="z-10 tracking-wide text-text-primary">{command}</span>
+      <span className="z-10 tracking-wide text-text-primary truncate">{command}</span>
       {copied ? (
         <Check className="w-4 h-4 text-accent shrink-0 z-10 drop-shadow-[0_0_8px_var(--accent)]" />
       ) : (
@@ -287,8 +287,8 @@ function CopyCommand({ command, className = '' }: { command: string; className?:
 /* ------------------------------------------------------------------ */
 
 /** Split tools into two rows for dual marquee. */
-const MARQUEE_KEYS_ROW1 = ['claude-code', 'cursor', 'windsurf', 'github-copilot', 'codex', 'gemini-cli', 'aider'];
-const MARQUEE_KEYS_ROW2 = ['amazon-q-cli', 'zed', 'cline', 'augment', 'amp', 'goose', 'vscode'];
+const MARQUEE_KEYS_ROW1 = ['cursor', 'claude-code', 'gemini-cli', 'codex', 'windsurf', 'opencode'];
+const MARQUEE_KEYS_ROW2 = ['aider', 'amazon-q-cli', 'github-copilot', 'vscode', 'cline', 'zed', 'augment', 'goose', 'amp', 'junie', 'roo-code', 'continue', 'trae'];
 const MARQUEE_ROW1 = SUPPORTED_AI_TOOLS.filter(t => MARQUEE_KEYS_ROW1.includes(t.key));
 const MARQUEE_ROW2 = SUPPORTED_AI_TOOLS.filter(t => MARQUEE_KEYS_ROW2.includes(t.key));
 
@@ -310,13 +310,13 @@ function ToolChip({ tool }: { tool: (typeof SUPPORTED_AI_TOOLS)[number] }) {
     : undefined;
 
   return (
-    <div className="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-lg border border-border/30 bg-bg-surface-1/50">
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/30 bg-bg-surface-1/50">
       {iconSrc ? (
-        <span className="w-4 h-4 block shrink-0" style={iconMask} />
+        <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 block shrink-0" style={iconMask} />
       ) : (
-        <span className="text-[9px] font-black shrink-0" style={{ color }}>{tool.name.slice(0, 2).toUpperCase()}</span>
+        <span className="text-[8px] sm:text-[9px] font-black shrink-0" style={{ color }}>{tool.name.slice(0, 2).toUpperCase()}</span>
       )}
-      <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">{tool.name}</span>
+      <span className="text-[9px] sm:text-[10px] font-mono text-text-muted whitespace-nowrap">{tool.name}</span>
     </div>
   );
 }
@@ -326,23 +326,23 @@ function ToolMarquee() {
   const row2 = [...MARQUEE_ROW2, ...MARQUEE_ROW2];
 
   return (
-    <div className="mt-5 px-4 md:px-0">
+    <div className="mt-3 sm:mt-5 px-0">
       <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full overflow-hidden relative">
         {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-10 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-10 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-6 sm:w-10 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
 
-        {/* Row 1 — scrolls left, slower */}
+        {/* Row 1 -- scrolls left, slower */}
         <div
-          className="flex gap-3 animate-marquee"
+          className="flex gap-2 sm:gap-3 animate-marquee"
           style={{ width: 'max-content', animationDuration: '35s' }}
         >
           {row1.map((tool, i) => <ToolChip key={`r1-${tool.key}-${i}`} tool={tool} />)}
         </div>
 
-        {/* Row 2 — scrolls right, faster */}
+        {/* Row 2 -- scrolls right, faster */}
         <div
-          className="flex gap-3 mt-2 animate-marquee-reverse"
+          className="flex gap-2 sm:gap-3 mt-1.5 sm:mt-2 animate-marquee-reverse"
           style={{ width: 'max-content', animationDuration: '25s' }}
         >
           {row2.map((tool, i) => <ToolChip key={`r2-${tool.key}-${i}`} tool={tool} />)}
@@ -388,12 +388,12 @@ function HeroDashboardPreview() {
   }, []);
 
   return (
-    <div className="w-full relative z-10 px-4 md:px-0">
+    <div className="w-full relative z-10 px-0">
       <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full">
         <div className="hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md overflow-hidden shadow-[0_0_30px_var(--shadow-glow)]">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-bg-surface-2">
-            <span className="text-[10px] font-mono text-text-muted tracking-widest flex items-center gap-1.5">
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border bg-bg-surface-2">
+            <span className="text-[9px] sm:text-[10px] font-mono text-text-muted tracking-widest flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               USEAI_DASHBOARD
             </span>
@@ -404,7 +404,7 @@ function HeroDashboardPreview() {
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 space-y-0">
+          <div className="p-3 sm:p-4 md:p-5 space-y-0">
             {DASHBOARD_SECTIONS.map((section, idx) => {
               const isActive = activeSection === idx;
               return (
@@ -432,7 +432,7 @@ function HeroDashboardPreview() {
                           animate={{ opacity: 0.6, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
                           transition={{ duration: 0.25 }}
-                          className="text-[9px] font-mono text-text-muted"
+                          className="text-[8px] sm:text-[9px] font-mono text-text-muted truncate max-w-[55%] sm:max-w-none text-right"
                         >
                           {section.summary}
                         </motion.span>
@@ -631,20 +631,20 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
-      <div className="blur-blob w-[600px] h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
-      <div className="blur-blob w-[500px] h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
+      <div className="blur-blob w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] lg:w-[600px] lg:h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
+      <div className="blur-blob w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
 
-      <main className="relative z-10 pb-32">
+      <main className="relative z-10 pb-16 sm:pb-24 lg:pb-32">
         {/* ── Hero ── */}
-        <section className="relative pt-28 lg:pt-36 pb-12 overflow-x-hidden min-h-[calc(100vh-90px)] xl:min-h-0 flex items-center">
-          <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
+        <section className="relative pt-20 sm:pt-28 lg:pt-36 pb-8 sm:pb-12 overflow-x-hidden min-h-[calc(100vh-90px)] xl:min-h-0 flex items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
             
             {/* Left Content */}
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
               
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-6 inline-flex items-center gap-2">
-                <Activity className="w-3 h-3 text-accent" />
-                <span className="text-[10px] font-mono text-text-secondary tracking-widest">TRACKING 20+ AI TOOLS EFFICIENTLY</span>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-4 sm:mb-6 inline-flex items-center gap-2">
+                <Activity className="w-3 h-3 text-accent shrink-0" />
+                <span className="text-[9px] sm:text-[10px] font-mono text-text-secondary tracking-widest whitespace-nowrap">TRACKING 20+ AI TOOLS</span>
               </motion.div>
 
               <HeroHeading onAnimationComplete={onHeroComplete} />
@@ -653,7 +653,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={heroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.5 }}
-                className="text-sm md:text-base text-text-muted max-w-[90%] lg:max-w-lg mb-7 leading-relaxed font-light"
+                className="text-sm md:text-base text-text-muted max-w-full sm:max-w-[90%] lg:max-w-lg mb-5 sm:mb-7 leading-relaxed font-light px-1 sm:px-0"
               >
                 Every session captured. Every milestone tracked. See what you build,
                 where your time goes, and how your skills grow — <span className="text-text-primary font-medium">across all your AI tools.</span>
@@ -665,7 +665,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl"
               >
-                <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-5" />
+                <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-4 sm:px-5" />
               </motion.div>
             </div>
 
@@ -684,18 +684,18 @@ export default function LandingPage() {
         </section>
 
         {/* ── Visual Break ── */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-10 max-w-7xl mx-auto px-6" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent my-6 sm:my-10 max-w-7xl mx-auto px-4 sm:px-6" />
 
         {/* ── Your AI Journal ── */}
-        <section id="features" className="max-w-7xl mx-auto px-6 py-24">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="grid lg:grid-cols-12 gap-12">
-            
+        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="grid lg:grid-cols-12 gap-8 lg:gap-12">
+
             <motion.div variants={fadeUp} className="lg:col-span-4 flex flex-col justify-center">
-              <div className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">YOUR_AI_JOURNAL</div>
-              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-6">
+              <div className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4 border-l-2 border-accent pl-2">YOUR_AI_JOURNAL</div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
                 Everything You Build, <br/><span className="gradient-text">Nothing You Forget</span>
               </h2>
-              <p className="text-text-muted leading-relaxed mb-8">
+              <p className="text-sm sm:text-base text-text-muted leading-relaxed mb-6 sm:mb-8">
                 What did you build today? How complex was it? Where did your hours go? UseAI captures
                 your complete AI development activity — the output you shipped and the skills behind it.
               </p>
@@ -704,22 +704,22 @@ export default function LandingPage() {
               </Link>
             </motion.div>
 
-            <motion.div variants={stagger} className="lg:col-span-8 grid sm:grid-cols-2 gap-4">
+            <motion.div variants={stagger} className="lg:col-span-8 grid sm:grid-cols-2 gap-3 sm:gap-4">
               {FEATURES.map((m, i) => (
-                <motion.div 
-                  key={m.title} 
-                  variants={fadeUp} 
-                  className="hud-border rounded-xl p-6 bg-bg-surface-1/80 hover:bg-bg-surface-2 transition-colors group"
+                <motion.div
+                  key={m.title}
+                  variants={fadeUp}
+                  className="hud-border rounded-xl p-4 sm:p-6 bg-bg-surface-1/80 hover:bg-bg-surface-2 transition-colors group"
                 >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-bg-surface-2 flex items-center justify-center border border-border-accent relative overflow-hidden">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-bg-surface-2 flex items-center justify-center border border-border-accent relative overflow-hidden">
                       <div className="absolute inset-0 opacity-20" style={{ background: m.accent }} />
-                      <m.icon className="w-6 h-6 z-10" style={{ color: m.accent }} />
+                      <m.icon className="w-5 h-5 sm:w-6 sm:h-6 z-10" style={{ color: m.accent }} />
                     </div>
                     <span className="text-text-muted font-mono text-xs opacity-50 group-hover:opacity-100 transition-opacity">0{i+1}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-text-primary mb-2 font-mono tracking-wide">{m.title}</h3>
-                  <p className="text-sm text-text-muted leading-relaxed">{m.description}</p>
+                  <h3 className="text-base sm:text-lg font-bold text-text-primary mb-2 font-mono tracking-wide">{m.title}</h3>
+                  <p className="text-xs sm:text-sm text-text-muted leading-relaxed">{m.description}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -727,35 +727,35 @@ export default function LandingPage() {
         </section>
 
         {/* ── Setup ── */}
-        <section className="bg-bg-surface-1/30 py-32 relative border-y border-border/50">
-          <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-            
+        <section className="bg-bg-surface-1/30 py-16 sm:py-24 lg:py-32 relative border-y border-border/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}>
               <TerminalMockup />
             </motion.div>
 
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="space-y-12">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} className="space-y-8 sm:space-y-12">
               <div>
-                <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4 border-l-2 border-accent pl-2">ZERO_FRICTION</motion.div>
-                <motion.h2 variants={fadeUp} className="text-4xl font-black uppercase tracking-tight text-text-primary mb-6">
+                <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4 border-l-2 border-accent pl-2">ZERO_FRICTION</motion.div>
+                <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
                   One Command. <span className="gradient-text-accent">Zero Friction.</span>
                 </motion.h2>
-                <motion.p variants={fadeUp} className="text-text-muted leading-relaxed">
+                <motion.p variants={fadeUp} className="text-sm sm:text-base text-text-muted leading-relaxed">
                   UseAI is completely invisible during your workflow. No context switching,
                   no extra tabs, no manual logging. Just code — the daemon captures everything.
                 </motion.p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {STEPS.map((s, idx) => (
-                  <motion.div key={s.step} variants={fadeUp} className="flex gap-6 items-start group">
-                    <div className="text-xs font-mono font-bold text-accent px-2 py-1 bg-[var(--accent-alpha)] border border-accent/20 rounded-md mt-1">
+                  <motion.div key={s.step} variants={fadeUp} className="flex gap-3 sm:gap-6 items-start group">
+                    <div className="text-xs font-mono font-bold text-accent px-2 py-1 bg-[var(--accent-alpha)] border border-accent/20 rounded-md mt-1 shrink-0">
                       {s.step}
                     </div>
-                    <div className="flex-1 border-b border-border-accent/30 pb-6 group-hover:border-accent transition-colors">
-                      <h3 className="font-mono text-text-primary mb-2 tracking-wide uppercase font-bold">{s.title}</h3>
-                      <p className="text-sm text-text-muted mb-3">{s.description}</p>
-                      <code className="block text-[10px] font-mono text-accent/70 bg-bg-surface-2/80 p-2 rounded-lg">
+                    <div className="flex-1 min-w-0 border-b border-border-accent/30 pb-4 sm:pb-6 group-hover:border-accent transition-colors">
+                      <h3 className="font-mono text-text-primary mb-2 tracking-wide uppercase font-bold text-sm sm:text-base">{s.title}</h3>
+                      <p className="text-xs sm:text-sm text-text-muted mb-3">{s.description}</p>
+                      <code className="block text-[10px] font-mono text-accent/70 bg-bg-surface-2/80 p-2 rounded-lg overflow-x-auto">
                         &gt; {s.command}
                       </code>
                     </div>
@@ -767,86 +767,86 @@ export default function LandingPage() {
         </section>
 
         {/* ── Your AI Identity ── */}
-        <section className="max-w-7xl mx-auto px-6 py-24">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}
-            className="text-center mb-16 max-w-3xl mx-auto"
+            className="text-center mb-10 sm:mb-16 max-w-3xl mx-auto"
           >
-            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-4">VISIBILITY</motion.div>
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-6">
+            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4">VISIBILITY</motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
               Your AI Developer <br/><span className="gradient-text">Identity</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-text-muted leading-relaxed">
+            <motion.p variants={fadeUp} className="text-sm sm:text-base text-text-muted leading-relaxed">
               GitHub shows your commits. UseAI shows what you built with AI and how well you wield it.
               A verified profile that proves you&#39;re not just using AI — you&#39;re proficient with it.
             </motion.p>
           </motion.div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-3 gap-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {[
               { icon: Globe, title: 'PUBLIC PROFILE', desc: 'A shareable page showing your AI activity — tools used, languages, output volume, complexity distribution, and SPACE scores. Your AI development resume.' },
               { icon: Fingerprint, title: 'VERIFIED MILESTONES', desc: 'Every milestone is cryptographically signed with Ed25519. Not self-reported. Not inflatable. Provable proof of what you shipped.' },
               { icon: Users, title: 'PROFESSIONAL SIGNAL', desc: 'In a world where every developer "uses AI," show you actually know how to wield it. Visible to recruiters, teams, and the community.' },
             ].map(item => (
-              <motion.div key={item.title} variants={fadeUp} className="hud-border rounded-xl p-8 bg-bg-surface-1/60 text-center">
-                <div className="w-14 h-14 rounded-xl bg-[var(--accent-alpha)] flex items-center justify-center border border-accent/20 mx-auto mb-6">
-                  <item.icon className="w-7 h-7 text-accent" />
+              <motion.div key={item.title} variants={fadeUp} className="hud-border rounded-xl p-5 sm:p-6 lg:p-8 bg-bg-surface-1/60 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[var(--accent-alpha)] flex items-center justify-center border border-accent/20 mx-auto mb-4 sm:mb-6">
+                  <item.icon className="w-6 h-6 sm:w-7 sm:h-7 text-accent" />
                 </div>
-                <h3 className="font-mono font-bold text-sm text-text-primary mb-3">{item.title}</h3>
-                <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
+                <h3 className="font-mono font-bold text-sm text-text-primary mb-2 sm:mb-3">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-text-muted leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
         </section>
 
         {/* ── Leaderboard Section ── */}
-        <section className="max-w-7xl mx-auto px-6 py-32">
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger} 
-            className="text-center mb-20 max-w-3xl mx-auto"
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-32">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}
+            className="text-center mb-12 sm:mb-20 max-w-3xl mx-auto"
           >
-            <motion.div variants={fadeUp} className="inline-flex justify-center mb-6">
-               <Trophy className="w-12 h-12 text-accent drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
+            <motion.div variants={fadeUp} className="inline-flex justify-center mb-4 sm:mb-6">
+               <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-accent drop-shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
             </motion.div>
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-black uppercase tracking-tight text-text-primary mb-6">
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
               See Where You <span className="gradient-text">Stand</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-lg text-text-muted leading-relaxed">
+            <motion.p variants={fadeUp} className="text-sm sm:text-base lg:text-lg text-text-muted leading-relaxed">
               Once you know your numbers, see how they compare. The global leaderboard ranks developers by AI Proficiency Score — a composite of output, efficiency, prompt quality, consistency, and breadth.
             </motion.p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="lg:col-span-5 flex justify-center lg:justify-end">
               <SkillRadar />
             </motion.div>
 
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="lg:col-span-7 hud-border rounded-xl p-8 bg-bg-surface-1">
-              <div className="flex justify-between items-center border-b border-border/50 pb-4 mb-6">
-                <span className="font-mono text-sm text-text-primary flex items-center gap-2">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="lg:col-span-7 hud-border rounded-xl p-4 sm:p-6 lg:p-8 bg-bg-surface-1">
+              <div className="flex justify-between items-center border-b border-border/50 pb-3 sm:pb-4 mb-4 sm:mb-6">
+                <span className="font-mono text-xs sm:text-sm text-text-primary flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> LIVE_RANKINGS
                 </span>
                 <Link href="/leaderboard" className="text-xs font-mono text-accent hover:underline">VIEW_ALL &gt;</Link>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {[
                   { rank: 1, name: "0xNeural", score: 98, level: "AI Prime" },
                   { rank: 2, name: "CyberDev", score: 94, level: "Architect" },
                   { rank: 3, name: "NeonCoder", score: 91, level: "Architect" },
                   { rank: 4, name: "You", score: "--", level: "Get Started" },
                 ].map((user, idx) => (
-                  <motion.div key={user.name} variants={fadeUp} className={`flex items-center justify-between p-3 rounded-xl bg-bg-surface-2/50 border ${idx === 0 ? 'border-accent/40' : 'border-transparent'}`}>
-                    <div className="flex items-center gap-4">
-                      <span className={`font-mono text-lg font-bold w-6 text-center ${idx === 0 ? 'text-accent' : 'text-text-muted'}`}>
+                  <motion.div key={user.name} variants={fadeUp} className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-bg-surface-2/50 border ${idx === 0 ? 'border-accent/40' : 'border-transparent'}`}>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <span className={`font-mono text-base sm:text-lg font-bold w-5 sm:w-6 text-center ${idx === 0 ? 'text-accent' : 'text-text-muted'}`}>
                         {user.rank}
                       </span>
                       <div className="flex flex-col">
-                        <span className={`font-mono font-bold ${idx === 3 ? 'text-accent border-b border-accent border-dashed' : 'text-text-primary'}`}>{user.name}</span>
-                        <span className="text-[10px] text-text-muted tracking-widest uppercase">{user.level}</span>
+                        <span className={`font-mono font-bold text-sm sm:text-base ${idx === 3 ? 'text-accent border-b border-accent border-dashed' : 'text-text-primary'}`}>{user.name}</span>
+                        <span className="text-[9px] sm:text-[10px] text-text-muted tracking-widest uppercase">{user.level}</span>
                       </div>
                     </div>
-                    <div className="font-mono text-xl font-bold text-text-primary tracking-widest">{user.score}</div>
+                    <div className="font-mono text-lg sm:text-xl font-bold text-text-primary tracking-widest">{user.score}</div>
                   </motion.div>
                 ))}
               </div>
@@ -855,21 +855,21 @@ export default function LandingPage() {
         </section>
 
         {/* ── Privacy / Verification ── */}
-        <section className="bg-bg-surface-1/20 border-t border-border/30 py-24">
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <h2 className="text-2xl font-mono text-text-primary mb-12 flex items-center justify-center gap-3">
-              <Shield className="w-6 h-6 text-accent" /> SECURE_PROTOCOLS
+        <section className="bg-bg-surface-1/20 border-t border-border/30 py-12 sm:py-16 lg:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+            <h2 className="text-xl sm:text-2xl font-mono text-text-primary mb-8 sm:mb-12 flex items-center justify-center gap-2 sm:gap-3">
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-accent shrink-0" /> SECURE_PROTOCOLS
             </h2>
-            <div className="grid md:grid-cols-3 gap-8 text-left">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 text-left">
               {[
                 { icon: Database, title: 'ZERO PAYLOAD', desc: 'No source code, file paths, or prompt contents are ever transmitted. Telemetry only.' },
                 { icon: Lock, title: 'LOCAL DAEMON', desc: 'Processing happens locally in ~/.useai. You fully own and control your raw data timeline.' },
                 { icon: Fingerprint, title: 'CRYPTO VERIFIED', desc: 'Public milestones and APS scores are HMAC-signed for authenticity on the leaderboard.' }
               ].map(item => (
-                <div key={item.title} className="p-6 rounded-xl border border-border/40 bg-bg-surface-1/40 hover:border-accent/30 transition-colors">
-                  <item.icon className="w-8 h-8 text-text-muted mb-4" />
-                  <h3 className="font-mono font-bold text-sm text-text-primary mb-2">{item.title}</h3>
-                  <p className="text-sm text-text-muted leading-relaxed">{item.desc}</p>
+                <div key={item.title} className="p-4 sm:p-5 lg:p-6 rounded-xl border border-border/40 bg-bg-surface-1/40 hover:border-accent/30 transition-colors">
+                  <item.icon className="w-6 h-6 sm:w-8 sm:h-8 text-text-muted mb-3 sm:mb-4" />
+                  <h3 className="font-mono font-bold text-xs sm:text-sm text-text-primary mb-2">{item.title}</h3>
+                  <p className="text-xs sm:text-sm text-text-muted leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
