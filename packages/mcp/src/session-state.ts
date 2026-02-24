@@ -45,6 +45,12 @@ export class SessionState {
   modelId: string | null;
   /** Token estimates for the useai_start tool call. */
   startCallTokensEst: { input: number; output: number } | null;
+  /** Whether a UseAI session is actively in-progress (between useai_start and useai_end). */
+  inProgress: boolean;
+  /** Timestamp when the current session was marked in-progress. */
+  inProgressSince: number | null;
+  /** Session ID that was auto-sealed by seal-active hook (for useai_end fallback). */
+  autoSealedSessionId: string | null;
 
   constructor() {
     this.sessionId = generateSessionId();
@@ -53,6 +59,9 @@ export class SessionState {
     this.mcpSessionId = null;
     this.modelId = null;
     this.startCallTokensEst = null;
+    this.inProgress = false;
+    this.inProgressSince = null;
+    this.autoSealedSessionId = null;
     this.sessionStartTime = Date.now();
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
@@ -81,6 +90,9 @@ export class SessionState {
     this.sessionPromptWordCount = null;
     this.modelId = null;
     this.startCallTokensEst = null;
+    this.inProgress = false;
+    this.inProgressSince = null;
+    // Preserve autoSealedSessionId — cleared explicitly by useai_start
     this.detectProject();
   }
 

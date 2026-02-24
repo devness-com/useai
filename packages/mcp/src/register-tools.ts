@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, renameSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -78,6 +78,175 @@ function resolveClient(server: McpServer, session: SessionState): void {
   session.setClient(detectClient());
 }
 
+// ── Auto-seal enrichment ────────────────────────────────────────────────────────
+
+interface ChainStartData {
+  client?: string;
+  task_type?: string;
+  title?: string;
+  private_title?: string;
+  project?: string;
+  conversation_id?: string;
+  conversation_index?: number;
+  model?: string;
+}
+
+/**
+ * When a session was auto-sealed by the seal-active hook (another conversation
+ * ended and triggered seal-all), the useai_end call finds sessionRecordCount=0.
+ * Instead of failing, this enriches the existing auto-seal with milestones,
+ * evaluation, and other data the AI provides at end-of-session.
+ */
+function enrichAutoSealedSession(
+  sealedSessionId: string,
+  session: SessionState,
+  args: {
+    task_type?: string;
+    languages?: string[];
+    files_touched_count?: number;
+    milestones?: Array<{ title: string; private_title?: string; category: string; complexity?: string }>;
+    evaluation?: SessionEvaluation;
+  },
+): string {
+  // Read chain metadata from the sealed file
+  const sealedPath = join(SEALED_DIR, `${sealedSessionId}.jsonl`);
+  const activePath = join(ACTIVE_DIR, `${sealedSessionId}.jsonl`);
+  const chainPath = existsSync(sealedPath) ? sealedPath : existsSync(activePath) ? activePath : null;
+
+  if (!chainPath) {
+    return 'No active session to end (already sealed or never started).';
+  }
+
+  let startData: ChainStartData = {};
+  let duration = 0;
+  let endedAt = new Date().toISOString();
+  let startedAt = endedAt;
+
+  try {
+    const content = readFileSync(chainPath, 'utf-8').trim();
+    const lines = content.split('\n').filter(Boolean);
+    if (lines.length > 0) {
+      const firstRecord = JSON.parse(lines[0]!) as { data: ChainStartData; timestamp: string };
+      startData = firstRecord.data;
+      startedAt = firstRecord.timestamp;
+      const lastRecord = JSON.parse(lines[lines.length - 1]!) as { data: Record<string, unknown>; timestamp: string; type: string };
+      // Use seal's ended_at if available, otherwise last record timestamp
+      if (lastRecord.type === 'session_seal' && lastRecord.data['seal']) {
+        try {
+          const sealObj = JSON.parse(lastRecord.data['seal'] as string) as { duration_seconds?: number; ended_at?: string };
+          duration = sealObj.duration_seconds ?? Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
+          endedAt = sealObj.ended_at ?? lastRecord.timestamp;
+        } catch {
+          duration = Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
+          endedAt = lastRecord.timestamp;
+        }
+      } else {
+        duration = Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
+        endedAt = lastRecord.timestamp;
+      }
+    }
+  } catch {
+    return 'No active session to end (chain file unreadable).';
+  }
+
+  const taskType = args.task_type ?? startData.task_type ?? 'coding';
+  const languages = args.languages ?? [];
+  const filesTouched = args.files_touched_count ?? 0;
+
+  // Save milestones
+  let milestoneCount = 0;
+  if (args.milestones && args.milestones.length > 0) {
+    const config = getConfig();
+    if (config.milestone_tracking) {
+      const durationMinutes = Math.round(duration / 60);
+      const allMilestones = getMilestones();
+      for (const m of args.milestones) {
+        allMilestones.push({
+          id: `m_${randomUUID().slice(0, 8)}`,
+          session_id: sealedSessionId,
+          title: m.title,
+          private_title: m.private_title,
+          project: startData.project ?? session.project ?? undefined,
+          category: m.category as Milestone['category'],
+          complexity: (m.complexity ?? 'medium') as Milestone['complexity'],
+          duration_minutes: durationMinutes,
+          languages,
+          client: startData.client ?? session.clientName,
+          created_at: new Date().toISOString(),
+          published: false,
+          published_at: null,
+          chain_hash: '',
+        });
+        milestoneCount++;
+      }
+      writeJson(MILESTONES_FILE, allMilestones);
+    }
+  }
+
+  // Compute score
+  let sessionScore: number | undefined;
+  let frameworkId: string | undefined;
+  if (args.evaluation) {
+    const config = getConfig();
+    const framework = getFramework(config.evaluation_framework);
+    sessionScore = Math.round(framework.computeSessionScore(args.evaluation));
+    frameworkId = framework.id;
+  }
+
+  // Upsert sessions.json with enriched data
+  const richSeal: SessionSeal = {
+    session_id: sealedSessionId,
+    conversation_id: startData.conversation_id,
+    conversation_index: startData.conversation_index,
+    client: startData.client ?? session.clientName,
+    task_type: taskType,
+    languages,
+    files_touched: filesTouched,
+    project: startData.project ?? session.project ?? undefined,
+    title: startData.title ?? undefined,
+    private_title: startData.private_title ?? undefined,
+    model: startData.model ?? session.modelId ?? undefined,
+    evaluation: args.evaluation ?? undefined,
+    session_score: sessionScore,
+    evaluation_framework: frameworkId,
+    started_at: startedAt,
+    ended_at: endedAt,
+    duration_seconds: duration,
+    heartbeat_count: 0,
+    record_count: 0,
+    chain_start_hash: '',
+    chain_end_hash: '',
+    seal_signature: '',
+  };
+
+  // Upsert: merge with existing seal to preserve fields we don't have (record_count, chain hashes, etc.)
+  const allSessions = getSessions();
+  const existingIdx = allSessions.findIndex(s => s.session_id === sealedSessionId);
+  if (existingIdx >= 0) {
+    const existing = allSessions[existingIdx]!;
+    allSessions[existingIdx] = {
+      ...existing,
+      // Enrich with data from useai_end call
+      task_type: taskType,
+      languages,
+      files_touched: filesTouched,
+      evaluation: args.evaluation ?? existing.evaluation,
+      session_score: sessionScore ?? existing.session_score,
+      evaluation_framework: frameworkId ?? existing.evaluation_framework,
+    };
+  } else {
+    allSessions.push(richSeal);
+  }
+  writeJson(SESSIONS_FILE, allSessions);
+
+  const durationStr = formatDuration(duration);
+  const langStr = languages.length > 0 ? ` using ${languages.join(', ')}` : '';
+  const milestoneStr = milestoneCount > 0 ? ` · ${milestoneCount} milestone${milestoneCount > 1 ? 's' : ''} recorded` : '';
+  const evalStr = args.evaluation ? ` · eval: ${args.evaluation.task_outcome} (prompt: ${args.evaluation.prompt_quality}/5)` : '';
+  const scoreStr = sessionScore !== undefined ? ` · score: ${sessionScore}/100 (${frameworkId})` : '';
+  return `Session ended (enriched auto-seal): ${durationStr} ${taskType}${langStr}${milestoneStr}${evalStr}${scoreStr}`;
+}
+
 // ── Tool Registration ──────────────────────────────────────────────────────────
 
 export interface RegisterToolsOpts {
@@ -127,6 +296,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         opts.sealBeforeReset();
       }
       session.reset();
+      session.autoSealedSessionId = null; // New session — clear previous auto-seal tracking
       resolveClient(server, session);
 
       // Conversation ID logic:
@@ -165,6 +335,10 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       if (model) chainData.model = model;
 
       const record = session.appendToChain('session_start', chainData);
+
+      // Mark session as in-progress (prevents seal-active from sealing mid-response)
+      session.inProgress = true;
+      session.inProgressSince = Date.now();
 
       // Persist MCP→UseAI mapping for daemon restart recovery
       writeMcpMapping(session.mcpSessionId, session.sessionId);
@@ -268,6 +442,18 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
     async ({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation }) => {
       // Guard: skip if session was never started (e.g. born from reset after seal-active hook)
       if (session.sessionRecordCount === 0) {
+        // Fallback: if the session was auto-sealed by seal-active hook, enrich the
+        // existing seal with milestones/evaluation rather than failing silently.
+        if (session.autoSealedSessionId) {
+          const enrichResult = enrichAutoSealedSession(
+            session.autoSealedSessionId, session,
+            { task_type, languages, files_touched_count, milestones: milestonesInput, evaluation },
+          );
+          session.autoSealedSessionId = null;
+          session.inProgress = false;
+          session.inProgressSince = null;
+          return { content: [{ type: 'text' as const, text: enrichResult }] };
+        }
         return {
           content: [{ type: 'text' as const, text: 'No active session to end (already sealed or never started).' }],
         };
@@ -447,6 +633,10 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       const sessions = getSessions().filter(s => s.session_id !== seal.session_id);
       sessions.push(seal);
       writeJson(SESSIONS_FILE, sessions);
+
+      // Mark session as no longer in-progress
+      session.inProgress = false;
+      session.inProgressSince = null;
 
       // Keep MCP→UseAI mapping intentionally: if the daemon restarts and the
       // MCP client reuses its stale session ID, recovery can read the sealed

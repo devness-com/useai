@@ -54,6 +54,7 @@ import {
   handleDeleteMilestone,
 } from './dashboard/local-api.js';
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SEAL_GRACE_MS = 30 * 60 * 1000; // Don't auto-seal sessions in-progress for less than 30 min
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -386,8 +387,11 @@ function autoSealSession(active: ActiveSession): void {
  * so the client can start a new UseAI session on the next prompt.
  */
 function sealSessionData(active: ActiveSession): void {
+  const sealedId = active.session.sessionId;
   autoSealSession(active);
   active.session.reset(); // Ready for a new UseAI session
+  // Remember what was sealed so useai_end can enrich it if called after the fact
+  active.session.autoSealedSessionId = sealedId;
 }
 
 // ── Idle Timer ─────────────────────────────────────────────────────────────────
@@ -1126,8 +1130,16 @@ export async function startDaemon(port?: number): Promise<void> {
     // Does NOT close MCP transports — the client may start a new session on the next prompt.
     if (url.pathname === '/api/seal-active' && req.method === 'POST') {
       let sealed = 0;
+      let skipped = 0;
       for (const [, active] of sessions) {
         if (active.session.sessionRecordCount > 0 && !isSessionAlreadySealed(active.session)) {
+          // Skip sessions actively in-progress (prevent sealing another conversation's session).
+          // Safety net: still seal if in-progress for longer than SEAL_GRACE_MS.
+          const { inProgress, inProgressSince } = active.session;
+          if (inProgress && inProgressSince && (Date.now() - inProgressSince < SEAL_GRACE_MS)) {
+            skipped++;
+            continue;
+          }
           sealSessionData(active);
           sealed++;
         }
@@ -1136,7 +1148,7 @@ export async function startDaemon(port?: number): Promise<void> {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       });
-      res.end(JSON.stringify({ sealed }));
+      res.end(JSON.stringify({ sealed, skipped }));
       return;
     }
 
