@@ -4,7 +4,7 @@ Thanks for your interest in contributing to UseAI! Whether it's a bug report, fe
 
 ## Prerequisites
 
-- **Node.js** 20 or later
+- **Node.js** 18 or later
 - **pnpm** 9 or later (`corepack enable` will set this up)
 - **Git**
 
