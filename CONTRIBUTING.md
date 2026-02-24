@@ -122,4 +122,4 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 
 ## Questions?
 
-If you have questions or want to discuss a larger change before working on it, open a [Discussion](https://github.com/devness/useai/discussions) or file an issue. We're happy to help you get started.
+If you have questions or want to discuss a larger change before working on it, open a [Discussion](https://github.com/devness-com/useai/discussions) or file an issue. We're happy to help you get started.

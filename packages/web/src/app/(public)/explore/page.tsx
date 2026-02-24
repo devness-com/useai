@@ -469,7 +469,7 @@ export default function ExplorePage() {
             </p>
             <p className="text-sm text-text-muted leading-relaxed">
               The entire project is{' '}
-              <a href="https://github.com/AhmedElBanna/useai" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-bright border-b border-accent/30">
+              <a href="https://github.com/devness-com/useai" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-bright border-b border-accent/30">
                 open source under the MIT license
               </a>
               . You can audit every line of code that runs on your machine.
@@ -585,7 +585,7 @@ export default function ExplorePage() {
             <h3 className="text-lg font-bold text-text-primary mb-3">Want to add your tool?</h3>
             <p className="text-sm text-text-muted mb-6">UseAI works with any MCP-compatible AI tool.</p>
             <a
-              href="https://github.com/AhmedElBanna/useai"
+              href="https://github.com/devness-com/useai"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 border border-border hover:border-accent/30 text-text-secondary hover:text-text-primary font-bold rounded-xl transition-colors"

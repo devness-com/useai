@@ -36,7 +36,7 @@ pnpm run dev
 
 ## Linking Public Packages
 
-The private packages depend on `@useai/shared` from the public [useai](https://github.com/user/useai) repo. Choose one of these approaches:
+The private packages depend on `@useai/shared` from the public [useai](https://github.com/devness-com/useai) repo. Choose one of these approaches:
 
 ### Option A: npm link (local development)
 

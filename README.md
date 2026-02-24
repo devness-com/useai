@@ -1,16 +1,13 @@
-<!-- TODO: Add project logo/banner -->
-
 # UseAI
 
-<!-- badges -->
 [![npm version](https://img.shields.io/npm/v/@devness/useai.svg)](https://www.npmjs.com/package/@devness/useai)
-[![license](https://img.shields.io/npm/l/@devness/useai.svg)](https://github.com/devness/useai/blob/main/LICENSE)
+[![npm downloads](https://img.shields.io/npm/dm/@devness/useai.svg)](https://www.npmjs.com/package/@devness/useai)
+[![license](https://img.shields.io/npm/l/@devness/useai.svg)](https://github.com/devness-com/useai/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/devness-com/useai)](https://github.com/devness-com/useai)
 
 **Track your AI coding sessions with privacy-first analytics.**
 
 UseAI is a local-first [MCP server](https://modelcontextprotocol.io/) that records how you use AI coding tools -- session duration, languages, task types, and streaks -- without ever seeing your code. Think of it as Wakatime for AI coding.
-
-<!-- TODO: Add screenshot/demo GIF -->
 
 ## Features
 
@@ -18,9 +15,10 @@ UseAI is a local-first [MCP server](https://modelcontextprotocol.io/) that recor
 - **Streak tracking** -- daily coding streaks with global leaderboard
 - **Evaluation metrics** -- sessions scored using the [SPACE framework](https://queue.acm.org/detail.cfm?id=3454124) for prompt quality, context, independence, and scope
 - **Local dashboard** -- built-in web UI served from the daemon (`useai serve`)
+- **Public profile & leaderboard** -- opt-in shareable profile at useai.dev with global AI proficiency rankings
 - **Privacy-first** -- everything stays in `~/.useai/` on your machine, zero network calls from the MCP server
 - **Ed25519 signed chain** -- every session record is cryptographically signed for tamper evidence
-- **Multi-tool support** -- works with Claude Code, Cursor, Windsurf, VS Code, GitHub Copilot, and more
+- **30+ AI tools supported** -- Claude Code, Cursor, Windsurf, VS Code, Codex, Gemini CLI, GitHub Copilot, Aider, Cline, Zed, Amazon Q, JetBrains/Junie, Goose, Roo Code, and [many more](https://useai.dev/explore)
 
 ## Quick Start
 
@@ -106,6 +104,16 @@ All data is written to `~/.useai/` as JSONL files. The MCP server makes zero net
 | `useai_start` | Begin tracking a session |
 | `useai_heartbeat` | Keep-alive during long sessions |
 | `useai_end` | End session, record milestones and evaluation |
+
+### Daemon Mode
+
+For tools that support HTTP-based MCP (StreamableHTTP), UseAI can run as a background daemon on `127.0.0.1:19200`. This allows multiple AI tool sessions to connect concurrently to the same tracking instance:
+
+```bash
+useai serve                   # Start daemon + local dashboard
+```
+
+The setup wizard auto-configures the right mode (stdio or daemon) for each tool.
 
 ## Evaluation Frameworks
 
@@ -193,7 +201,9 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instr
 ## Links
 
 - Website: [useai.dev](https://useai.dev)
+- GitHub: [devness-com/useai](https://github.com/devness-com/useai)
 - npm: [@devness/useai](https://www.npmjs.com/package/@devness/useai)
+- Explore supported tools: [useai.dev/explore](https://useai.dev/explore)
 
 ## License
 

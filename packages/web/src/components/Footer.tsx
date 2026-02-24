@@ -15,13 +15,13 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-4 sm:gap-6">
-          <a href="https://github.com/AhmedElBanna/useai" target="_blank" rel="noopener noreferrer" className="text-[10px] sm:text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-1.5 sm:gap-2">
+          <a href="https://github.com/devness-com/useai" target="_blank" rel="noopener noreferrer" className="text-[10px] sm:text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-1.5 sm:gap-2">
             <Github className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> REPOSITORY
           </a>
           <a href="https://www.npmjs.com/package/@devness/useai" target="_blank" rel="noopener noreferrer" className="text-[10px] sm:text-xs font-mono text-text-muted hover:text-accent transition-colors flex items-center gap-1.5 sm:gap-2">
             <Terminal className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> PACKAGE
           </a>
-          <a href="https://github.com/AhmedElBanna/useai" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-accent/30 bg-[var(--accent-alpha)] text-[10px] sm:text-xs font-mono font-bold text-accent hover:bg-accent hover:text-bg-base transition-colors">
+          <a href="https://github.com/devness-com/useai" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-accent/30 bg-[var(--accent-alpha)] text-[10px] sm:text-xs font-mono font-bold text-accent hover:bg-accent hover:text-bg-base transition-colors">
             <Star className="w-3 h-3 fill-current" /> STAR ON GITHUB
           </a>
         </div>

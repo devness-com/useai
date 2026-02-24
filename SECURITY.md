@@ -104,6 +104,6 @@ JWT tokens have a server-defined expiry. When expired, you'll need to re-authent
 If you discover a security vulnerability in UseAI, please report it responsibly:
 
 - **Email:** security@useai.dev
-- **GitHub:** Open a private security advisory at [github.com/devness/useai/security](https://github.com/devness/useai/security)
+- **GitHub:** Open a private security advisory at [github.com/devness-com/useai/security](https://github.com/devness-com/useai/security)
 
 Please do not file public issues for security vulnerabilities. We aim to acknowledge reports within 48 hours and provide a fix timeline within 7 days.

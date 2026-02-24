@@ -7,7 +7,7 @@ import { UseAILogo } from './UseAILogo';
 import { StatusBadge } from '@/components/StatusBadge';
 import { usePresence } from '@/hooks/usePresence';
 
-const GITHUB_URL = 'https://github.com/AhmedElBanna/useai';
+const GITHUB_URL = 'https://github.com/devness-com/useai';
 
 export function TopNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,7 +26,7 @@ export function TopNav() {
   }, []);
 
   useEffect(() => {
-    fetch('https://api.github.com/repos/AhmedElBanna/useai')
+    fetch('https://api.github.com/repos/devness-com/useai')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.stargazers_count != null) setStars(data.stargazers_count); })
       .catch(() => {});

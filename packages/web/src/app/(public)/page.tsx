@@ -788,7 +788,7 @@ export default function LandingPage() {
             className="flex justify-center mt-8 sm:mt-10"
           >
             <a
-              href="https://github.com/AhmedElBanna/useai"
+              href="https://github.com/devness-com/useai"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-accent/30 bg-[var(--accent-alpha)] font-mono text-xs sm:text-sm text-accent hover:bg-accent hover:text-bg-base transition-colors font-bold tracking-wider"
