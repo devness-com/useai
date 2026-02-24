@@ -20,7 +20,11 @@ import {
   Database,
   Fingerprint,
   Trophy,
-  Activity
+  Activity,
+  Github,
+  Eye,
+  Code2,
+  ShieldCheck
 } from 'lucide-react';
 import { SUPPORTED_AI_TOOLS, TOOL_ICONS, TOOL_COLORS } from '@useai/shared/constants/tools';
 
@@ -642,9 +646,15 @@ export default function LandingPage() {
             {/* Left Content */}
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
               
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="hud-border px-3 py-1 rounded-full mb-4 sm:mb-6 inline-flex items-center gap-2">
-                <Activity className="w-3 h-3 text-accent shrink-0" />
-                <span className="text-[9px] sm:text-[10px] font-mono text-text-secondary tracking-widest whitespace-nowrap">TRACKING 20+ AI TOOLS</span>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
+                <span className="hud-border px-3 py-1 rounded-full inline-flex items-center gap-2">
+                  <Activity className="w-3 h-3 text-accent shrink-0" />
+                  <span className="text-[9px] sm:text-[10px] font-mono text-text-secondary tracking-widest whitespace-nowrap">TRACKING 20+ AI TOOLS</span>
+                </span>
+                <span className="px-3 py-1 rounded-full inline-flex items-center gap-1.5 border border-accent/30 bg-[var(--accent-alpha)]">
+                  <Github className="w-3 h-3 text-accent shrink-0" />
+                  <span className="text-[9px] sm:text-[10px] font-mono text-accent font-bold tracking-widest whitespace-nowrap">100% OPEN SOURCE</span>
+                </span>
               </motion.div>
 
               <HeroHeading onAnimationComplete={onHeroComplete} />
@@ -658,6 +668,19 @@ export default function LandingPage() {
                 Every session captured. Every milestone tracked. See what you build,
                 where your time goes, and how your skills grow — <span className="text-text-primary font-medium">across all your AI tools.</span>
               </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-5 sm:mb-6 font-mono text-[10px] sm:text-xs tracking-wider text-text-muted"
+              >
+                <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-accent" /> Local-first</span>
+                <span className="text-border">|</span>
+                <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-accent" /> No code ever leaves your machine</span>
+                <span className="text-border">|</span>
+                <span className="flex items-center gap-1.5"><Github className="w-3.5 h-3.5 text-accent" /> MIT Licensed</span>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -723,6 +746,55 @@ export default function LandingPage() {
                 </motion.div>
               ))}
             </motion.div>
+          </motion.div>
+        </section>
+
+        {/* ── Privacy by Design ── */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24">
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}
+            className="text-center mb-10 sm:mb-14 max-w-3xl mx-auto"
+          >
+            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4">OPEN_SOURCE · MIT_LICENSE</motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
+              Privacy by <span className="gradient-text">Design</span>
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-sm sm:text-base text-text-muted leading-relaxed">
+              UseAI is fully open source under the MIT license. No source code, no file paths, no prompts — nothing
+              sensitive ever leaves your machine. Audit the code yourself.
+            </motion.p>
+          </motion.div>
+
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
+            {[
+              { icon: Code2, title: 'OPEN SOURCE', desc: 'Full source code on GitHub under the MIT license. Fork it, audit it, contribute to it.' },
+              { icon: Eye, title: 'PUBLIC TITLES ONLY', desc: 'Milestones use generic descriptions like "Fixed auth bug" — no project names, file paths, or company info appear publicly.' },
+              { icon: Database, title: 'ZERO PAYLOAD', desc: 'No source code, file paths, or prompt contents are ever transmitted. Only aggregate metrics.' },
+              { icon: Lock, title: 'LOCAL DAEMON', desc: 'All processing happens locally in ~/.useai. You fully own and control your raw data.' },
+              { icon: ShieldCheck, title: 'CRYPTO VERIFIED', desc: 'Sessions are Ed25519 signed and hash-chained. Tamper-proof, provable records.' },
+            ].map(item => (
+              <motion.div key={item.title} variants={fadeUp} className="hud-border rounded-xl p-4 sm:p-5 bg-bg-surface-1/60 hover:bg-bg-surface-2/60 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-[var(--accent-alpha)] flex items-center justify-center border border-accent/20 mb-3 sm:mb-4">
+                  <item.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-mono font-bold text-xs text-text-primary mb-2">{item.title}</h3>
+                <p className="text-xs text-text-muted leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="flex justify-center mt-8 sm:mt-10"
+          >
+            <a
+              href="https://github.com/AhmedElBanna/useai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-accent/30 bg-[var(--accent-alpha)] font-mono text-xs sm:text-sm text-accent hover:bg-accent hover:text-bg-base transition-colors font-bold tracking-wider"
+            >
+              <Github className="w-4 h-4" /> VIEW ON GITHUB
+            </a>
           </motion.div>
         </section>
 
@@ -854,27 +926,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Privacy / Verification ── */}
-        <section className="bg-bg-surface-1/20 border-t border-border/30 py-12 sm:py-16 lg:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-            <h2 className="text-xl sm:text-2xl font-mono text-text-primary mb-8 sm:mb-12 flex items-center justify-center gap-2 sm:gap-3">
-              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-accent shrink-0" /> SECURE_PROTOCOLS
-            </h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 text-left">
-              {[
-                { icon: Database, title: 'ZERO PAYLOAD', desc: 'No source code, file paths, or prompt contents are ever transmitted. Telemetry only.' },
-                { icon: Lock, title: 'LOCAL DAEMON', desc: 'Processing happens locally in ~/.useai. You fully own and control your raw data timeline.' },
-                { icon: Fingerprint, title: 'CRYPTO VERIFIED', desc: 'Public milestones and APS scores are HMAC-signed for authenticity on the leaderboard.' }
-              ].map(item => (
-                <div key={item.title} className="p-4 sm:p-5 lg:p-6 rounded-xl border border-border/40 bg-bg-surface-1/40 hover:border-accent/30 transition-colors">
-                  <item.icon className="w-6 h-6 sm:w-8 sm:h-8 text-text-muted mb-3 sm:mb-4" />
-                  <h3 className="font-mono font-bold text-xs sm:text-sm text-text-primary mb-2">{item.title}</h3>
-                  <p className="text-xs sm:text-sm text-text-muted leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
