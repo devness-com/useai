@@ -722,8 +722,8 @@ export default function LandingPage() {
                 What did you build today? How complex was it? Where did your hours go? UseAI captures
                 your complete AI development activity — the output you shipped and the skills behind it.
               </p>
-              <Link href="/explore#metrics" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
-                Explore All Metrics <ArrowRight className="w-4 h-4" />
+              <Link href="/explore" className="inline-flex items-center gap-2 text-accent text-sm font-mono hover:text-accent-bright max-w-max border-b border-accent/30 pb-1">
+                Explore All Features <ArrowRight className="w-4 h-4" />
               </Link>
             </motion.div>
 
