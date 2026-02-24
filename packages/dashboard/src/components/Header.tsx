@@ -5,7 +5,7 @@ import { UseAILogo, TabBar, StatusBadge } from '@useai/ui';
 import type { ActiveTab } from '@useai/ui';
 import { ProfileDropdown } from './ProfileDropdown';
 
-const UPDATE_COMMAND = 'npx -y @devness/useai@latest update';
+const UPDATE_COMMAND = 'npx -y @devness/useai update';
 
 function UpdateBanner({ updateInfo }: { updateInfo: UpdateInfo }) {
   const [showPopover, setShowPopover] = useState(false);

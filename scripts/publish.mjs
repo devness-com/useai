@@ -11,7 +11,7 @@
  *   node scripts/publish.mjs patch --dry  # show what would happen without publishing
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,8 @@ const ROOT = join(__dirname, '..');
 const VERSION_TS   = join(ROOT, 'packages/shared/src/constants/version.ts');
 const MCP_PKG_JSON = join(ROOT, 'packages/mcp/package.json');
 const CLI_PKG_JSON = join(ROOT, 'packages/cli/package.json');
+const ROOT_README  = join(ROOT, 'README.md');
+const ROOT_LICENSE = join(ROOT, 'LICENSE');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -100,19 +102,27 @@ run('pnpm --filter @devness/useai run bundle');
 console.log('\n  Bundling cli...');
 run('pnpm --filter @devness/useai-cli run bundle');
 
+// 5. Copy root README.md and LICENSE into each package (npm only includes package-local files)
+console.log('\n  Copying README.md + LICENSE into packages...');
+for (const pkg of ['packages/mcp', 'packages/cli']) {
+  copyFileSync(ROOT_README, join(ROOT, pkg, 'README.md'));
+  copyFileSync(ROOT_LICENSE, join(ROOT, pkg, 'LICENSE'));
+  console.log(`    ✓ ${pkg}/`);
+}
+
 if (dry) {
   console.log('\n  Dry run complete — skipping publish.\n');
   process.exit(0);
 }
 
-// 5. Publish
+// 6. Publish
 console.log('\n  Publishing @devness/useai...');
 run('pnpm --filter @devness/useai publish --access public --no-git-checks');
 
 console.log('\n  Publishing @devness/useai-cli...');
 run('pnpm --filter @devness/useai-cli publish --access public --no-git-checks');
 
-// 6. Done
+// 7. Done
 console.log(`\n  ✓ Published v${nextVersion}`);
 console.log(`    @devness/useai@${nextVersion}`);
 console.log(`    @devness/useai-cli@${nextVersion}\n`);

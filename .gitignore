@@ -23,6 +23,12 @@ playwright-report/
 .genbox/
 .uploads/
 
+# Copied into packages by publish script (npm needs them package-local)
+packages/mcp/README.md
+packages/mcp/LICENSE
+packages/cli/README.md
+packages/cli/LICENSE
+
 # Private packages (not open sourced)
 packages/api/
 packages/admin/

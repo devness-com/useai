@@ -95,7 +95,7 @@ if (command === 'update') {
     console.log(chalk.red('  ✗ Failed to start updated daemon'));
     console.log();
     console.log(chalk.bold('  To debug, run the daemon in foreground mode:'));
-    console.log(chalk.cyan('    npx @devness/useai@latest daemon --port 19200'));
+    console.log(chalk.cyan('    npx @devness/useai daemon --port 19200'));
     process.exit(1);
   }
 

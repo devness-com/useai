@@ -203,7 +203,7 @@ async function daemonInstallFlow(tools: AiTool[], autoYes: boolean, explicit: bo
     spinner.stop(chalk.red(`  \u2717 Could not start daemon on port ${DAEMON_PORT}`));
     console.log();
     console.log(chalk.bold('  To debug, run the daemon in foreground mode:'));
-    console.log(chalk.cyan(`    npx @devness/useai@latest daemon --port ${DAEMON_PORT}`));
+    console.log(chalk.cyan(`    npx @devness/useai daemon --port ${DAEMON_PORT}`));
     console.log();
     console.log(chalk.dim('  If you need stdio mode (e.g. containers/CI), use: npx @devness/useai mcp --stdio'));
     return;
@@ -466,7 +466,7 @@ async function fullRemoveFlow(tools: AiTool[], autoYes: boolean, explicit: boole
 
 function showHelp(): void {
   console.log(`
-  ${chalk.bold('Usage:')} npx @devness/useai@latest mcp [tools...] [options]
+  ${chalk.bold('Usage:')} npx @devness/useai mcp [tools...] [options]
 
   Configure UseAI MCP server in your AI tools.
   Default: starts daemon, installs auto-start, configures tools with HTTP.
