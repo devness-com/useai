@@ -29,6 +29,20 @@ import { writeMcpMapping } from './mcp-map.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+/**
+ * Some MCP clients (e.g. Claude) serialize complex parameters as JSON strings
+ * instead of native JSON types. This helper wraps a Zod schema to transparently
+ * parse a JSON string into the expected type before validation.
+ */
+function coerceJsonString<T extends z.ZodTypeAny>(schema: T): z.ZodType<z.infer<T>> {
+  return z.preprocess((val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch { return val; }
+    }
+    return val;
+  }, schema) as z.ZodType<z.infer<T>>;
+}
+
 function getConfig(): LocalConfig {
   return readJson<LocalConfig>(CONFIG_FILE, {
     milestone_tracking: true,
@@ -222,21 +236,21 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       task_type: taskTypeSchema
         .optional()
         .describe('What kind of task was the developer working on?'),
-      languages: z
-        .array(z.string())
+      languages: coerceJsonString(z
+        .array(z.string()))
         .optional()
         .describe("Programming languages used (e.g. ['typescript', 'python'])"),
-      files_touched_count: z
-        .number()
+      files_touched_count: coerceJsonString(z
+        .number())
         .optional()
         .describe('Approximate number of files created or modified (count only, no names)'),
-      milestones: z.array(z.object({
+      milestones: coerceJsonString(z.array(z.object({
         title: z.string().describe("PRIVACY-CRITICAL: Generic description of what was accomplished. NEVER include project names, repo names, product names, package names, file names, file paths, class names, API endpoints, database names, company names, or ANY identifier that could reveal which codebase this work was done in. Write as if describing the work to a stranger. GOOD: 'Implemented user authentication', 'Fixed race condition in background worker', 'Added unit tests for data validation', 'Refactored state management layer'. BAD: 'Fixed bug in Acme auth', 'Investigated ProjectX pipeline', 'Updated UserService.ts in src/services/', 'Added tests for coverit MCP tool'"),
         private_title: z.string().optional().describe("Detailed description for the user's private records. CAN include project names, file names, and specific details. Example: 'Added private/public milestone support to UseAI MCP server'"),
         category: milestoneCategorySchema.describe('Type of work completed'),
         complexity: complexitySchema.optional().describe('How complex was this task?'),
-      })).optional().describe('What was accomplished this session? List each distinct piece of work completed. Provide both a generic public title and an optional detailed private_title.'),
-      evaluation: z.object({
+      }))).optional().describe('What was accomplished this session? List each distinct piece of work completed. Provide both a generic public title and an optional detailed private_title.'),
+      evaluation: coerceJsonString(z.object({
         prompt_quality: z.number().min(1).max(5).describe('How clear, specific, and complete was the initial prompt? 1=vague/ambiguous, 5=crystal clear with acceptance criteria'),
         prompt_quality_reason: z.string().optional().describe('Required if prompt_quality < 5. Explain what was vague/missing and how the user could phrase it better next time.'),
         context_provided: z.number().min(1).max(5).describe('Did the user provide relevant context (files, errors, constraints)? 1=no context, 5=comprehensive context'),
@@ -249,7 +263,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         scope_quality: z.number().min(1).max(5).describe('Was the task well-scoped? 1=vague or impossibly broad, 5=precise and achievable'),
         scope_quality_reason: z.string().optional().describe('Required if scope_quality < 5. How was the scope too broad/vague and how could it be better defined?'),
         tools_leveraged: z.number().min(0).describe('Count of distinct AI capabilities used (code gen, debugging, refactoring, testing, docs, etc.)'),
-      }).optional().describe('AI-assessed evaluation of this session. Score honestly based on the actual interaction.'),
+      })).optional().describe('AI-assessed evaluation of this session. Score honestly based on the actual interaction.'),
     },
     async ({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation }) => {
       // Guard: skip if session was never started (e.g. born from reset after seal-active hook)

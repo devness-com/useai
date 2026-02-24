@@ -186,10 +186,10 @@ export default function HeroHeading({ onAnimationComplete }: HeroHeadingProps) {
         <br />
 
         {/* Speed line — "USING AI" rushes in from the left */}
-        <span className="relative block overflow-visible">
+        <span className="relative block overflow-x-clip">
           <motion.span
             aria-hidden
-            initial={{ opacity: 0, x: '-100vw' }}
+            initial={{ opacity: 0, x: '-120%' }}
             animate={{ opacity: 1, x: 0 }}
             transition={{
               delay: GLITCH_ENTRANCE_DELAY,

@@ -80,7 +80,7 @@ const TASK_TYPES = [
 export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-bg-base">
-      <div className="max-w-6xl mx-auto px-6 pt-24 pb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12">
 
         {/* Page Header */}
         <div className="mb-16 max-w-3xl">

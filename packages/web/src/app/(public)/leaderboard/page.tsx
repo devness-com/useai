@@ -164,7 +164,7 @@ function SkeletonRows() {
       {Array.from({ length: 10 }, (_, i) => (
         <div
           key={i}
-          className="grid grid-cols-[3rem_1fr_5rem_5.5rem_4rem_5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-4 py-3 border-b border-border/20"
+          className="grid grid-cols-[2.5rem_1fr_3.5rem_3rem_3.5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-3 sm:px-4 py-3 border-b border-border/20"
         >
           <div className="h-4 w-6 bg-bg-surface-2 rounded animate-pulse" />
           <div className="h-4 w-24 bg-bg-surface-2 rounded animate-pulse" />
@@ -210,11 +210,11 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <div className="max-w-5xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 pb-16">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
-          <Trophy className="w-7 h-7 text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.4)]" />
-          <h1 className="text-3xl font-black text-text-primary tracking-tight">
+          <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.4)] shrink-0" />
+          <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
             Global AI Proficiency Leaderboard
           </h1>
         </div>
@@ -234,7 +234,7 @@ export default function LeaderboardPage() {
         {/* Table */}
         <div className="hud-border rounded-xl bg-bg-surface-1 overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[3rem_1fr_5rem_5.5rem_4rem_5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-4 py-3 border-b border-border/50 text-[10px] font-mono text-text-muted tracking-widest uppercase">
+          <div className="grid grid-cols-[2.5rem_1fr_3.5rem_3rem_3.5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-3 sm:px-4 py-3 border-b border-border/50 text-[10px] font-mono text-text-muted tracking-widest uppercase">
             <span>#</span>
             <span>Developer</span>
             <span className="text-right">{getScoreLabel(dimension)}</span>
@@ -281,7 +281,7 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={entry.user_id}
-                  className={`grid grid-cols-[3rem_1fr_5rem_5.5rem_4rem_5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-4 py-3 border-b border-border/20 transition-colors hover:bg-bg-surface-2/50 ${decoration.bg} ${decoration.glow}`}
+                  className={`grid grid-cols-[2.5rem_1fr_3.5rem_3rem_3.5rem] sm:grid-cols-[3.5rem_1fr_5.5rem_6rem_4.5rem_5.5rem] items-center px-3 sm:px-4 py-3 border-b border-border/20 transition-colors hover:bg-bg-surface-2/50 ${decoration.bg} ${decoration.glow}`}
                 >
                   {/* Rank */}
                   <span

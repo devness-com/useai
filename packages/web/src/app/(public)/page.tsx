@@ -331,7 +331,7 @@ function ToolMarquee() {
 
   return (
     <div className="mt-3 sm:mt-5 px-0">
-      <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full overflow-hidden relative">
+      <div className="max-w-full sm:max-w-md mx-auto lg:mx-0 lg:ml-auto w-full overflow-hidden relative">
         {/* Fade edges */}
         <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-10 z-10 bg-gradient-to-r from-bg-base to-transparent pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-6 sm:w-10 z-10 bg-gradient-to-l from-bg-base to-transparent pointer-events-none" />
@@ -393,7 +393,7 @@ function HeroDashboardPreview() {
 
   return (
     <div className="w-full relative z-10 px-0">
-      <div className="max-w-md mx-auto lg:mx-0 lg:ml-auto w-full">
+      <div className="max-w-full sm:max-w-md mx-auto lg:mx-0 lg:ml-auto w-full">
         <div className="hud-border rounded-xl bg-bg-surface-1/90 backdrop-blur-md overflow-hidden shadow-[0_0_30px_var(--shadow-glow)]">
           {/* Header */}
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border bg-bg-surface-2">
@@ -633,18 +633,18 @@ export default function LandingPage() {
   const onHeroComplete = useCallback(() => setHeroReady(true), []);
 
   return (
-    <div className="min-h-screen bg-bg-base overflow-x-hidden selection:bg-accent/30 selection:text-white relative">
+    <div className="min-h-screen bg-bg-base overflow-x-clip selection:bg-accent/30 selection:text-white relative">
       <div className="fixed inset-0 cyber-grid pointer-events-none z-0" />
       <div className="blur-blob w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] lg:w-[600px] lg:h-[600px] top-[-10%] left-[-10%]" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--accent-rgb), var(--glow-opacity)) 0%, rgba(var(--accent-rgb), 0) 70%)' }} />
       <div className="blur-blob w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] bottom-[20%] right-[-5%]" style={{ animationDelay: '-5s', backgroundImage: 'radial-gradient(circle, var(--glow-blue) 0%, rgba(59, 130, 246, 0) 70%)' }} />
 
       <main className="relative z-10 pb-16 sm:pb-24 lg:pb-32">
         {/* ── Hero ── */}
-        <section className="relative pt-20 sm:pt-28 lg:pt-36 pb-8 sm:pb-12 overflow-x-hidden min-h-[calc(100vh-90px)] xl:min-h-0 flex items-center">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10">
+        <section className="relative pt-20 sm:pt-28 lg:pt-36 pb-8 sm:pb-12 overflow-x-clip min-h-[calc(100vh-90px)] xl:min-h-0 flex items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full grid lg:grid-cols-2 gap-8 lg:gap-6 items-center relative z-10 [&>*]:min-w-0">
             
             {/* Left Content */}
-            <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
+            <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full min-w-0 overflow-hidden">
               
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
                 <span className="hud-border px-3 py-1 rounded-full inline-flex items-center gap-2">
@@ -686,7 +686,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={heroReady ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl"
+                className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-full sm:max-w-xl"
               >
                 <CopyCommand command="npx @devness/useai" className="w-full sm:w-auto shrink-0 py-2.5 px-4 sm:px-5" />
               </motion.div>
@@ -697,7 +697,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="w-full relative z-10"
+              className="w-full relative z-10 overflow-hidden"
             >
               <HeroDashboardPreview />
               <ToolMarquee />

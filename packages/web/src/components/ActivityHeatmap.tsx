@@ -140,7 +140,7 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
         <span className="text-xs font-mono text-text-muted tracking-wider">
           {Math.round(visibleHours)}h total in the last {durationLabel === '1Y' ? 'year' : durationLabel === '6M' ? '6 months' : durationLabel === '3M' ? '3 months' : 'month'}
         </span>

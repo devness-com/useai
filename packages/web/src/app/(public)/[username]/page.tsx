@@ -106,7 +106,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const isVerified = (profile.verification_rate ?? 0) > 0.8;
 
   return (
-      <div className="max-w-5xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 pb-16">
           {/* ── Header ── */}
           <section className="flex flex-col md:flex-row md:items-start gap-6 mb-10">
             {/* Avatar */}
@@ -215,7 +215,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           </section>
 
           {/* ── Activity Heatmap ── */}
-          <section className="hud-border rounded-xl p-6 bg-bg-surface-1 mb-10">
+          <section className="hud-border rounded-xl p-4 sm:p-6 bg-bg-surface-1 mb-10">
             <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
               ACTIVITY_HEATMAP
             </div>
