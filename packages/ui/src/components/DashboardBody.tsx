@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Filter, Eye, EyeOff } from 'lucide-react';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 import type { StatCardType } from './StatDetailPanel';
 import type { Filters, ActiveTab } from '../types';
 import type { TimeScale } from './TimeTravel/types';
-import { ALL_SCALES, SCALE_LABELS, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './TimeTravel/types';
+import { ALL_SCALES, SCALE_LABELS, SCRUB_CALENDAR_MAP, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './TimeTravel/types';
 import { computeStats, calculateStreak, filterSessionsByWindow, filterMilestonesByWindow, countSessionsOutsideWindow } from '../stats';
 import { StatsBar } from './StatsBar';
 import { StatDetailPanel } from './StatDetailPanel';
@@ -52,7 +52,7 @@ export function DashboardBody({
   onDeleteSession,
   onDeleteConversation,
   onDeleteMilestone,
-  defaultTimeScale = '1h',
+  defaultTimeScale = 'day',
   activeTab: controlledTab,
   onActiveTabChange,
 }: DashboardBodyProps) {
@@ -89,6 +89,16 @@ export function DashboardBody({
   const setFilter = useCallback((key: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  // Restore calendar scale when returning to live from a scrub-rolling scale (e.g. 24h → day)
+  useEffect(() => {
+    if (timeTravelTime === null) {
+      const calendarScale = SCRUB_CALENDAR_MAP[timeScale];
+      if (calendarScale) {
+        setTimeScale(calendarScale);
+      }
+    }
+  }, [timeTravelTime, timeScale, setTimeScale]);
 
   // ── Derived values ──────────────────────────────────────────────────────
   const isLive = timeTravelTime === null;
@@ -287,7 +297,7 @@ export function DashboardBody({
             milestones={filteredMilestones}
             filters={filters}
             globalShowPublic={globalShowPublic}
-            showFullDate={timeScale === 'week' || timeScale === 'month'}
+            showFullDate={timeScale === 'week' || timeScale === '7d' || timeScale === 'month' || timeScale === '30d'}
             outsideWindowCounts={outsideWindowCounts}
             onNavigateNewer={handleNavigateNewer}
             onNavigateOlder={handleNavigateOlder}

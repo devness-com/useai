@@ -48,17 +48,35 @@ const SCALE_CONFIG: Record<
     minorTickInterval: 30 * 60 * 1000,
     labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
   },
+  '24h': {
+    visibleDuration: 24 * 60 * 60 * 1000,
+    majorTickInterval: 4 * 60 * 60 * 1000,
+    minorTickInterval: 1 * 60 * 60 * 1000,
+    labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
+  },
   'day': {
     visibleDuration: 24 * 60 * 60 * 1000,
     majorTickInterval: 4 * 60 * 60 * 1000,
     minorTickInterval: 1 * 60 * 60 * 1000,
     labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
   },
+  '7d': {
+    visibleDuration: 7 * 24 * 60 * 60 * 1000,
+    majorTickInterval: 24 * 60 * 60 * 1000,
+    minorTickInterval: 6 * 60 * 60 * 1000,
+    labelFormat: (d) => d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }),
+  },
   'week': {
     visibleDuration: 7 * 24 * 60 * 60 * 1000,
     majorTickInterval: 24 * 60 * 60 * 1000,
     minorTickInterval: 6 * 60 * 60 * 1000,
     labelFormat: (d) => d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }),
+  },
+  '30d': {
+    visibleDuration: 30 * 24 * 60 * 60 * 1000,
+    majorTickInterval: 7 * 24 * 60 * 60 * 1000,
+    minorTickInterval: 24 * 60 * 60 * 1000,
+    labelFormat: (d) => d.toLocaleDateString([], { month: 'short', day: 'numeric' }),
   },
   'month': {
     visibleDuration: 30 * 24 * 60 * 60 * 1000,
@@ -113,18 +131,33 @@ export function TimeScrubber({
 
   const pxPerMs = width > 0 ? width / visibleDuration : 0;
 
-  // Drag handling (disabled for calendar scales)
+  // Drag handling — always enabled (calendar scales transition to rolling on drag)
   const [dragging, setDragging] = useState(false);
   const lastX = useRef(0);
+  // rAF throttle: accumulate pixel deltas between frames, commit once per frame.
+  // Between frames, the content container is shifted via direct DOM transform
+  // for instant visual feedback without any React re-renders.
+  const accDxRef = useRef(0);
+  const dragOffsetRef = useRef(0);
+  const rafRef = useRef(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Cleanup rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (isCalendar) return;
       setDragging(true);
       lastX.current = e.clientX;
+      accDxRef.current = 0;
+      dragOffsetRef.current = 0;
       e.currentTarget.setPointerCapture(e.pointerId);
     },
-    [isCalendar],
+    [],
   );
 
   const handlePointerMove = useCallback(
@@ -132,14 +165,49 @@ export function TimeScrubber({
       if (!dragging || pxPerMs === 0) return;
       const dx = e.clientX - lastX.current;
       lastX.current = e.clientX;
-      onChange(value + -dx / pxPerMs);
+      accDxRef.current += dx;
+      dragOffsetRef.current += dx;
+
+      // Instant visual feedback: shift content via direct DOM manipulation (zero React work)
+      if (contentRef.current) {
+        contentRef.current.style.transform = `translateX(${dragOffsetRef.current}px)`;
+      }
+
+      // Throttle state commits to once per animation frame
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = 0;
+          const totalDx = accDxRef.current;
+          accDxRef.current = 0;
+          dragOffsetRef.current = 0;
+          // Clear the direct DOM transform before React re-renders with new positions
+          if (contentRef.current) contentRef.current.style.transform = '';
+          // Use windowEnd as the drag anchor so calendar→rolling transitions
+          // don't cause the viewport to jump. Clamp to Date.now().
+          const newTime = Math.min(windowEnd + -totalDx / pxPerMs, Date.now());
+          onChange(newTime);
+        });
+      }
     },
-    [dragging, pxPerMs, value, onChange],
+    [dragging, pxPerMs, windowEnd, onChange],
   );
 
   const handlePointerUp = useCallback(() => {
     setDragging(false);
-  }, []);
+    // Flush any remaining accumulated movement
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    if (contentRef.current) contentRef.current.style.transform = '';
+    if (accDxRef.current !== 0 && pxPerMs > 0) {
+      const newTime = Math.min(windowEnd + -accDxRef.current / pxPerMs, Date.now());
+      accDxRef.current = 0;
+      dragOffsetRef.current = 0;
+      onChange(newTime);
+    }
+    dragOffsetRef.current = 0;
+  }, [windowEnd, pxPerMs, onChange]);
 
   // Generate ticks — right-edge anchored at windowEnd
   const ticks = useMemo(() => {
@@ -244,13 +312,17 @@ export function TimeScrubber({
     return result;
   }, [parsedMilestones, windowStart, windowEnd, width, pxPerMs]);
 
-  // "Now" marker position for calendar scales (shows current time within the period)
+  // "Now" marker — shown at its true position in ALL modes.
+  // In live rolling mode this naturally lands at the right edge.
+  // In calendar mode it sits at the current time within the period.
+  // During calendar→rolling scrub transition, it moves smoothly.
   const nowMarkerOffset = useMemo(() => {
-    if (!isCalendar || !width || pxPerMs === 0) return null;
+    if (!width || pxPerMs === 0) return null;
     const now = Date.now();
+    // Only show if "now" falls within (or at) the visible window
     if (now < windowStart || now > windowEnd) return null;
     return (now - windowEnd) * pxPerMs;
-  }, [isCalendar, windowStart, windowEnd, width, pxPerMs]);
+  }, [windowStart, windowEnd, width, pxPerMs]);
 
   // Tooltip state
   const [tooltip, setTooltip] = useState<{
@@ -272,36 +344,35 @@ export function TimeScrubber({
   return (
     <div className="relative h-16">
       <div
-        className={`absolute inset-0 bg-transparent border-t border-border/50 overflow-hidden select-none touch-none ${isCalendar ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
+        className="absolute inset-0 bg-transparent border-t border-border/50 overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
-        {/* Right-edge indicator (rolling = "now" line, calendar = end of period) */}
-        {!isCalendar && (
-          <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-accent/40 z-30" />
-        )}
-
-        {/* "Now" marker for calendar scales */}
+        {/* "Now" marker — unified across all modes (stays fixed; timeline slides past it) */}
         {nowMarkerOffset !== null && (
           <div
-            className="absolute top-0 bottom-0 w-[2px] bg-accent/60 z-30"
+            className="absolute top-0 bottom-0 w-[2px] bg-accent/50 z-30"
             style={{ right: -nowMarkerOffset }}
           />
         )}
 
-        {/* Future area dimming for calendar scales */}
-        {nowMarkerOffset !== null && (
+        {/* Future area dimming (when "now" is visible within the window) */}
+        {nowMarkerOffset !== null && nowMarkerOffset < -1 && (
           <div
             className="absolute top-0 bottom-0 bg-bg-base/30 z-20"
             style={{ right: 0, width: -nowMarkerOffset }}
           />
         )}
 
-        {/* Ticks + markers container (anchored at right edge) */}
-        <div className="absolute right-0 top-0 bottom-0 w-0 pointer-events-none">
+        {/* Ticks + markers container (anchored at right edge; transform applied directly via ref during drag) */}
+        <div
+          ref={contentRef}
+          className="absolute right-0 top-0 bottom-0 w-0 pointer-events-none"
+          style={dragging ? { willChange: 'transform' } : undefined}
+        >
           {/* Ticks */}
           {ticks.map((tick) => (
             <div

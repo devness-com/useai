@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { RotateCcw, ChevronLeft, ChevronRight, Edit2, Calendar, Clock } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { TimeScrubber } from './TimeScrubber';
-import { SCALE_LABELS, ROLLING_SCALES, CALENDAR_SCALES, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './types';
+import { SCALE_LABELS, ROLLING_SCALES, CALENDAR_SCALES, CALENDAR_SCRUB_MAP, SCRUB_CALENDAR_MAP, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './types';
 import type { TimeScale } from './types';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 
@@ -89,12 +89,30 @@ export function TimeTravelPanel({
 
   const handleScrubberChange = useCallback(
     (newTime: number) => {
-      // Disable scrubber dragging for calendar scales
-      if (isCalendar) return;
+      // Calendar → rolling transition: scrubbing on a calendar scale
+      // smoothly transitions to its rolling equivalent.
+      // But if scrubbing near "now", snap to live instead of transitioning
+      // (prevents flicker loop: snap-to-live → useEffect restores calendar → re-transition).
+      if (isCalendar) {
+        const now = Date.now();
+        if (newTime >= now - 2000) {
+          onChange(null);
+          return;
+        }
+        const rollingEquiv = CALENDAR_SCRUB_MAP[scale];
+        if (rollingEquiv) {
+          onScaleChange(rollingEquiv);
+        }
+        onChange(newTime);
+        return;
+      }
 
       const now = Date.now();
 
-      if (newTime >= now - 2000) {
+      // Snap to live when scrubbing close to "now" (within 2s in either direction).
+      // The upper bound prevents false snaps when windowEnd is in the future
+      // (e.g. after a calendar→rolling transition where windowEnd = end-of-day).
+      if (newTime >= now - 2000 && newTime <= now + 2000) {
         snappedToLiveRef.current = true;
         snapTimeRef.current = now;
         onChange(null);
@@ -106,7 +124,7 @@ export function TimeTravelPanel({
         return;
       }
 
-      if (snappedToLiveRef.current && newTime >= now - 10000) {
+      if (snappedToLiveRef.current && newTime >= now - 10000 && newTime <= now + 2000) {
         onChange(null);
         return;
       }
@@ -114,7 +132,7 @@ export function TimeTravelPanel({
       snappedToLiveRef.current = false;
       onChange(newTime);
     },
-    [onChange, isCalendar],
+    [onChange, onScaleChange, isCalendar, scale],
   );
 
   const handleJump = (direction: -1 | 1) => {
@@ -273,7 +291,16 @@ export function TimeTravelPanel({
             {isLive ? (
               <StatusBadge label="Live" color="success" dot glow />
             ) : (
-              <StatusBadge label="History" color="muted" />
+              <>
+                <StatusBadge label="History" color="muted" />
+                <button
+                  onClick={() => onChange(null)}
+                  className="group flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-history/10 hover:bg-history text-history hover:text-white rounded-xl transition-all border border-history/20"
+                >
+                  <RotateCcw className="w-3 h-3 group-hover:-rotate-90 transition-transform duration-500" />
+                  Live
+                </button>
+              </>
             )}
           </div>
 
@@ -311,34 +338,28 @@ export function TimeTravelPanel({
             {/* Separator */}
             <div className="w-px h-5 bg-border/50 mx-1" />
 
-            {CALENDAR_SCALES.map((s) => (
-              <button
-                key={s}
-                onClick={() => onScaleChange(s)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
-                  scale === s
-                    ? 'bg-bg-surface-3 text-text-primary shadow-sm'
-                    : 'text-text-muted hover:text-text-primary hover:bg-bg-surface-2'
-                }`}
-                title={SCALE_LABELS[s]}
-              >
-                {s}
-              </button>
-            ))}
+            {CALENDAR_SCALES.map((s) => {
+              // Highlight the calendar button when on its scrub-rolling equivalent (e.g. 24h → day)
+              const isActive = scale === s || SCRUB_CALENDAR_MAP[scale] === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => onScaleChange(s)}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                    isActive
+                      ? 'bg-bg-surface-3 text-text-primary shadow-sm'
+                      : 'text-text-muted hover:text-text-primary hover:bg-bg-surface-2'
+                  }`}
+                  title={SCALE_LABELS[s]}
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Nav arrows + Return to Now */}
+          {/* Nav arrows */}
           <div className="flex items-center gap-2">
-            {!isLive && (
-              <button
-                onClick={() => onChange(null)}
-                className="group flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-history/10 hover:bg-history text-history hover:text-white rounded-xl transition-all border border-history/20"
-              >
-                <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-90 transition-transform duration-500" />
-                Live
-              </button>
-            )}
-
             <div className="flex items-center gap-1 bg-bg-surface-2/50 border border-border/50 rounded-xl p-1">
               <button
                 onClick={() => handleJump(-1)}

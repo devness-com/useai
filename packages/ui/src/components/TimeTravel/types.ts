@@ -1,19 +1,39 @@
-export type TimeScale = '1h' | '3h' | '6h' | '12h' | 'day' | 'week' | 'month';
+export type TimeScale = '1h' | '3h' | '6h' | '12h' | '24h' | 'day' | '7d' | 'week' | '30d' | 'month';
 
+/** Rolling scales shown as buttons */
 export const ROLLING_SCALES: TimeScale[] = ['1h', '3h', '6h', '12h'];
+/** Calendar scales shown as buttons */
 export const CALENDAR_SCALES: TimeScale[] = ['day', 'week', 'month'];
-export const ALL_SCALES: TimeScale[] = [...ROLLING_SCALES, ...CALENDAR_SCALES];
+/** All valid scales (including hidden scrub-transition ones, for localStorage validation) */
+export const ALL_SCALES: TimeScale[] = ['1h', '3h', '6h', '12h', '24h', 'day', '7d', 'week', '30d', 'month'];
+
+/** Calendar → rolling equivalent (used when scrubbing transitions out of calendar mode) */
+export const CALENDAR_SCRUB_MAP: Partial<Record<TimeScale, TimeScale>> = {
+  'day': '24h',
+  'week': '7d',
+  'month': '30d',
+};
+
+/** Rolling → calendar equivalent (used when returning to live mode) */
+export const SCRUB_CALENDAR_MAP: Partial<Record<TimeScale, TimeScale>> = {
+  '24h': 'day',
+  '7d': 'week',
+  '30d': 'month',
+};
 
 export function isCalendarScale(scale: TimeScale): boolean {
   return scale === 'day' || scale === 'week' || scale === 'month';
 }
 
-/** Fixed duration for rolling scales (ms). Only defined for rolling scales. */
+/** Fixed duration for rolling scales (ms). */
 const ROLLING_MS: Record<string, number> = {
   '1h': 60 * 60 * 1000,
   '3h': 3 * 60 * 60 * 1000,
   '6h': 6 * 60 * 60 * 1000,
   '12h': 12 * 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
 /**
@@ -26,8 +46,11 @@ export const SCALE_LABELS: Record<TimeScale, string> = {
   '3h': '3 Hours',
   '6h': '6 Hours',
   '12h': '12 Hours',
+  '24h': '24 Hours',
   'day': 'Day',
+  '7d': '7 Days',
   'week': 'Week',
+  '30d': '30 Days',
   'month': 'Month',
 };
 

@@ -30,4 +30,4 @@ export { TimeScrubber } from './components/TimeTravel/TimeScrubber';
 export type { StatCardType } from './components/StatDetailPanel';
 export type { Filters, ActiveTab } from './types';
 export type { TimeScale } from './components/TimeTravel/types';
-export { SCALE_MS, SCALE_LABELS, ALL_SCALES, ROLLING_SCALES, CALENDAR_SCALES, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './components/TimeTravel/types';
+export { SCALE_MS, SCALE_LABELS, ALL_SCALES, ROLLING_SCALES, CALENDAR_SCALES, CALENDAR_SCRUB_MAP, SCRUB_CALENDAR_MAP, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './components/TimeTravel/types';

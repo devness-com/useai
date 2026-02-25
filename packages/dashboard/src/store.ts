@@ -45,7 +45,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const valid: TimeScale[] = [...ALL_SCALES];
       if (saved && valid.includes(saved as TimeScale)) return saved as TimeScale;
     } catch { /* ignore */ }
-    return '1h' as TimeScale;
+    return 'day' as TimeScale;
   })(),
   filters: { category: 'all', client: 'all', project: 'all', language: 'all' },
   activeTab: (() => {
