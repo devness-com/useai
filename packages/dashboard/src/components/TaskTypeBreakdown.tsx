@@ -59,7 +59,7 @@ export function TaskTypeBreakdown({ data }: TaskTypeBreakdownProps) {
           const color = TASK_TYPE_COLORS[type] ?? TASK_TYPE_COLORS.other!;
           const widthPercent = (hours / maxValue) * 100;
           const percentage = totalHours > 0 ? ((hours / totalHours) * 100).toFixed(0) : '0';
-          const hoursStr = hours < 0.1 ? '<0.1h' : `${hours.toFixed(1)}h`;
+          const hoursStr = hours < 1 ? `${Math.round(hours * 60)}m` : `${hours.toFixed(1)}h`;
 
           return (
             <div key={type} className="flex items-center gap-3">

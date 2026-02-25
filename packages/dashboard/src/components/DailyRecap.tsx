@@ -26,11 +26,12 @@ function buildRecap(props: DailyRecapProps): React.ReactNode {
   const parts: React.ReactNode[] = [];
 
   // Sessions and hours
-  const hoursStr = hours < 0.1 ? '<0.1' : hours.toFixed(1);
+  const hoursStr = hours < 1 ? `${Math.round(hours * 60)}` : hours.toFixed(1);
+  const hoursUnit = hours < 1 ? 'min' : 'hrs';
   parts.push(
     <span key="core">
       Today: <Strong>{sessions}</Strong> {sessions === 1 ? 'session' : 'sessions'},{' '}
-      <Strong>{hoursStr}</Strong> hrs
+      <Strong>{hoursStr}</Strong> {hoursUnit}
     </span>,
   );
 

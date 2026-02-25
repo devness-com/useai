@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { ChevronDown, Clock, Lock, Zap, Shield, Eye, EyeOff, Flag, MessageSquare, FileText, Target, Compass, RefreshCw, Wrench, FolderKanban, Cpu, Activity } from 'lucide-react';
+import { ChevronDown, Clock, Lock, Shield, Eye, EyeOff, Flag, MessageSquare, FileText, Target, Compass, RefreshCw, Wrench, FolderKanban, Cpu, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal, Milestone, SessionEvaluation } from '@useai/shared/types';
 import { TOOL_COLORS, TOOL_INITIALS, TOOL_ICONS, CATEGORY_COLORS, TOOL_DISPLAY_NAMES, resolveClient } from '../constants';
@@ -286,17 +286,6 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
                 {formatDuration(session.duration_seconds)}
               </span>
 
-              {session.duration_seconds >= 900 && (() => {
-                const expected = Math.floor(session.duration_seconds / 900);
-                const focus = expected > 0 ? Math.min(session.heartbeat_count / expected, 1) : 0;
-                const focusColor = focus >= 0.8 ? 'text-success' : focus >= 0.5 ? 'text-accent' : 'text-text-secondary';
-                return (
-                  <span className={`flex items-center gap-0.5 font-mono ${focusColor}`} title={`Focus: ${Math.round(focus * 100)}%`}>
-                    <Zap className="w-2.5 h-2.5 fill-current opacity-70" />
-                    {Math.round(focus * 100)}%
-                  </span>
-                );
-              })()}
 
               <span className="text-text-secondary/80 font-mono tracking-tight">
                 {showFullDate && `${new Date(session.started_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}

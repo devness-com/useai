@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { SessionSeal, Milestone, LocalConfig, HealthInfo, UpdateInfo } from './lib/api';
 import { fetchSessions, fetchMilestones, fetchConfig, fetchHealth, fetchUpdateCheck, deleteSession as apiDeleteSession, deleteConversation as apiDeleteConversation, deleteMilestone as apiDeleteMilestone } from './lib/api';
 import type { TimeScale, Filters, ActiveTab } from '@useai/ui';
-import { SCALE_MS } from '@useai/ui';
+import { SCALE_MS, ALL_SCALES } from '@useai/ui';
 
 export type { TimeScale, Filters, ActiveTab };
 export { SCALE_MS };
@@ -42,7 +42,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   timeScale: (() => {
     try {
       const saved = localStorage.getItem('useai-time-scale');
-      const valid: TimeScale[] = ['15m', '30m', '1h', '12h', '24h', '7d', '30d'];
+      const valid: TimeScale[] = [...ALL_SCALES];
       if (saved && valid.includes(saved as TimeScale)) return saved as TimeScale;
     } catch { /* ignore */ }
     return '1h' as TimeScale;

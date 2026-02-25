@@ -7,7 +7,7 @@ interface SummaryChipsProps {
 
 function formatHours(seconds: number): string {
   const h = seconds / 3600;
-  return h < 0.1 ? `${h.toFixed(2)}h` : `${h.toFixed(1)}h`;
+  return h < 1 ? `${Math.round(h * 60)}m` : `${h.toFixed(1)}h`;
 }
 
 function topN(record: Record<string, number>, n: number): [string, number][] {

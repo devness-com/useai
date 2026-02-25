@@ -21,7 +21,7 @@ export function ActivityStrip({
   onDayClick,
   highlightDate,
 }: ActivityStripProps) {
-  const useHourly = timeScale === '24h' || timeScale === '12h';
+  const useHourly = timeScale === 'day' || timeScale === '12h' || timeScale === '6h';
   const effectiveDate = new Date(effectiveTime).toISOString().slice(0, 10);
 
   const hourlyData = useMemo(

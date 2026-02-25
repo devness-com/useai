@@ -9,6 +9,9 @@ export interface ComputedStats {
   featuresShipped: number;
   bugsFixed: number;
   complexSolved: number;
+  totalMilestones: number;
+  completionRate: number;
+  activeProjects: number;
   byClient: Record<string, number>;
   byLanguage: Record<string, number>;
   byTaskType: Record<string, number>;
@@ -60,12 +63,23 @@ export function computeStats(sessions: SessionSeal[], milestones: Milestone[] = 
 
   const milestoneStats = computeMilestoneStats(milestones);
 
+  // Completion rate from sessions with evaluations
+  const evaluated = sessions.filter((s) => s.evaluation && typeof s.evaluation === 'object');
+  const completed = evaluated.filter((s) => s.evaluation!.task_outcome === 'completed').length;
+  const completionRate = evaluated.length > 0 ? Math.round((completed / evaluated.length) * 100) : 0;
+
+  // Active projects
+  const activeProjects = Object.keys(byProject).length;
+
   return {
     totalHours: totalSeconds / 3600,
     totalSessions: sessions.length,
     currentStreak: calculateStreak(sessions),
-    filesTouched,
+    filesTouched: Math.round(filesTouched),
     ...milestoneStats,
+    totalMilestones: milestones.length,
+    completionRate,
+    activeProjects,
     byClient,
     byLanguage,
     byTaskType,

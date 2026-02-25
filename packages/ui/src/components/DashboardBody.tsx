@@ -4,7 +4,7 @@ import type { SessionSeal, Milestone } from '@useai/shared/types';
 import type { StatCardType } from './StatDetailPanel';
 import type { Filters, ActiveTab } from '../types';
 import type { TimeScale } from './TimeTravel/types';
-import { SCALE_MS, SCALE_LABELS } from './TimeTravel/types';
+import { ALL_SCALES, SCALE_LABELS, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './TimeTravel/types';
 import { computeStats, calculateStreak, filterSessionsByWindow, filterMilestonesByWindow, countSessionsOutsideWindow } from '../stats';
 import { StatsBar } from './StatsBar';
 import { StatDetailPanel } from './StatDetailPanel';
@@ -59,7 +59,7 @@ export function DashboardBody({
   // ── UI state ────────────────────────────────────────────────────────────
   const [timeTravelTime, setTimeTravelTime] = useState<number | null>(null);
   const [timeScale, setTimeScaleRaw] = useState<TimeScale>(() =>
-    readLocalStorage('useai-time-scale', ['15m', '30m', '1h', '12h', '24h', '7d', '30d'], defaultTimeScale),
+    readLocalStorage('useai-time-scale', ALL_SCALES as TimeScale[], defaultTimeScale),
   );
   const [filters, setFilters] = useState<Filters>({ category: 'all', client: 'all', project: 'all', language: 'all' });
   const [internalTab, setInternalTabRaw] = useState<ActiveTab>(() =>
@@ -93,8 +93,7 @@ export function DashboardBody({
   // ── Derived values ──────────────────────────────────────────────────────
   const isLive = timeTravelTime === null;
   const effectiveTime = timeTravelTime ?? Date.now();
-  const windowStart = effectiveTime - SCALE_MS[timeScale];
-  const windowEnd = effectiveTime;
+  const { start: windowStart, end: windowEnd } = getTimeWindow(timeScale, effectiveTime);
 
   const filteredSessions = useMemo(
     () => filterSessionsByWindow(sessions, windowStart, windowEnd),
@@ -116,32 +115,34 @@ export function DashboardBody({
   const outsideWindowCounts = useMemo(() => {
     const counts = countSessionsOutsideWindow(sessions, windowStart, windowEnd);
     if (isLive && counts.before === 0) return undefined;
-    const step = SCALE_MS[timeScale];
     const scaleLabel = SCALE_LABELS[timeScale];
     const fmt = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
     const fmtDate = (ts: number) => {
       const d = new Date(ts);
       return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${fmt(ts)}`;
     };
-    const isMultiDay = step >= 86400000;
+    const isMultiDay = isCalendarScale(timeScale) || (windowEnd - windowStart) >= 86400000;
     const label = isMultiDay ? fmtDate : fmt;
-    const olderStart = windowStart - step;
-    const olderLabel = `View prev ${scaleLabel} · ${label(olderStart)} – ${label(windowStart)}`;
+
+    // For older window, jump back and compute that window
+    const olderRef = jumpScale(timeScale, effectiveTime, -1);
+    const olderWindow = getTimeWindow(timeScale, olderRef);
+    const olderLabel = `View prev ${scaleLabel} · ${label(olderWindow.start)} – ${label(olderWindow.end)}`;
     if (isLive) {
       return { before: counts.before, after: 0, olderLabel };
     }
-    const newerEnd = windowEnd + step;
+    const newerRef = jumpScale(timeScale, effectiveTime, 1);
+    const newerWindow = getTimeWindow(timeScale, newerRef);
     return {
       ...counts,
-      newerLabel: `View next ${scaleLabel} · ${label(windowEnd)} – ${label(newerEnd)}`,
+      newerLabel: `View next ${scaleLabel} · ${label(newerWindow.start)} – ${label(newerWindow.end)}`,
       olderLabel,
     };
-  }, [sessions, windowStart, windowEnd, isLive, timeScale]);
+  }, [sessions, windowStart, windowEnd, effectiveTime, isLive, timeScale]);
 
   const handleNavigateNewer = useCallback(() => {
-    const step = SCALE_MS[timeScale];
-    const next = effectiveTime + step;
-    if (next >= Date.now() - 60_000) {
+    const next = jumpScale(timeScale, effectiveTime, 1);
+    if (shouldSnapToLive(timeScale, next)) {
       setTimeTravelTime(null);
     } else {
       setTimeTravelTime(next);
@@ -149,8 +150,8 @@ export function DashboardBody({
   }, [effectiveTime, timeScale]);
 
   const handleNavigateOlder = useCallback(() => {
-    const step = SCALE_MS[timeScale];
-    setTimeTravelTime(effectiveTime - step);
+    const prev = jumpScale(timeScale, effectiveTime, -1);
+    setTimeTravelTime(prev);
   }, [effectiveTime, timeScale]);
 
   const highlightDate = useMemo(() => {
@@ -190,9 +191,9 @@ export function DashboardBody({
   }, [filteredMilestones]);
 
   const handleDayClick = useCallback((date: string) => {
-    const endOfDay = new Date(`${date}T23:59:59`).getTime();
-    setTimeTravelTime(endOfDay);
-    setTimeScale('24h');
+    const midday = new Date(`${date}T12:00:00`).getTime();
+    setTimeTravelTime(midday);
+    setTimeScale('day');
   }, [setTimeScale]);
 
   const hasActiveFilter = filters.client !== 'all' || filters.language !== 'all' || filters.project !== 'all';
@@ -218,6 +219,9 @@ export function DashboardBody({
         featuresShipped={stats.featuresShipped}
         bugsFixed={stats.bugsFixed}
         complexSolved={stats.complexSolved}
+        totalMilestones={stats.totalMilestones}
+        completionRate={stats.completionRate}
+        activeProjects={stats.activeProjects}
         selectedCard={selectedStatCard}
         onCardClick={setSelectedStatCard}
       />
@@ -283,7 +287,7 @@ export function DashboardBody({
             milestones={filteredMilestones}
             filters={filters}
             globalShowPublic={globalShowPublic}
-            showFullDate={timeScale === '7d' || timeScale === '30d'}
+            showFullDate={timeScale === 'week' || timeScale === 'month'}
             outsideWindowCounts={outsideWindowCounts}
             onNavigateNewer={handleNavigateNewer}
             onNavigateOlder={handleNavigateOlder}

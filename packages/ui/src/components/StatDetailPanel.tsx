@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { X, Brain, Rocket, Bug, Sparkles } from 'lucide-react';
+import { X, Brain, Rocket, Bug, Sparkles, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Milestone } from '@useai/shared/types';
 import { CATEGORY_COLORS, TOOL_INITIALS, TOOL_COLORS, TOOL_ICONS, resolveClient } from '../constants';
 
-export type StatCardType = 'features' | 'bugs' | 'complex' | null;
+export type StatCardType = 'features' | 'bugs' | 'complex' | 'milestones' | null;
 
 const PANEL_CONFIG: Record<Exclude<StatCardType, null>, {
   title: string;
@@ -13,6 +13,13 @@ const PANEL_CONFIG: Record<Exclude<StatCardType, null>, {
   emptyText: string;
   accentColor: string;
 }> = {
+  milestones: {
+    title: 'All Milestones',
+    icon: Target,
+    filter: () => true,
+    emptyText: 'No milestones in this time window.',
+    accentColor: '#60a5fa',
+  },
   features: {
     title: 'Features Shipped',
     icon: Rocket,
@@ -188,8 +195,8 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
                                   {displayTitle}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  {/* Category badge (for complex view which mixes categories) */}
-                                  {type === 'complex' && (
+                                  {/* Category badge (for views that mix categories) */}
+                                  {(type === 'complex' || type === 'milestones') && (
                                     <span className={`text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full border ${badgeCls}`}>
                                       {m.category}
                                     </span>

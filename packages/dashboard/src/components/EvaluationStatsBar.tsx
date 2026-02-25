@@ -109,10 +109,10 @@ export function EvaluationStatsBar({
     <div className="flex gap-2">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 flex-1">
         <EvalStatCard
-          label="Active Hours"
-          value={hours}
-          suffix="hrs"
-          decimals={1}
+          label={hours < 1 ? 'Active Time' : 'Active Hours'}
+          value={hours < 1 ? Math.round(hours * 60) : hours}
+          suffix={hours < 1 ? 'min' : 'hrs'}
+          decimals={hours < 1 ? 0 : 1}
           icon={Clock}
           delay={0.1}
         />

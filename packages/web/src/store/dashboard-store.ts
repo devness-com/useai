@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 import type { Filters, ActiveTab, TimeScale } from '@useai/ui';
-import { SCALE_MS } from '@useai/ui';
+import { SCALE_MS, ALL_SCALES } from '@useai/ui';
 import { apiFetch } from '../lib/api-client';
 
 interface DashboardState {
@@ -28,10 +28,10 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   timeScale: (() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('useai-time-scale') : null;
-      const valid: TimeScale[] = ['15m', '30m', '1h', '12h', '24h', '7d', '30d'];
+      const valid: TimeScale[] = [...ALL_SCALES];
       if (saved && valid.includes(saved as TimeScale)) return saved as TimeScale;
     } catch { /* ignore */ }
-    return '7d' as TimeScale;
+    return 'week' as TimeScale;
   })(),
   filters: { category: 'all', client: 'all', project: 'all', language: 'all' },
   activeTab: 'sessions',

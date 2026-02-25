@@ -17,7 +17,7 @@ export default function DashboardPage() {
     <DashboardBody
       sessions={sessions}
       milestones={milestones}
-      defaultTimeScale="7d"
+      defaultTimeScale="week"
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
     />

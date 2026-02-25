@@ -8,6 +8,8 @@ interface TimeScrubberProps {
   value: number;
   onChange: (newValue: number) => void;
   scale: TimeScale;
+  /** For calendar scales, the fixed window boundaries. When set, the scrubber shows this range instead of computing from value. */
+  window?: { start: number; end: number };
   sessions?: SessionSeal[];
   milestones?: Milestone[];
   showPublic?: boolean;
@@ -22,22 +24,22 @@ const SCALE_CONFIG: Record<
     labelFormat: (date: Date) => string;
   }
 > = {
-  '15m': {
-    visibleDuration: 15 * 60 * 1000,
-    majorTickInterval: 5 * 60 * 1000,
-    minorTickInterval: 1 * 60 * 1000,
-    labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
-  },
-  '30m': {
-    visibleDuration: 30 * 60 * 1000,
-    majorTickInterval: 10 * 60 * 1000,
-    minorTickInterval: 2 * 60 * 1000,
-    labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
-  },
   '1h': {
     visibleDuration: 60 * 60 * 1000,
     majorTickInterval: 15 * 60 * 1000,
     minorTickInterval: 5 * 60 * 1000,
+    labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
+  },
+  '3h': {
+    visibleDuration: 3 * 60 * 60 * 1000,
+    majorTickInterval: 30 * 60 * 1000,
+    minorTickInterval: 10 * 60 * 1000,
+    labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
+  },
+  '6h': {
+    visibleDuration: 6 * 60 * 60 * 1000,
+    majorTickInterval: 60 * 60 * 1000,
+    minorTickInterval: 15 * 60 * 1000,
     labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
   },
   '12h': {
@@ -46,19 +48,19 @@ const SCALE_CONFIG: Record<
     minorTickInterval: 30 * 60 * 1000,
     labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
   },
-  '24h': {
+  'day': {
     visibleDuration: 24 * 60 * 60 * 1000,
     majorTickInterval: 4 * 60 * 60 * 1000,
     minorTickInterval: 1 * 60 * 60 * 1000,
     labelFormat: (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
   },
-  '7d': {
+  'week': {
     visibleDuration: 7 * 24 * 60 * 60 * 1000,
     majorTickInterval: 24 * 60 * 60 * 1000,
     minorTickInterval: 6 * 60 * 60 * 1000,
     labelFormat: (d) => d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }),
   },
-  '30d': {
+  'month': {
     visibleDuration: 30 * 24 * 60 * 60 * 1000,
     majorTickInterval: 7 * 24 * 60 * 60 * 1000,
     minorTickInterval: 24 * 60 * 60 * 1000,
@@ -79,12 +81,14 @@ export function TimeScrubber({
   value,
   onChange,
   scale,
+  window: calendarWindow,
   sessions = [],
   milestones = [],
   showPublic = false,
 }: TimeScrubberProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  const isCalendar = calendarWindow !== undefined;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -99,19 +103,28 @@ export function TimeScrubber({
   }, []);
 
   const config = SCALE_CONFIG[scale];
-  const pxPerMs = width > 0 ? width / config.visibleDuration : 0;
 
-  // Drag handling (native pointer events)
+  // For calendar scales, use the provided window; for rolling, compute from value
+  const visibleDuration = isCalendar
+    ? calendarWindow.end - calendarWindow.start
+    : config.visibleDuration;
+  const windowEnd = isCalendar ? calendarWindow.end : value;
+  const windowStart = isCalendar ? calendarWindow.start : value - config.visibleDuration;
+
+  const pxPerMs = width > 0 ? width / visibleDuration : 0;
+
+  // Drag handling (disabled for calendar scales)
   const [dragging, setDragging] = useState(false);
   const lastX = useRef(0);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (isCalendar) return;
       setDragging(true);
       lastX.current = e.clientX;
       e.currentTarget.setPointerCapture(e.pointerId);
     },
-    [],
+    [isCalendar],
   );
 
   const handlePointerMove = useCallback(
@@ -128,14 +141,12 @@ export function TimeScrubber({
     setDragging(false);
   }, []);
 
-  // Generate ticks — right-edge anchored (value = right edge)
+  // Generate ticks — right-edge anchored at windowEnd
   const ticks = useMemo(() => {
     if (!width || pxPerMs === 0) return [];
 
-    const startTime = value - config.visibleDuration;
-    const endTime = value;
-    const renderStart = startTime - config.majorTickInterval;
-    const renderEnd = endTime + config.majorTickInterval;
+    const renderStart = windowStart - config.majorTickInterval;
+    const renderEnd = windowEnd + config.majorTickInterval;
 
     const result: { type: 'major' | 'minor'; time: number; position: number; label?: string }[] = [];
 
@@ -146,7 +157,7 @@ export function TimeScrubber({
       result.push({
         type: 'major',
         time: t,
-        position: (t - value) * pxPerMs,
+        position: (t - windowEnd) * pxPerMs,
         label: config.labelFormat(new Date(t)),
       });
     }
@@ -159,12 +170,12 @@ export function TimeScrubber({
       result.push({
         type: 'minor',
         time: t,
-        position: (t - value) * pxPerMs,
+        position: (t - windowEnd) * pxPerMs,
       });
     }
 
     return result;
-  }, [value, width, pxPerMs, config]);
+  }, [windowStart, windowEnd, width, pxPerMs, config]);
 
   // Pre-parse sessions for efficient rendering
   const parsedSessions = useMemo(
@@ -177,21 +188,18 @@ export function TimeScrubber({
     [sessions],
   );
 
-  // Visible session blocks — right-edge anchored
+  // Visible session blocks — right-edge anchored at windowEnd
   const sessionBlocks = useMemo(() => {
     if (!width || pxPerMs === 0) return [];
 
-    const startTime = value - config.visibleDuration;
-    const endTime = value;
-
     return parsedSessions
-      .filter((s) => s.start <= endTime && s.end >= startTime)
+      .filter((s) => s.start <= windowEnd && s.end >= windowStart)
       .map((s) => ({
         session: s.session,
-        leftOffset: (Math.max(s.start, startTime) - value) * pxPerMs,
-        width: (Math.min(s.end, endTime) - Math.max(s.start, startTime)) * pxPerMs,
+        leftOffset: (Math.max(s.start, windowStart) - windowEnd) * pxPerMs,
+        width: (Math.min(s.end, windowEnd) - Math.max(s.start, windowStart)) * pxPerMs,
       }));
-  }, [parsedSessions, value, width, pxPerMs, config]);
+  }, [parsedSessions, windowStart, windowEnd, width, pxPerMs]);
 
   // Pre-parse milestones
   const parsedMilestones = useMemo(
@@ -202,19 +210,16 @@ export function TimeScrubber({
     [milestones],
   );
 
-  // Visible milestone dots (binary search for range) — right-edge anchored
+  // Visible milestone dots (binary search for range) — right-edge anchored at windowEnd
   const milestoneDots = useMemo(() => {
     if (!width || pxPerMs === 0 || !parsedMilestones.length) return [];
-
-    const startTime = value - config.visibleDuration;
-    const endTime = value;
 
     // Binary search for start
     let lo = 0,
       hi = parsedMilestones.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (parsedMilestones[mid]!.time < startTime) lo = mid + 1;
+      if (parsedMilestones[mid]!.time < windowStart) lo = mid + 1;
       else hi = mid;
     }
     const startIdx = lo;
@@ -223,7 +228,7 @@ export function TimeScrubber({
     hi = parsedMilestones.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (parsedMilestones[mid]!.time <= endTime) lo = mid + 1;
+      if (parsedMilestones[mid]!.time <= windowEnd) lo = mid + 1;
       else hi = mid;
     }
     const endIdx = lo;
@@ -233,11 +238,19 @@ export function TimeScrubber({
       const m = parsedMilestones[i]!;
       result.push({
         ...m,
-        offset: (m.time - value) * pxPerMs,
+        offset: (m.time - windowEnd) * pxPerMs,
       });
     }
     return result;
-  }, [parsedMilestones, value, width, pxPerMs, config]);
+  }, [parsedMilestones, windowStart, windowEnd, width, pxPerMs]);
+
+  // "Now" marker position for calendar scales (shows current time within the period)
+  const nowMarkerOffset = useMemo(() => {
+    if (!isCalendar || !width || pxPerMs === 0) return null;
+    const now = Date.now();
+    if (now < windowStart || now > windowEnd) return null;
+    return (now - windowEnd) * pxPerMs;
+  }, [isCalendar, windowStart, windowEnd, width, pxPerMs]);
 
   // Tooltip state
   const [tooltip, setTooltip] = useState<{
@@ -259,15 +272,33 @@ export function TimeScrubber({
   return (
     <div className="relative h-16">
       <div
-        className="absolute inset-0 bg-transparent border-t border-border/50 overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
+        className={`absolute inset-0 bg-transparent border-t border-border/50 overflow-hidden select-none touch-none ${isCalendar ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
-        {/* Right-edge "now" indicator */}
-        <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-accent/40 z-30" />
+        {/* Right-edge indicator (rolling = "now" line, calendar = end of period) */}
+        {!isCalendar && (
+          <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-accent/40 z-30" />
+        )}
+
+        {/* "Now" marker for calendar scales */}
+        {nowMarkerOffset !== null && (
+          <div
+            className="absolute top-0 bottom-0 w-[2px] bg-accent/60 z-30"
+            style={{ right: -nowMarkerOffset }}
+          />
+        )}
+
+        {/* Future area dimming for calendar scales */}
+        {nowMarkerOffset !== null && (
+          <div
+            className="absolute top-0 bottom-0 bg-bg-base/30 z-20"
+            style={{ right: 0, width: -nowMarkerOffset }}
+          />
+        )}
 
         {/* Ticks + markers container (anchored at right edge) */}
         <div className="absolute right-0 top-0 bottom-0 w-0 pointer-events-none">

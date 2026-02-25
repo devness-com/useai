@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { RotateCcw, ChevronLeft, ChevronRight, Edit2, Calendar, Clock } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { TimeScrubber } from './TimeScrubber';
-import { SCALE_MS, SCALE_LABELS } from './types';
+import { SCALE_LABELS, ROLLING_SCALES, CALENDAR_SCALES, isCalendarScale, getTimeWindow, jumpScale, shouldSnapToLive } from './types';
 import type { TimeScale } from './types';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 
@@ -53,8 +53,6 @@ function parseTimeInput(input: string, referenceTimestamp: number): number | nul
   return null;
 }
 
-const SCALES: TimeScale[] = ['15m', '30m', '1h', '12h', '24h', '7d', '30d'];
-
 export function TimeTravelPanel({
   value,
   onChange,
@@ -64,6 +62,7 @@ export function TimeTravelPanel({
   showPublic = false,
 }: TimeTravelPanelProps) {
   const isLive = value === null;
+  const isCalendar = isCalendarScale(scale);
 
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -74,6 +73,9 @@ export function TimeTravelPanel({
 
   const effectiveTime = isLive ? now : value;
 
+  // Compute window for scrubber
+  const timeWindow = getTimeWindow(scale, effectiveTime);
+
   // Editing state
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [timeInput, setTimeInput] = useState('');
@@ -81,12 +83,15 @@ export function TimeTravelPanel({
   const wasLiveRef = useRef(false);
   const originalTimeInputRef = useRef('');
 
-  // Snap-to-live hysteresis
+  // Snap-to-live hysteresis (only for rolling scales)
   const snappedToLiveRef = useRef(false);
   const snapTimeRef = useRef(0);
 
   const handleScrubberChange = useCallback(
     (newTime: number) => {
+      // Disable scrubber dragging for calendar scales
+      if (isCalendar) return;
+
       const now = Date.now();
 
       if (newTime >= now - 2000) {
@@ -109,18 +114,13 @@ export function TimeTravelPanel({
       snappedToLiveRef.current = false;
       onChange(newTime);
     },
-    [onChange],
+    [onChange, isCalendar],
   );
 
-  const handleJump = (deltaMs: number) => {
-    const base = effectiveTime;
-    const newTime = base + deltaMs;
-    // Use 60s threshold: when in history mode the `now` timer stops, so
-    // effectiveTime is stale by however long the user waited before clicking.
-    // 60s handles any realistic delay while being negligible vs the smallest
-    // window scale (15m = 900s).
-    if (newTime >= Date.now() - 60_000) {
-      onChange(null); // snap to live
+  const handleJump = (direction: -1 | 1) => {
+    const newTime = jumpScale(scale, effectiveTime, direction);
+    if (shouldSnapToLive(scale, newTime)) {
+      onChange(null);
     } else {
       onChange(newTime);
     }
@@ -205,6 +205,17 @@ export function TimeTravelPanel({
     });
   };
 
+  // Calendar period label for arrow tooltips
+  const getJumpLabel = (direction: -1 | 1): string => {
+    if (isCalendar) {
+      const prefix = direction === -1 ? 'Previous' : 'Next';
+      if (scale === 'day') return `${prefix} Day`;
+      if (scale === 'week') return `${prefix} Week`;
+      return `${prefix} Month`;
+    }
+    return `${direction === -1 ? 'Back' : 'Forward'} ${SCALE_LABELS[scale]}`;
+  };
+
   return (
     <div className="flex flex-col bg-bg-surface-1 border border-border/50 rounded-2xl overflow-hidden mb-8 shadow-xl">
       {/* Top bar */}
@@ -280,9 +291,27 @@ export function TimeTravelPanel({
 
         {/* Right: Controls */}
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          {/* Scale buttons */}
+          {/* Scale buttons — rolling | calendar */}
           <div className="flex items-center bg-bg-surface-2/50 border border-border/50 rounded-xl p-1 shadow-inner">
-            {SCALES.map((s) => (
+            {ROLLING_SCALES.map((s) => (
+              <button
+                key={s}
+                onClick={() => onScaleChange(s)}
+                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                  scale === s
+                    ? 'bg-bg-surface-3 text-text-primary shadow-sm'
+                    : 'text-text-muted hover:text-text-primary hover:bg-bg-surface-2'
+                }`}
+                title={SCALE_LABELS[s]}
+              >
+                {s}
+              </button>
+            ))}
+
+            {/* Separator */}
+            <div className="w-px h-5 bg-border/50 mx-1" />
+
+            {CALENDAR_SCALES.map((s) => (
               <button
                 key={s}
                 onClick={() => onScaleChange(s)}
@@ -312,17 +341,17 @@ export function TimeTravelPanel({
 
             <div className="flex items-center gap-1 bg-bg-surface-2/50 border border-border/50 rounded-xl p-1">
               <button
-                onClick={() => handleJump(-SCALE_MS[scale])}
+                onClick={() => handleJump(-1)}
                 className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-surface-2 rounded-lg transition-colors"
-                title={`Back ${SCALE_LABELS[scale]}`}
+                title={getJumpLabel(-1)}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
               <button
-                onClick={() => handleJump(SCALE_MS[scale])}
+                onClick={() => handleJump(1)}
                 className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-surface-2 rounded-lg transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-                title={`Forward ${SCALE_LABELS[scale]}`}
+                title={getJumpLabel(1)}
                 disabled={isLive || effectiveTime >= Date.now() - 1000}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -337,6 +366,7 @@ export function TimeTravelPanel({
         value={effectiveTime}
         onChange={handleScrubberChange}
         scale={scale}
+        window={isCalendar ? timeWindow : undefined}
         sessions={sessions}
         milestones={undefined}
         showPublic={showPublic}
