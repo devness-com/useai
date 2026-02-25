@@ -301,8 +301,10 @@ function autoSealSession(active: ActiveSession): void {
   if (session.sessionRecordCount === 0) return;
   if (isSessionAlreadySealed(session)) return; // Already sealed by session_end tool
 
-  const duration = session.getSessionDuration();
-  const now = new Date().toISOString();
+  // Use active duration (last activity time) instead of wall-clock time,
+  // so idle timeout periods aren't counted as active hours.
+  const duration = session.getActiveDuration();
+  const now = new Date(session.lastActivityTime).toISOString();
 
   // Append session_end to chain
   const endRecord = session.appendToChain('session_end', {

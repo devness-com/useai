@@ -23,6 +23,7 @@ import type { ChainRecord, Keystore } from '@useai/shared';
 export interface SavedParentState {
   sessionId: string;
   sessionStartTime: number;
+  lastActivityTime: number;
   heartbeatCount: number;
   sessionRecordCount: number;
   chainTipHash: string;
@@ -74,6 +75,8 @@ export class SessionState {
   inProgressSince: number | null;
   /** Session ID that was auto-sealed by seal-active hook (for useai_end fallback). */
   autoSealedSessionId: string | null;
+  /** Timestamp of the last meaningful activity (tool call, heartbeat). Used for auto-seal duration. */
+  lastActivityTime: number;
   /** Saved parent session state when a child (subagent) session is active. */
   parentState: SavedParentState | null;
 
@@ -89,6 +92,7 @@ export class SessionState {
     this.autoSealedSessionId = null;
     this.parentState = null;
     this.sessionStartTime = Date.now();
+    this.lastActivityTime = this.sessionStartTime;
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
     this.clientName = 'unknown';
@@ -104,6 +108,7 @@ export class SessionState {
 
   reset(): void {
     this.sessionStartTime = Date.now();
+    this.lastActivityTime = this.sessionStartTime;
     this.sessionId = generateSessionId();
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
@@ -154,12 +159,26 @@ export class SessionState {
     this.modelId = id;
   }
 
+  /** Update the last-activity timestamp to now. Called on every meaningful event. */
+  touchActivity(): void {
+    this.lastActivityTime = Date.now();
+  }
+
   incrementHeartbeat(): void {
     this.heartbeatCount++;
+    this.touchActivity();
   }
 
   getSessionDuration(): number {
     return Math.round((Date.now() - this.sessionStartTime) / 1000);
+  }
+
+  /**
+   * Duration based on the last meaningful activity, not the current wall-clock time.
+   * Used by auto-seal to avoid counting idle timeout as active time.
+   */
+  getActiveDuration(): number {
+    return Math.round((this.lastActivityTime - this.sessionStartTime) / 1000);
   }
 
   /**
@@ -170,6 +189,7 @@ export class SessionState {
     this.parentState = {
       sessionId: this.sessionId,
       sessionStartTime: this.sessionStartTime,
+      lastActivityTime: this.lastActivityTime,
       heartbeatCount: this.heartbeatCount,
       sessionRecordCount: this.sessionRecordCount,
       chainTipHash: this.chainTipHash,
@@ -196,6 +216,7 @@ export class SessionState {
     const p = this.parentState;
     this.sessionId = p.sessionId;
     this.sessionStartTime = p.sessionStartTime;
+    this.lastActivityTime = p.lastActivityTime;
     this.heartbeatCount = p.heartbeatCount;
     this.sessionRecordCount = p.sessionRecordCount;
     this.chainTipHash = p.chainTipHash;
@@ -252,6 +273,7 @@ export class SessionState {
 
     this.chainTipHash = record.hash;
     this.sessionRecordCount++;
+    this.touchActivity();
 
     return record;
   }
