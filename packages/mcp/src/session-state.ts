@@ -24,6 +24,10 @@ export interface SavedParentState {
   sessionId: string;
   sessionStartTime: number;
   lastActivityTime: number;
+  /** Accumulated ms the parent was paused (child sessions active) before this save. */
+  childPausedMs: number;
+  /** Timestamp when the parent was paused (child session started). */
+  pausedAt: number;
   heartbeatCount: number;
   sessionRecordCount: number;
   chainTipHash: string;
@@ -77,6 +81,8 @@ export class SessionState {
   autoSealedSessionId: string | null;
   /** Timestamp of the last meaningful activity (tool call, heartbeat). Used for auto-seal duration. */
   lastActivityTime: number;
+  /** Accumulated ms this session was paused while child sessions were active. */
+  childPausedMs: number;
   /** Saved parent session state when a child (subagent) session is active. */
   parentState: SavedParentState | null;
 
@@ -93,6 +99,7 @@ export class SessionState {
     this.parentState = null;
     this.sessionStartTime = Date.now();
     this.lastActivityTime = this.sessionStartTime;
+    this.childPausedMs = 0;
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
     this.clientName = 'unknown';
@@ -109,6 +116,7 @@ export class SessionState {
   reset(): void {
     this.sessionStartTime = Date.now();
     this.lastActivityTime = this.sessionStartTime;
+    this.childPausedMs = 0;
     this.sessionId = generateSessionId();
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
@@ -170,7 +178,7 @@ export class SessionState {
   }
 
   getSessionDuration(): number {
-    return Math.round((Date.now() - this.sessionStartTime) / 1000);
+    return Math.round((Date.now() - this.sessionStartTime - this.childPausedMs) / 1000);
   }
 
   /**
@@ -178,7 +186,7 @@ export class SessionState {
    * Used by auto-seal to avoid counting idle timeout as active time.
    */
   getActiveDuration(): number {
-    return Math.round((this.lastActivityTime - this.sessionStartTime) / 1000);
+    return Math.round((this.lastActivityTime - this.sessionStartTime - this.childPausedMs) / 1000);
   }
 
   /**
@@ -190,6 +198,8 @@ export class SessionState {
       sessionId: this.sessionId,
       sessionStartTime: this.sessionStartTime,
       lastActivityTime: this.lastActivityTime,
+      childPausedMs: this.childPausedMs,
+      pausedAt: Date.now(),
       heartbeatCount: this.heartbeatCount,
       sessionRecordCount: this.sessionRecordCount,
       chainTipHash: this.chainTipHash,
@@ -217,6 +227,8 @@ export class SessionState {
     this.sessionId = p.sessionId;
     this.sessionStartTime = p.sessionStartTime;
     this.lastActivityTime = p.lastActivityTime;
+    // Accumulate the time spent in the child session so it's excluded from parent duration
+    this.childPausedMs = p.childPausedMs + (Date.now() - p.pausedAt);
     this.heartbeatCount = p.heartbeatCount;
     this.sessionRecordCount = p.sessionRecordCount;
     this.chainTipHash = p.chainTipHash;

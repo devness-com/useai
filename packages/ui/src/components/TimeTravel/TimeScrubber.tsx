@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
 import { CATEGORY_COLORS, TOOL_DISPLAY_NAMES } from '../../constants';
+import { parseTimestamp } from '../../stats';
 import type { TimeScale } from './types';
 
 interface TimeScrubberProps {
@@ -133,19 +134,18 @@ export function TimeScrubber({
 
   // Drag handling — always enabled (calendar scales transition to rolling on drag)
   const [dragging, setDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   const lastX = useRef(0);
-  // rAF throttle: accumulate pixel deltas between frames, commit once per frame.
-  // Between frames, the content container is shifted via direct DOM transform
-  // for instant visual feedback without any React re-renders.
+  // Accumulated pixel deltas since last parent commit.
+  // Parent state updates are throttled (~12fps) to avoid heavy DashboardBody re-renders
+  // while TimeScrubber re-renders at full pointer rate (just applying a CSS transform).
   const accDxRef = useRef(0);
-  const dragOffsetRef = useRef(0);
-  const rafRef = useRef(0);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup rAF on unmount
+  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (commitTimer.current) clearTimeout(commitTimer.current);
     };
   }, []);
 
@@ -154,7 +154,7 @@ export function TimeScrubber({
       setDragging(true);
       lastX.current = e.clientX;
       accDxRef.current = 0;
-      dragOffsetRef.current = 0;
+      setDragOffset(0);
       e.currentTarget.setPointerCapture(e.pointerId);
     },
     [],
@@ -166,48 +166,47 @@ export function TimeScrubber({
       const dx = e.clientX - lastX.current;
       lastX.current = e.clientX;
       accDxRef.current += dx;
-      dragOffsetRef.current += dx;
 
-      // Instant visual feedback: shift content via direct DOM manipulation (zero React work)
-      if (contentRef.current) {
-        contentRef.current.style.transform = `translateX(${dragOffsetRef.current}px)`;
-      }
+      // Instant visual feedback via local state (only TimeScrubber re-renders; memos are cached)
+      setDragOffset((prev) => prev + dx);
 
-      // Throttle state commits to once per animation frame
-      if (!rafRef.current) {
-        rafRef.current = requestAnimationFrame(() => {
-          rafRef.current = 0;
+      // Throttle expensive parent state updates (~12fps instead of every pointer move)
+      if (!commitTimer.current) {
+        commitTimer.current = setTimeout(() => {
+          commitTimer.current = null;
           const totalDx = accDxRef.current;
           accDxRef.current = 0;
-          dragOffsetRef.current = 0;
-          // Clear the direct DOM transform before React re-renders with new positions
-          if (contentRef.current) contentRef.current.style.transform = '';
-          // Use windowEnd as the drag anchor so calendar→rolling transitions
-          // don't cause the viewport to jump. Clamp to Date.now().
-          const newTime = Math.min(windowEnd + -totalDx / pxPerMs, Date.now());
+          setDragOffset(0);
+          // Calendar: clamp within the calendar window (windowEnd may be in the future).
+          // Rolling: clamp to Date.now() to prevent scrubbing into the future.
+          const raw = windowEnd + -totalDx / pxPerMs;
+          const newTime = isCalendar
+            ? Math.max(Math.min(raw, windowEnd), windowStart)
+            : Math.min(raw, Date.now());
           onChange(newTime);
-        });
+        }, 80);
       }
     },
-    [dragging, pxPerMs, windowEnd, onChange],
+    [dragging, pxPerMs, windowEnd, windowStart, isCalendar, onChange],
   );
 
   const handlePointerUp = useCallback(() => {
     setDragging(false);
     // Flush any remaining accumulated movement
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
+    if (commitTimer.current) {
+      clearTimeout(commitTimer.current);
+      commitTimer.current = null;
     }
-    if (contentRef.current) contentRef.current.style.transform = '';
     if (accDxRef.current !== 0 && pxPerMs > 0) {
-      const newTime = Math.min(windowEnd + -accDxRef.current / pxPerMs, Date.now());
+      const raw = windowEnd + -accDxRef.current / pxPerMs;
+      const newTime = isCalendar
+        ? Math.max(Math.min(raw, windowEnd), windowStart)
+        : Math.min(raw, Date.now());
       accDxRef.current = 0;
-      dragOffsetRef.current = 0;
       onChange(newTime);
     }
-    dragOffsetRef.current = 0;
-  }, [windowEnd, pxPerMs, onChange]);
+    setDragOffset(0);
+  }, [windowEnd, windowStart, isCalendar, pxPerMs, onChange]);
 
   // Generate ticks — right-edge anchored at windowEnd
   const ticks = useMemo(() => {
@@ -250,8 +249,8 @@ export function TimeScrubber({
     () =>
       sessions.map((s) => ({
         session: s,
-        start: new Date(s.started_at).getTime(),
-        end: new Date(s.ended_at).getTime(),
+        start: parseTimestamp(s.started_at),
+        end: parseTimestamp(s.ended_at),
       })),
     [sessions],
   );
@@ -260,20 +259,27 @@ export function TimeScrubber({
   const sessionBlocks = useMemo(() => {
     if (!width || pxPerMs === 0) return [];
 
-    return parsedSessions
+    const blocks = parsedSessions
       .filter((s) => s.start <= windowEnd && s.end >= windowStart)
       .map((s) => ({
         session: s.session,
         leftOffset: (Math.max(s.start, windowStart) - windowEnd) * pxPerMs,
         width: (Math.min(s.end, windowEnd) - Math.max(s.start, windowStart)) * pxPerMs,
       }));
+    // For large windows (week/month), cap rendered blocks to avoid DOM bloat.
+    // Show longest blocks first — they're the most visually meaningful.
+    if (blocks.length > 100) {
+      blocks.sort((a, b) => b.width - a.width);
+      return blocks.slice(0, 100);
+    }
+    return blocks;
   }, [parsedSessions, windowStart, windowEnd, width, pxPerMs]);
 
   // Pre-parse milestones
   const parsedMilestones = useMemo(
     () =>
       milestones
-        .map((m) => ({ milestone: m, time: new Date(m.created_at).getTime() }))
+        .map((m) => ({ milestone: m, time: parseTimestamp(m.created_at) }))
         .sort((a, b) => a.time - b.time),
     [milestones],
   );
@@ -344,6 +350,7 @@ export function TimeScrubber({
   return (
     <div className="relative h-16">
       <div
+        data-testid="time-scrubber"
         className="absolute inset-0 bg-transparent border-t border-border/50 overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
         ref={containerRef}
         onPointerDown={handlePointerDown}
@@ -367,11 +374,10 @@ export function TimeScrubber({
           />
         )}
 
-        {/* Ticks + markers container (anchored at right edge; transform applied directly via ref during drag) */}
+        {/* Ticks + markers container (anchored at right edge; shifted via transform during drag) */}
         <div
-          ref={contentRef}
           className="absolute right-0 top-0 bottom-0 w-0 pointer-events-none"
-          style={dragging ? { willChange: 'transform' } : undefined}
+          style={dragOffset ? { transform: `translateX(${dragOffset}px)`, willChange: 'transform' } : undefined}
         >
           {/* Ticks */}
           {ticks.map((tick) => (
@@ -396,7 +402,7 @@ export function TimeScrubber({
           {sessionBlocks.map((block) => (
             <div
               key={block.session.session_id}
-              className="absolute bottom-0 rounded-t-md pointer-events-auto cursor-pointer transition-opacity hover:opacity-80"
+              className="absolute bottom-0 rounded-t-md pointer-events-auto cursor-pointer hover:opacity-80"
               style={{
                 left: block.leftOffset,
                 width: Math.max(block.width, 3),

@@ -33,3 +33,6 @@ packages/cli/LICENSE
 packages/api/
 packages/admin/
 packages/worker/
+
+**/e2e/report/
+**/e2e/test-results/*

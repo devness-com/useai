@@ -95,7 +95,7 @@ export function TimeTravelPanel({
       // (prevents flicker loop: snap-to-live → useEffect restores calendar → re-transition).
       if (isCalendar) {
         const now = Date.now();
-        if (newTime >= now - 2000) {
+        if (newTime >= now - 2000 && newTime <= now + 2000) {
           onChange(null);
           return;
         }
@@ -103,7 +103,10 @@ export function TimeTravelPanel({
         if (rollingEquiv) {
           onScaleChange(rollingEquiv);
         }
-        onChange(newTime);
+        // Clamp to past — calendar windowEnd can be in the future, but rolling
+        // mode snaps to live within ±2s of now. Push at least 3s into the past
+        // to prevent immediate snap-to-live → calendar restore → transition loop.
+        onChange(Math.min(newTime, now - 3000));
         return;
       }
 
@@ -235,7 +238,7 @@ export function TimeTravelPanel({
   };
 
   return (
-    <div className="flex flex-col bg-bg-surface-1 border border-border/50 rounded-2xl overflow-hidden mb-8 shadow-xl">
+    <div data-testid="time-travel-panel" className="flex flex-col bg-bg-surface-1 border border-border/50 rounded-2xl overflow-hidden mb-8 shadow-xl">
       {/* Top bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-3 border-b border-border/50 gap-4">
         {/* Left: Time + date display */}
@@ -261,6 +264,7 @@ export function TimeTravelPanel({
                 >
                   <Clock className={`w-5 h-5 ${isLive ? 'text-text-muted' : 'text-history'}`} />
                   <span
+                    data-testid="time-display"
                     className={`text-xl font-mono font-bold tracking-tight tabular-nums ${isLive ? 'text-text-primary' : 'text-history'}`}
                   >
                     {new Date(effectiveTime).toLocaleTimeString([], {
@@ -289,11 +293,12 @@ export function TimeTravelPanel({
             </div>
 
             {isLive ? (
-              <StatusBadge label="Live" color="success" dot glow />
+              <StatusBadge label="Live" color="success" dot glow data-testid="live-badge" />
             ) : (
               <>
-                <StatusBadge label="History" color="muted" />
+                <StatusBadge label="History" color="muted" data-testid="history-badge" />
                 <button
+                  data-testid="go-live-button"
                   onClick={() => onChange(null)}
                   className="group flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-history/10 hover:bg-history text-history hover:text-white rounded-xl transition-all border border-history/20"
                 >
@@ -323,6 +328,7 @@ export function TimeTravelPanel({
             {ROLLING_SCALES.map((s) => (
               <button
                 key={s}
+                data-testid={`scale-${s}`}
                 onClick={() => onScaleChange(s)}
                 className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
                   scale === s
@@ -344,6 +350,7 @@ export function TimeTravelPanel({
               return (
                 <button
                   key={s}
+                  data-testid={`scale-${s}`}
                   onClick={() => onScaleChange(s)}
                   className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
                     isActive

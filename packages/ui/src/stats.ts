@@ -1,6 +1,18 @@
 import type { SessionSeal } from '@useai/shared/types';
 import type { Milestone } from '@useai/shared/types';
 
+// Module-level timestamp cache — avoids repeated new Date(iso).getTime()
+// across filterSessionsByWindow, countSessionsOutsideWindow, etc.
+const _tsCache = new Map<string, number>();
+export function parseTimestamp(iso: string): number {
+  let v = _tsCache.get(iso);
+  if (v === undefined) {
+    v = new Date(iso).getTime();
+    _tsCache.set(iso, v);
+  }
+  return v;
+}
+
 export interface ComputedStats {
   totalHours: number;
   totalSessions: number;
@@ -127,8 +139,8 @@ export function countSessionsOutsideWindow(
   let before = 0;
   let after = 0;
   for (const s of allSessions) {
-    const sEnd = new Date(s.ended_at).getTime();
-    const sStart = new Date(s.started_at).getTime();
+    const sEnd = parseTimestamp(s.ended_at);
+    const sStart = parseTimestamp(s.started_at);
     if (sEnd < windowStart) before++;
     else if (sStart > windowEnd) after++;
   }
@@ -142,8 +154,8 @@ export function filterSessionsByWindow(
   end: number,
 ): SessionSeal[] {
   return sessions.filter((s) => {
-    const sStart = new Date(s.started_at).getTime();
-    const sEnd = new Date(s.ended_at).getTime();
+    const sStart = parseTimestamp(s.started_at);
+    const sEnd = parseTimestamp(s.ended_at);
     return sStart <= end && sEnd >= start;
   });
 }
@@ -155,7 +167,7 @@ export function filterMilestonesByWindow(
   end: number,
 ): Milestone[] {
   return milestones.filter((m) => {
-    const t = new Date(m.created_at).getTime();
+    const t = parseTimestamp(m.created_at);
     return t >= start && t <= end;
   });
 }
@@ -209,7 +221,7 @@ export function groupSessionsWithMilestones(
   }));
 
   // Sort by session start time, most recent first
-  result.sort((a, b) => new Date(b.session.started_at).getTime() - new Date(a.session.started_at).getTime());
+  result.sort((a, b) => parseTimestamp(b.session.started_at) - parseTimestamp(a.session.started_at));
 
   return result;
 }
@@ -300,7 +312,7 @@ export function groupIntoConversations(
     });
   }
 
-  result.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  result.sort((a, b) => parseTimestamp(b.startedAt) - parseTimestamp(a.startedAt));
 
   return result;
 }
@@ -331,8 +343,8 @@ export function getHourlyActivity(sessions: SessionSeal[], date: string): { hour
   }
 
   for (const s of sessions) {
-    const sStart = new Date(s.started_at).getTime();
-    const sEnd = new Date(s.ended_at).getTime();
+    const sStart = parseTimestamp(s.started_at);
+    const sEnd = parseTimestamp(s.ended_at);
 
     if (sEnd < dayStart || sStart > dayEnd) continue;
 
