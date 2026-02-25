@@ -17,6 +17,29 @@ import {
 import type { ChainRecord, Keystore } from '@useai/shared';
 
 /**
+ * Snapshot of parent session state, saved when a child (subagent) session starts.
+ * Restored when the child session ends so the parent can continue.
+ */
+export interface SavedParentState {
+  sessionId: string;
+  sessionStartTime: number;
+  heartbeatCount: number;
+  sessionRecordCount: number;
+  chainTipHash: string;
+  conversationId: string;
+  conversationIndex: number;
+  sessionTaskType: string;
+  sessionTitle: string | null;
+  sessionPrivateTitle: string | null;
+  sessionPromptWordCount: number | null;
+  project: string | null;
+  modelId: string | null;
+  startCallTokensEst: { input: number; output: number } | null;
+  inProgress: boolean;
+  inProgressSince: number | null;
+}
+
+/**
  * Encapsulates all mutable session state for a single MCP session.
  * In stdio mode a single instance is shared; in daemon mode each
  * connected client gets its own SessionState.
@@ -51,6 +74,8 @@ export class SessionState {
   inProgressSince: number | null;
   /** Session ID that was auto-sealed by seal-active hook (for useai_end fallback). */
   autoSealedSessionId: string | null;
+  /** Saved parent session state when a child (subagent) session is active. */
+  parentState: SavedParentState | null;
 
   constructor() {
     this.sessionId = generateSessionId();
@@ -62,6 +87,7 @@ export class SessionState {
     this.inProgress = false;
     this.inProgressSince = null;
     this.autoSealedSessionId = null;
+    this.parentState = null;
     this.sessionStartTime = Date.now();
     this.heartbeatCount = 0;
     this.sessionRecordCount = 0;
@@ -134,6 +160,58 @@ export class SessionState {
 
   getSessionDuration(): number {
     return Math.round((Date.now() - this.sessionStartTime) / 1000);
+  }
+
+  /**
+   * Save the current session state as the parent, so it can be restored
+   * after a child (subagent) session finishes.
+   */
+  saveParentState(): void {
+    this.parentState = {
+      sessionId: this.sessionId,
+      sessionStartTime: this.sessionStartTime,
+      heartbeatCount: this.heartbeatCount,
+      sessionRecordCount: this.sessionRecordCount,
+      chainTipHash: this.chainTipHash,
+      conversationId: this.conversationId,
+      conversationIndex: this.conversationIndex,
+      sessionTaskType: this.sessionTaskType,
+      sessionTitle: this.sessionTitle,
+      sessionPrivateTitle: this.sessionPrivateTitle,
+      sessionPromptWordCount: this.sessionPromptWordCount,
+      project: this.project,
+      modelId: this.modelId,
+      startCallTokensEst: this.startCallTokensEst,
+      inProgress: this.inProgress,
+      inProgressSince: this.inProgressSince,
+    };
+  }
+
+  /**
+   * Restore the parent session state after a child session ends.
+   * Returns true if parent state was restored, false if no parent state was saved.
+   */
+  restoreParentState(): boolean {
+    if (!this.parentState) return false;
+    const p = this.parentState;
+    this.sessionId = p.sessionId;
+    this.sessionStartTime = p.sessionStartTime;
+    this.heartbeatCount = p.heartbeatCount;
+    this.sessionRecordCount = p.sessionRecordCount;
+    this.chainTipHash = p.chainTipHash;
+    this.conversationId = p.conversationId;
+    this.conversationIndex = p.conversationIndex;
+    this.sessionTaskType = p.sessionTaskType;
+    this.sessionTitle = p.sessionTitle;
+    this.sessionPrivateTitle = p.sessionPrivateTitle;
+    this.sessionPromptWordCount = p.sessionPromptWordCount;
+    this.project = p.project;
+    this.modelId = p.modelId;
+    this.startCallTokensEst = p.startCallTokensEst;
+    this.inProgress = p.inProgress;
+    this.inProgressSince = p.inProgressSince;
+    this.parentState = null;
+    return true;
   }
 
   initializeKeystore(): void {

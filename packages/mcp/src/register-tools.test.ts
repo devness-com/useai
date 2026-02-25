@@ -83,6 +83,11 @@ function createMockSession() {
     project: null as string | null,
     modelId: null as string | null,
     startCallTokensEst: null as { input: number; output: number } | null,
+    inProgress: false,
+    inProgressSince: null as number | null,
+    autoSealedSessionId: null as string | null,
+    parentState: null as { sessionId: string; [key: string]: unknown } | null,
+    mcpSessionId: null as string | null,
     reset: vi.fn(),
     setClient: vi.fn(),
     setTaskType: vi.fn(),
@@ -105,6 +110,8 @@ function createMockSession() {
     appendToChain: vi.fn((_event: string, _data: Record<string, unknown>) => ({
       hash: 'chain_hash_abc123def456',
     })),
+    saveParentState: vi.fn(),
+    restoreParentState: vi.fn(() => false),
   };
 }
 
@@ -248,13 +255,15 @@ describe('registerTools', () => {
 
       const result = await handler({ task_type: 'coding' });
 
-      expect(result.content).toHaveLength(1);
+      expect(result.content).toHaveLength(2);
       expect(result.content[0]!.type).toBe('text');
       expect(result.content[0]!.text).toContain('useai session started');
       expect(result.content[0]!.text).toContain('coding');
       expect(result.content[0]!.text).toContain('claude-code');
       expect(result.content[0]!.text).toContain('abcdef12');
       expect(result.content[0]!.text).toContain('signed');
+      expect(result.content[1]!.type).toBe('text');
+      expect(result.content[1]!.text).toMatch(/^conversation_id=/);
     });
 
     it('indicates unsigned when signing is not available', async () => {

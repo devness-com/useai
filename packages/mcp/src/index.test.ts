@@ -136,12 +136,18 @@ vi.mock('./session-state.js', () => ({
     mockSessionObj.sessionPrivateTitle = null;
     mockSessionObj.sessionPromptWordCount = null;
     mockSessionObj.project = null;
+    mockSessionObj.inProgress = false;
+    mockSessionObj.inProgressSince = null;
+    mockSessionObj.autoSealedSessionId = null;
+    mockSessionObj.parentState = null;
 
     // Methods — plain functions so vi.clearAllMocks() doesn't affect them.
     // They delegate to vi.fn() mocks which ARE restored in restoreMockImplementations().
     mockSessionObj.reset = (...args: any[]) => {
       (mockResetSession as any)(...args);
       mockSessionObj.conversationIndex++;
+      mockSessionObj.inProgress = false;
+      mockSessionObj.inProgressSince = null;
     };
     mockSessionObj.setClient = (...args: any[]) => (mockSetClient as any)(...args);
     mockSessionObj.setTaskType = (...args: any[]) => (mockSetTaskType as any)(...args);
@@ -155,6 +161,49 @@ vi.mock('./session-state.js', () => ({
     mockSessionObj.appendToChain = (...args: any[]) => (mockAppendToChain as any)(...args);
     mockSessionObj.detectProject = () => {};
     mockSessionObj.sessionChainPath = () => '/home/testuser/.useai/active/mock-session.jsonl';
+    mockSessionObj.saveParentState = () => {
+      mockSessionObj.parentState = {
+        sessionId: mockSessionId,
+        sessionStartTime: mockSessionStartTime,
+        heartbeatCount: mockHeartbeatCount,
+        sessionRecordCount: mockSessionRecordCount,
+        chainTipHash: mockChainTipHash,
+        conversationId: mockSessionObj.conversationId,
+        conversationIndex: mockSessionObj.conversationIndex,
+        sessionTaskType: mockSessionTaskType,
+        sessionTitle: mockSessionObj.sessionTitle,
+        sessionPrivateTitle: mockSessionObj.sessionPrivateTitle,
+        sessionPromptWordCount: mockSessionObj.sessionPromptWordCount,
+        project: mockSessionObj.project,
+        modelId: mockSessionObj.modelId,
+        startCallTokensEst: mockSessionObj.startCallTokensEst,
+        inProgress: mockSessionObj.inProgress,
+        inProgressSince: mockSessionObj.inProgressSince,
+      };
+    };
+    mockSessionObj.restoreParentState = () => {
+      if (!mockSessionObj.parentState) return false;
+      const p = mockSessionObj.parentState;
+      // Restore mock variables that getters reference
+      mockSessionId = p.sessionId;
+      mockSessionStartTime = p.sessionStartTime;
+      mockHeartbeatCount = p.heartbeatCount;
+      mockSessionRecordCount = p.sessionRecordCount;
+      mockChainTipHash = p.chainTipHash;
+      mockSessionObj.conversationId = p.conversationId;
+      mockSessionObj.conversationIndex = p.conversationIndex;
+      mockSessionTaskType = p.sessionTaskType;
+      mockSessionObj.sessionTitle = p.sessionTitle;
+      mockSessionObj.sessionPrivateTitle = p.sessionPrivateTitle;
+      mockSessionObj.sessionPromptWordCount = p.sessionPromptWordCount;
+      mockSessionObj.project = p.project;
+      mockSessionObj.modelId = p.modelId;
+      mockSessionObj.startCallTokensEst = p.startCallTokensEst;
+      mockSessionObj.inProgress = p.inProgress;
+      mockSessionObj.inProgressSince = p.inProgressSince;
+      mockSessionObj.parentState = null;
+      return true;
+    };
 
     return mockSessionObj;
   }),
@@ -294,6 +343,10 @@ beforeEach(() => {
   mockSessionObj.sessionPrivateTitle = null;
   mockSessionObj.sessionPromptWordCount = null;
   mockSessionObj.project = null;
+  mockSessionObj.inProgress = false;
+  mockSessionObj.inProgressSince = null;
+  mockSessionObj.autoSealedSessionId = null;
+  mockSessionObj.parentState = null;
 
   // Restore all mock implementations (vi.clearAllMocks clears them)
   restoreMockImplementations();
@@ -371,9 +424,11 @@ describe('useai_start', () => {
 
     const result = await callTool('useai_start', { task_type: 'planning' });
 
-    expect(result.content).toHaveLength(1);
+    expect(result.content).toHaveLength(2);
     expect(result.content[0].type).toBe('text');
     expect(result.content[0].text).toContain('useai session started');
+    expect(result.content[1].type).toBe('text');
+    expect(result.content[1].text).toMatch(/^conversation_id=/);
   });
 
   it('indicates signing status when Ed25519 key is available', async () => {

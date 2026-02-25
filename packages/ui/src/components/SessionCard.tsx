@@ -66,7 +66,40 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-function EvaluationDetail({ evaluation, showPublic = false }: { evaluation: SessionEvaluation; showPublic?: boolean }) {
+function SessionMetaRow({ model, toolOverhead }: { model?: string; toolOverhead?: SessionSeal['tool_overhead'] }) {
+  if (!model && !toolOverhead) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      {model && (
+        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
+          <Cpu className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
+          <span className="text-text-secondary">Model</span>
+          <span className="text-text-secondary font-mono font-bold ml-0.5">{model}</span>
+        </div>
+      )}
+      {toolOverhead && (
+        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
+          <Activity className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
+          <span className="text-text-secondary">Tracking overhead</span>
+          <span className="text-text-secondary font-mono font-bold ml-0.5">~{toolOverhead.total_tokens_est} tokens</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EvaluationDetail({
+  evaluation,
+  showPublic = false,
+  model,
+  toolOverhead,
+}: {
+  evaluation: SessionEvaluation;
+  showPublic?: boolean;
+  model?: string;
+  toolOverhead?: SessionSeal['tool_overhead'];
+}) {
+  const hasMeta = !!model || !!toolOverhead;
   const metrics = [
     { label: 'Prompt', value: evaluation.prompt_quality, reason: evaluation.prompt_quality_reason, Icon: MessageSquare },
     { label: 'Context', value: evaluation.context_provided, reason: evaluation.context_provided_reason, Icon: FileText },
@@ -77,46 +110,52 @@ function EvaluationDetail({ evaluation, showPublic = false }: { evaluation: Sess
   const hasReasons = metrics.some(m => m.reason) || evaluation.task_outcome_reason;
 
   return (
-    <div className="px-2 py-1.5 bg-bg-surface-2/30 rounded-md mb-2">
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+    <div className="px-2.5 py-2 bg-bg-surface-2/30 rounded-md mb-2">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         {metrics.map(({ label, value, Icon }) => (
-          <div key={label} className="flex items-center gap-1.5 text-[10px]">
-            <Icon className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
-            <span className="text-text-muted min-w-[58px]">{label}</span>
+          <div key={label} className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
+            <Icon className="w-3 h-3 text-text-muted/60 flex-shrink-0" />
+            <span className="text-text-secondary whitespace-nowrap">{label}</span>
             <ScoreBar score={value} />
           </div>
         ))}
-      </div>
-
-      {!showPublic && hasReasons && (
-        <div className="mt-1.5 pt-1.5 border-t border-border/15 space-y-1">
-          {evaluation.task_outcome_reason && (
-            <div className="flex items-start gap-1.5 text-[10px]">
-              <span className="text-error font-bold flex-shrink-0">Outcome:</span>
-              <span className="text-text-muted leading-tight">{evaluation.task_outcome_reason}</span>
-            </div>
-          )}
-          {metrics.filter(m => m.reason).map(({ label, reason }) => (
-            <div key={label} className="flex items-start gap-1.5 text-[10px]">
-              <span className="text-accent font-bold flex-shrink-0">{label}:</span>
-              <span className="text-text-muted leading-tight">{reason}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 mt-1.5 pt-1.5 border-t border-border/15">
-        <div className="flex items-center gap-1.5 text-[10px]">
+        {hasMeta && (
+          <>
+            <div className="hidden md:block h-3.5 w-px bg-border/30" />
+            <SessionMetaRow model={model} toolOverhead={toolOverhead} />
+          </>
+        )}
+        <div className="hidden md:block h-3.5 w-px bg-border/30" />
+        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
           <RefreshCw className="w-3 h-3 text-text-muted/50" />
           <span className="text-text-muted">Iterations</span>
           <span className="text-text-secondary font-mono font-bold ml-0.5">{evaluation.iteration_count}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px]">
+        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
           <Wrench className="w-3 h-3 text-text-muted/50" />
           <span className="text-text-muted">Tools</span>
           <span className="text-text-secondary font-mono font-bold ml-0.5">{evaluation.tools_leveraged}</span>
         </div>
       </div>
+
+      {!showPublic && hasReasons && (
+        <div className="mt-2 pt-2 border-t border-border/15">
+          <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[10px]">
+            {evaluation.task_outcome_reason && (
+              <>
+                <span className="text-error font-bold text-right">Outcome:</span>
+                <span className="text-text-secondary leading-relaxed">{evaluation.task_outcome_reason}</span>
+              </>
+            )}
+            {metrics.filter(m => m.reason).map(({ label, reason }) => (
+              <div key={label} className="contents">
+                <span className="text-accent font-bold text-right">{label}:</span>
+                <span className="text-text-secondary leading-relaxed">{reason}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -126,6 +165,7 @@ interface SessionCardProps {
   milestones: Milestone[];
   defaultExpanded?: boolean;
   externalShowPublic?: boolean;
+  contextLabel?: string;
   hideClientAvatar?: boolean;
   hideProject?: boolean;
   showFullDate?: boolean;
@@ -134,7 +174,7 @@ interface SessionCardProps {
   onDeleteMilestone?: (milestoneId: string) => void;
 }
 
-export const SessionCard = memo(function SessionCard({ session, milestones, defaultExpanded = false, externalShowPublic, hideClientAvatar = false, hideProject = false, showFullDate = false, highlightWords, onDeleteSession, onDeleteMilestone }: SessionCardProps) {
+export const SessionCard = memo(function SessionCard({ session, milestones, defaultExpanded = false, externalShowPublic, contextLabel, hideClientAvatar = false, hideProject = false, showFullDate = false, highlightWords, onDeleteSession, onDeleteMilestone }: SessionCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [internalShowPublic, setInternalShowPublic] = useState(false);
   const showPublic = externalShowPublic ?? internalShowPublic;
@@ -167,14 +207,17 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
   let publicTitle = session.title || milestoneFallback || 'Untitled Session';
 
   const hasPrivacyDifference = privateTitle !== publicTitle;
+  const canTogglePrivacy = hasPrivacyDifference && externalShowPublic === undefined;
+  const showActionStrip = !!onDeleteSession || hasDetails || canTogglePrivacy;
+  const contextLabelCompact = contextLabel?.replace(/^\s*prompt\s*/i, '').trim();
 
   return (
-    <div className={`group/card mb-1 rounded-lg border transition-all duration-200 ${
-      expanded ? 'bg-bg-surface-1 border-accent/30 shadow-md' : 'bg-bg-surface-1/30 border-border/50 hover:border-accent/30'
+    <div className={`group/card mb-2 rounded-xl border transition-all duration-200 ${
+      expanded ? 'bg-bg-surface-1 border-accent/35 shadow-md' : 'bg-bg-surface-1/35 border-border/50 hover:border-accent/30'
     }`}>
       <div className="flex items-center">
         <button
-          className="flex-1 flex items-center gap-3 px-3 py-2 text-left min-w-0"
+          className="flex-1 flex items-center gap-3 px-3.5 py-2.5 text-left min-w-0"
           onClick={() => hasDetails && setExpanded(!expanded)}
           style={{ cursor: hasDetails ? 'pointer' : 'default' }}
         >
@@ -206,8 +249,13 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
             </div>
           )}
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center gap-2">
+              {contextLabel && (
+                <span className="inline-flex items-center rounded-md border border-accent/20 bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent/90">
+                  {contextLabelCompact || contextLabel}
+                </span>
+              )}
               <div className="flex items-center gap-1.5 min-w-0">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -219,11 +267,11 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
                     className="flex items-center gap-1.5 min-w-0"
                   >
                     {showPublic ? (
-                      <Shield className="w-3 h-3 text-success/60 flex-shrink-0" />
+                      <Shield className="w-3 h-3 text-success/70 flex-shrink-0" />
                     ) : (
-                      <Lock className="w-3 h-3 text-accent/60 flex-shrink-0" />
+                      <Lock className="w-3 h-3 text-accent/70 flex-shrink-0" />
                     )}
-                    <span className="text-sm font-bold truncate text-text-primary tracking-tight">
+                    <span className="text-[15px] font-semibold truncate text-text-primary tracking-tight leading-tight">
                       <HighlightText text={showPublic ? publicTitle : privateTitle} words={highlightWords} />
                     </span>
                   </motion.div>
@@ -232,16 +280,16 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
 
             </div>
 
-            <div className="flex items-center gap-3 text-[11px] text-text-muted font-semibold">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3 opacity-60" />
+            <div className="flex items-center gap-3.5 text-[11px] text-text-secondary font-medium">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 opacity-75" />
                 {formatDuration(session.duration_seconds)}
               </span>
 
               {session.duration_seconds >= 900 && (() => {
                 const expected = Math.floor(session.duration_seconds / 900);
                 const focus = expected > 0 ? Math.min(session.heartbeat_count / expected, 1) : 0;
-                const focusColor = focus >= 0.8 ? 'text-success' : focus >= 0.5 ? 'text-accent' : 'text-text-muted';
+                const focusColor = focus >= 0.8 ? 'text-success' : focus >= 0.5 ? 'text-accent' : 'text-text-secondary';
                 return (
                   <span className={`flex items-center gap-0.5 font-mono ${focusColor}`} title={`Focus: ${Math.round(focus * 100)}%`}>
                     <Zap className="w-2.5 h-2.5 fill-current opacity-70" />
@@ -250,21 +298,21 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
                 );
               })()}
 
-              <span className="opacity-50 font-mono tracking-tight">
+              <span className="text-text-secondary/80 font-mono tracking-tight">
                 {showFullDate && `${new Date(session.started_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
                 {formatTimeRange(session.started_at, session.ended_at).split(' — ')[0]}
               </span>
 
               {!showPublic && !isUntitled && !hideProject && (
-                <span className="flex items-center gap-0.5 text-text-muted/70" title={`Project: ${rawProject}`}>
-                  <FolderKanban className="w-2.5 h-2.5 opacity-60" />
-                  <span className="max-w-[100px] truncate">{rawProject}</span>
+                <span className="flex items-center gap-1 text-text-secondary/85" title={`Project: ${rawProject}`}>
+                  <FolderKanban className="w-2.5 h-2.5 opacity-70" />
+                  <span className="max-w-[130px] truncate">{rawProject}</span>
                 </span>
               )}
 
               {milestones.length > 0 && (
-                <span className="flex items-center gap-0.5" title={`${milestones.length} milestone${milestones.length !== 1 ? 's' : ''}`}>
-                  <Flag className="w-2.5 h-2.5 opacity-60" />
+                <span className="flex items-center gap-1 text-text-secondary/85" title={`${milestones.length} milestone${milestones.length !== 1 ? 's' : ''}`}>
+                  <Flag className="w-2.5 h-2.5 opacity-70" />
                   {milestones.length}
                 </span>
               )}
@@ -276,37 +324,44 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
           </div>
         </button>
 
-        {/* Action strip */}
-        <div className="flex items-center px-2 gap-1.5 border-l border-border/30 h-8 self-center">
-          {onDeleteSession && (
-            <DeleteButton onDelete={() => onDeleteSession(session.session_id)} className="opacity-0 group-hover/card:opacity-100" />
-          )}
-          {hasPrivacyDifference && externalShowPublic === undefined && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowPublic(!showPublic);
-              }}
-              className={`p-1.5 rounded-lg transition-all ${
-                showPublic ? 'bg-success/10 text-success' : 'text-text-muted hover:bg-bg-surface-2'
-              }`}
-              title={showPublic ? "Public Mode" : "Private Mode"}
-            >
-              {showPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            </button>
-          )}
+        {showActionStrip && (
+          <div className="flex items-center px-2.5 gap-1.5 border-l border-border/30 h-9 self-center">
+            {onDeleteSession && (
+              <DeleteButton
+                onDelete={() => onDeleteSession(session.session_id)}
+                className="opacity-0 group-hover/card:opacity-100 focus-within:opacity-100"
+              />
+            )}
+            {canTogglePrivacy && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPublic(!showPublic);
+                }}
+                className={`p-1.5 rounded-lg transition-all ${
+                  showPublic ? 'bg-success/10 text-success' : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface-2'
+                }`}
+                title={showPublic ? 'Public title shown' : 'Private title shown'}
+                aria-label={showPublic ? 'Show private title' : 'Show public title'}
+              >
+                {showPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              </button>
+            )}
 
-          {hasDetails && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className={`p-1.5 rounded-lg transition-all ${
-                expanded ? 'text-accent bg-accent/5' : 'text-text-muted hover:bg-bg-surface-2'
-              }`}
-            >
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
-            </button>
-          )}
-        </div>
+            {hasDetails && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className={`p-1.5 rounded-lg transition-all ${
+                  expanded ? 'text-accent bg-accent/8' : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface-2'
+                }`}
+                title={expanded ? 'Collapse details' : 'Expand details'}
+                aria-label={expanded ? 'Collapse details' : 'Expand details'}
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -318,32 +373,18 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 pt-1 space-y-1">
+            <div className="px-3.5 pb-3.5 pt-1.5 space-y-2">
               <div className="h-px bg-border/20 mb-2 mx-1" />
 
-              {/* Model & tool overhead metadata */}
-              {(session.model || session.tool_overhead) && (
-                <div className="flex items-center gap-4 px-2 py-1.5 bg-bg-surface-2/30 rounded-md mb-2">
-                  {session.model && (
-                    <div className="flex items-center gap-1.5 text-[10px]">
-                      <Cpu className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
-                      <span className="text-text-muted">Model</span>
-                      <span className="text-text-secondary font-mono font-bold ml-0.5">{session.model}</span>
-                    </div>
-                  )}
-                  {session.tool_overhead && (
-                    <div className="flex items-center gap-1.5 text-[10px]">
-                      <Activity className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
-                      <span className="text-text-muted">Tracking overhead</span>
-                      <span className="text-text-secondary font-mono font-bold ml-0.5">~{session.tool_overhead.total_tokens_est} tokens</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {session.evaluation && (
-                <EvaluationDetail evaluation={session.evaluation} showPublic={showPublic} />
+                <EvaluationDetail
+                  evaluation={session.evaluation}
+                  showPublic={showPublic}
+                  model={session.model}
+                  toolOverhead={session.tool_overhead}
+                />
               )}
+              {!session.evaluation && <SessionMetaRow model={session.model} toolOverhead={session.tool_overhead} />}
 
               {milestones.length > 0 && <div className="space-y-0.5">
                 {milestones.map((m) => {

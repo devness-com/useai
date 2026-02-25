@@ -53,8 +53,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-4">
-        <div className="max-w-[1000px] mx-auto px-6 py-3 flex items-center justify-between relative">
+      <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-6">
+        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between relative">
           <Link href="/dashboard" className="flex items-center gap-3">
             <UseAILogo className="h-6" />
           </Link>
@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sessions={sessions}
         milestones={milestones}
       />
-      <div className="max-w-[1000px] mx-auto px-6 pb-6">
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 pb-6">
         {children}
       </div>
     </div>

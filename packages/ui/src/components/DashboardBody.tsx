@@ -199,7 +199,7 @@ export function DashboardBody({
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-1">
+    <div className="space-y-3">
       <TimeTravelPanel
         value={timeTravelTime}
         onChange={setTimeTravelTime}
@@ -233,7 +233,7 @@ export function DashboardBody({
 
       {activeTab === 'sessions' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
+          <div className="flex items-center justify-between px-1 pt-0.5">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-text-muted uppercase tracking-widest">
                 Activity Feed
@@ -245,24 +245,31 @@ export function DashboardBody({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setGlobalShowPublic((v) => !v)}
-                className={`p-1.5 rounded-md border transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border transition-all duration-200 ${
                   globalShowPublic
                     ? 'bg-success/10 border-success/30 text-success'
                     : 'bg-bg-surface-1 border-border/50 text-text-muted hover:text-text-primary hover:border-text-muted/50'
                 }`}
                 title={globalShowPublic ? 'Showing public titles' : 'Showing private titles'}
+                aria-label={globalShowPublic ? 'Switch to private titles' : 'Switch to public titles'}
               >
                 {globalShowPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline text-xs font-medium">
+                  {globalShowPublic ? 'Public' : 'Private'}
+                </span>
               </button>
               <button
                 onClick={() => setShowFilters((v) => !v)}
-                className={`p-1.5 rounded-md border transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border transition-all duration-200 ${
                   showFilters || hasActiveFilter
                     ? 'bg-accent/10 border-accent/30 text-accent'
                     : 'bg-bg-surface-1 border-border/50 text-text-muted hover:text-text-primary hover:border-text-muted/50'
                 }`}
+                title={showFilters ? 'Hide filters' : 'Show filters'}
+                aria-label={showFilters ? 'Hide filters' : 'Show filters'}
               >
                 <Filter className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-xs font-medium">Filters</span>
               </button>
             </div>
           </div>

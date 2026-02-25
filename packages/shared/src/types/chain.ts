@@ -34,6 +34,8 @@ export interface ToolOverhead {
 
 export interface SessionSeal {
   session_id: string;
+  /** Parent session ID when this is a child (subagent) session. */
+  parent_session_id?: string;
   conversation_id?: string;
   conversation_index?: number;
   client: string;

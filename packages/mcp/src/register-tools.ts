@@ -285,15 +285,26 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       conversation_id: z
         .string()
         .optional()
-        .describe('Pass the conversation_id from the previous useai_start response to group sessions in the same conversation. Omit for a new conversation.'),
+        .describe('Pass the conversation_id value from the previous useai_start response to group multiple prompts in the same conversation. The value is returned as "conversation_id=<uuid>" in the response. Omit for a new conversation.'),
     },
     async ({ task_type, title, private_title, project, model, conversation_id }) => {
       // Save previous conversation ID before reset (reset preserves it + increments index)
       const prevConvId = session.conversationId;
 
-      // Seal the previous session before resetting (prevents orphaned sessions)
-      if (session.sessionRecordCount > 0 && opts?.sealBeforeReset) {
-        opts.sealBeforeReset();
+      // Detect child (subagent) session: if a session is actively in-progress,
+      // save its state instead of sealing it. The parent will be restored when
+      // the child ends via useai_end.
+      const isChildSession = session.inProgress && session.sessionRecordCount > 0;
+      const parentSessionId = isChildSession ? session.sessionId : null;
+
+      if (isChildSession) {
+        // Save parent state — do NOT seal the parent session
+        session.saveParentState();
+      } else {
+        // Normal flow: seal any previous session before resetting (prevents orphaned sessions)
+        if (session.sessionRecordCount > 0 && opts?.sealBeforeReset) {
+          opts.sealBeforeReset();
+        }
       }
       session.reset();
       session.autoSealedSessionId = null; // New session — clear previous auto-seal tracking
@@ -302,19 +313,32 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       // Conversation ID logic:
       // - If conversation_id is provided and matches the previous: keep (reset already incremented index)
       // - If conversation_id is provided but different: use it as a new conversation
-      // - If not provided: generate a fresh conversation ID (each useai_start = new conversation by default)
+      // - If not provided and this is a child session: inherit parent's conversation_id
+      //   (reset() already preserved it and incremented index)
+      // - If not provided and not a child: generate a fresh conversation ID
+      //
+      // Models often copy the response format verbatim (e.g. "edb8fb48#0" instead of the
+      // full UUID), so we normalize: strip any "#N" suffix and match by prefix if the input
+      // looks like a truncated ID (≤8 chars).
       if (conversation_id) {
-        if (conversation_id !== prevConvId) {
-          session.conversationId = conversation_id;
+        const normalized = conversation_id.replace(/#\d+$/, '');
+        const matches =
+          normalized === prevConvId ||
+          (normalized.length <= 8 && prevConvId.startsWith(normalized));
+        if (!matches) {
+          session.conversationId = normalized.length <= 8 ? generateSessionId() : normalized;
           session.conversationIndex = 0;
         }
         // else: matches previous → reset() already preserved it and incremented index
-      } else {
-        // No conversation_id → new conversation (fixes long-lived MCP connections
+      } else if (!isChildSession) {
+        // No conversation_id and not a child → new conversation (fixes long-lived MCP connections
         // like Antigravity where multiple user conversations share one transport)
         session.conversationId = generateSessionId();
         session.conversationIndex = 0;
       }
+      // else: child session without explicit conversation_id → inherits parent's
+      // (reset() already preserved conversationId and incremented conversationIndex)
+
       if (project) session.setProject(project);
       if (model) session.setModel(model);
       session.setTaskType(task_type ?? 'coding');
@@ -333,6 +357,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       if (title) chainData.title = title;
       if (private_title) chainData.private_title = private_title;
       if (model) chainData.model = model;
+      if (parentSessionId) chainData.parent_session_id = parentSessionId;
 
       const record = session.appendToChain('session_start', chainData);
 
@@ -343,7 +368,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       // Persist MCP→UseAI mapping for daemon restart recovery
       writeMcpMapping(session.mcpSessionId, session.sessionId);
 
-      const responseText = `useai session started — ${session.sessionTaskType} on ${session.clientName} · ${session.sessionId.slice(0, 8)} · conv ${session.conversationId.slice(0, 8)}#${session.conversationIndex} · ${session.signingAvailable ? 'signed' : 'unsigned'}`;
+      const childSuffix = parentSessionId ? ` · child of ${parentSessionId.slice(0, 8)}` : '';
+      const responseText = `useai session started — ${session.sessionTaskType} on ${session.clientName} · ${session.sessionId.slice(0, 8)} · conv ${session.conversationId.slice(0, 8)}#${session.conversationIndex}${childSuffix} · ${session.signingAvailable ? 'signed' : 'unsigned'}`;
 
       // Estimate token overhead for this tool call
       const paramsJson = JSON.stringify({ task_type, title, private_title, project, model });
@@ -357,6 +383,10 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
           {
             type: 'text' as const,
             text: responseText,
+          },
+          {
+            type: 'text' as const,
+            text: `conversation_id=${session.conversationId}`,
           },
         ],
       };
@@ -394,19 +424,19 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
   server.tool(
     'useai_end',
     'End the current AI coding session and record milestones. ' +
-      'Each milestone needs TWO titles: (1) a generic public "title" safe for public display ' +
-      '(NEVER include project names, file names, class names, or any identifying details), ' +
-      'and (2) an optional detailed "private_title" for the user\'s own records that CAN include ' +
-      'project names, file names, and specific details. ' +
-      'GOOD title: "Implemented user authentication". ' +
-      'GOOD private_title: "Added JWT auth to UseAI API server". ' +
-      'BAD title: "Fixed bug in Acme auth service". ' +
+      'Each milestone is an object with required fields: "title" (generic, no project names), "category" ' +
+      '(e.g. "feature", "bugfix", "investigation", "analysis", "refactor", "test", "docs"), and optional ' +
+      '"private_title" and "complexity". Example: [{"title": "Implemented auth flow", "category": "feature"}]. ' +
       'Also provide an `evaluation` object assessing the session: prompt_quality (1-5), context_provided (1-5), ' +
       'task_outcome (completed/partial/abandoned/blocked), iteration_count, independence_level (1-5), ' +
       'scope_quality (1-5), and tools_leveraged count. Score honestly based on the actual interaction. ' +
       'For any scored metric < 5 or non-completed outcome, you MUST provide a *_reason field explaining ' +
       'what was lacking and a concrete tip for the user to improve next time. Only skip *_reason for a perfect 5.',
     {
+      session_id: z
+        .string()
+        .optional()
+        .describe('Session ID to end. If omitted, ends the current active session. Pass the session_id from your useai_start response to explicitly target your own session (important when subagents may have started their own sessions on the same connection).'),
       task_type: taskTypeSchema
         .optional()
         .describe('What kind of task was the developer working on?'),
@@ -419,11 +449,11 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         .optional()
         .describe('Approximate number of files created or modified (count only, no names)'),
       milestones: coerceJsonString(z.array(z.object({
-        title: z.string().describe("PRIVACY-CRITICAL: Generic description of what was accomplished. NEVER include project names, repo names, product names, package names, file names, file paths, class names, API endpoints, database names, company names, or ANY identifier that could reveal which codebase this work was done in. Write as if describing the work to a stranger. GOOD: 'Implemented user authentication', 'Fixed race condition in background worker', 'Added unit tests for data validation', 'Refactored state management layer'. BAD: 'Fixed bug in Acme auth', 'Investigated ProjectX pipeline', 'Updated UserService.ts in src/services/', 'Added tests for coverit MCP tool'"),
-        private_title: z.string().optional().describe("Detailed description for the user's private records. CAN include project names, file names, and specific details. Example: 'Added private/public milestone support to UseAI MCP server'"),
-        category: milestoneCategorySchema.describe('Type of work completed'),
-        complexity: complexitySchema.optional().describe('How complex was this task?'),
-      }))).optional().describe('What was accomplished this session? List each distinct piece of work completed. Provide both a generic public title and an optional detailed private_title.'),
+        title: z.string().describe("PRIVACY-CRITICAL: Generic description of what was accomplished. NEVER include project names, file paths, class names, or identifying details. GOOD: 'Implemented user authentication'. BAD: 'Fixed bug in Acme auth'."),
+        private_title: z.string().optional().describe("Detailed description for the user's private records. CAN include project names and specifics."),
+        category: milestoneCategorySchema.describe('Required. Type of work: feature, bugfix, refactor, test, docs, investigation, analysis, research, setup, deployment, performance, cleanup, chore, security, migration, design, devops, config, other'),
+        complexity: complexitySchema.optional().describe('Optional. simple, medium, or complex. Defaults to medium.'),
+      }))).optional().describe('Array of milestone objects. Each MUST have "title" (string) and "category" (string). Example: [{"title": "Implemented auth flow", "category": "feature"}, {"title": "Fixed race condition", "category": "bugfix"}]'),
       evaluation: coerceJsonString(z.object({
         prompt_quality: z.number().min(1).max(5).describe('How clear, specific, and complete was the initial prompt? 1=vague/ambiguous, 5=crystal clear with acceptance criteria'),
         prompt_quality_reason: z.string().optional().describe('Required if prompt_quality < 5. Explain what was vague/missing and how the user could phrase it better next time.'),
@@ -439,7 +469,90 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         tools_leveraged: z.number().min(0).describe('Count of distinct AI capabilities used (code gen, debugging, refactoring, testing, docs, etc.)'),
       })).optional().describe('AI-assessed evaluation of this session. Score honestly based on the actual interaction.'),
     },
-    async ({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation }) => {
+    async ({ session_id: targetSessionId, task_type, languages, files_touched_count, milestones: milestonesInput, evaluation }) => {
+      // If session_id targets the saved parent session, auto-seal the current child
+      // and restore the parent before ending it with the provided milestones/evaluation.
+      if (targetSessionId && session.parentState &&
+          session.parentState.sessionId.startsWith(targetSessionId)) {
+        // Auto-seal the current child session without milestones
+        if (session.sessionRecordCount > 0) {
+          const childDuration = session.getSessionDuration();
+          const childNow = new Date().toISOString();
+          const childEndRecord = session.appendToChain('session_end', {
+            duration_seconds: childDuration,
+            task_type: session.sessionTaskType,
+            languages: [],
+            files_touched: 0,
+            heartbeat_count: session.heartbeatCount,
+            auto_sealed: true,
+            parent_ended: true,
+          });
+          const childSealData = JSON.stringify({
+            session_id: session.sessionId,
+            parent_session_id: session.parentState.sessionId,
+            conversation_id: session.conversationId,
+            conversation_index: session.conversationIndex,
+            client: session.clientName,
+            task_type: session.sessionTaskType,
+            languages: [],
+            files_touched: 0,
+            project: session.project ?? undefined,
+            title: session.sessionTitle ?? undefined,
+            private_title: session.sessionPrivateTitle ?? undefined,
+            model: session.modelId ?? undefined,
+            started_at: new Date(session.sessionStartTime).toISOString(),
+            ended_at: childNow,
+            duration_seconds: childDuration,
+            heartbeat_count: session.heartbeatCount,
+            record_count: session.sessionRecordCount,
+            chain_end_hash: childEndRecord.hash,
+          });
+          const childSealSig = signHash(
+            createHash('sha256').update(childSealData).digest('hex'),
+            session.signingKey,
+          );
+          session.appendToChain('session_seal', { seal: childSealData, seal_signature: childSealSig });
+
+          // Move child chain file to sealed/
+          const childActivePath = join(ACTIVE_DIR, `${session.sessionId}.jsonl`);
+          const childSealedPath = join(SEALED_DIR, `${session.sessionId}.jsonl`);
+          try {
+            if (existsSync(childActivePath)) renameSync(childActivePath, childSealedPath);
+          } catch { /* ignore */ }
+
+          // Write child seal to sessions index
+          const childSeal: SessionSeal = {
+            session_id: session.sessionId,
+            parent_session_id: session.parentState.sessionId,
+            conversation_id: session.conversationId,
+            conversation_index: session.conversationIndex,
+            client: session.clientName,
+            task_type: session.sessionTaskType,
+            languages: [],
+            files_touched: 0,
+            project: session.project ?? undefined,
+            title: session.sessionTitle ?? undefined,
+            private_title: session.sessionPrivateTitle ?? undefined,
+            model: session.modelId ?? undefined,
+            started_at: new Date(session.sessionStartTime).toISOString(),
+            ended_at: childNow,
+            duration_seconds: childDuration,
+            heartbeat_count: session.heartbeatCount,
+            record_count: session.sessionRecordCount,
+            chain_start_hash: 'GENESIS',
+            chain_end_hash: childEndRecord.hash,
+            seal_signature: childSealSig,
+          };
+          const childSessions = getSessions().filter(s => s.session_id !== childSeal.session_id);
+          childSessions.push(childSeal);
+          writeJson(SESSIONS_FILE, childSessions);
+        }
+
+        // Restore parent state
+        session.restoreParentState();
+        // Fall through to end the parent session normally below
+      }
+
       // Guard: skip if session was never started (e.g. born from reset after seal-active hook)
       if (session.sessionRecordCount === 0) {
         // Fallback: if the session was auto-sealed by seal-active hook, enrich the
@@ -538,9 +651,13 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       // End input estimate will be computed after building response text (below)
       const startEst = session.startCallTokensEst ?? { input: 0, output: 0 };
 
+      // Track parent relationship for child sessions
+      const parentId = session.parentState?.sessionId;
+
       // Create session seal
       const sealData = JSON.stringify({
         session_id: session.sessionId,
+        ...(parentId ? { parent_session_id: parentId } : {}),
         conversation_id: session.conversationId,
         conversation_index: session.conversationIndex,
         client: session.clientName,
@@ -604,6 +721,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       // Append seal to sessions index
       const seal: SessionSeal = {
         session_id: session.sessionId,
+        ...(parentId ? { parent_session_id: parentId } : {}),
         conversation_id: session.conversationId,
         conversation_index: session.conversationIndex,
         client: session.clientName,
@@ -638,6 +756,11 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       session.inProgress = false;
       session.inProgressSince = null;
 
+      // If this was a child session, restore the parent session state
+      // so the parent can continue (and eventually call useai_end itself).
+      const restoredParent = session.restoreParentState();
+      const parentRestoredStr = restoredParent ? ` · parent ${session.sessionId.slice(0, 8)} restored` : '';
+
       // Keep MCP→UseAI mapping intentionally: if the daemon restarts and the
       // MCP client reuses its stale session ID, recovery can read the sealed
       // chain file to inherit the client name. The mapping is cleaned up by
@@ -647,7 +770,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         content: [
           {
             type: 'text' as const,
-            text: responseText,
+            text: responseText + parentRestoredStr,
           },
         ],
       };

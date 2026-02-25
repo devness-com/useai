@@ -75,6 +75,7 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
   const privateConvTitle = firstSession.private_title || firstSession.title || firstSession.project || 'Conversation';
   const publicConvTitle = firstSession.title || firstSession.project || 'Conversation';
   const hasPrivacyDifference = privateConvTitle !== publicConvTitle;
+  const canTogglePrivacy = hasPrivacyDifference && !globalShowPublic;
 
   // Derive project from conversation sessions
   const UNTITLED_PROJECTS = ['untitled', 'mcp', 'unknown', 'default', 'none', 'null', 'undefined'];
@@ -82,13 +83,13 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
   const hasProject = !!convProject && !UNTITLED_PROJECTS.includes(convProject.toLowerCase());
 
   return (
-    <div className={`group/conv mb-1 rounded-lg border transition-all duration-200 ${
-      expanded ? 'bg-bg-surface-1 border-accent/30 shadow-md' : 'bg-bg-surface-1/30 border-border/50 hover:border-accent/30'
+    <div className={`group/conv mb-2 rounded-xl border transition-all duration-200 ${
+      expanded ? 'bg-bg-surface-1 border-accent/35 shadow-md' : 'bg-bg-surface-1/35 border-border/50 hover:border-accent/30'
     }`}>
       {/* Conversation header */}
       <div className="flex items-center">
         <button
-          className="flex-1 flex items-center gap-3 px-3 py-2 text-left min-w-0"
+          className="flex-1 flex items-center gap-3 px-3.5 py-2.5 text-left min-w-0"
           onClick={() => setExpanded(!expanded)}
         >
           <div
@@ -116,8 +117,8 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -129,44 +130,44 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
                     className="flex items-center gap-1.5 min-w-0"
                   >
                     {showPublic ? (
-                      <Shield className="w-3 h-3 text-success/60 flex-shrink-0" />
+                      <Shield className="w-3 h-3 text-success/70 flex-shrink-0" />
                     ) : (
-                      <Lock className="w-3 h-3 text-accent/60 flex-shrink-0" />
+                      <Lock className="w-3 h-3 text-accent/70 flex-shrink-0" />
                     )}
-                    <span className="text-sm font-bold truncate text-text-primary tracking-tight">
+                    <span className="text-[15px] font-semibold truncate text-text-primary tracking-tight leading-tight">
                       <HighlightText text={showPublic ? publicConvTitle : privateConvTitle} words={highlightWords} />
                     </span>
                   </motion.div>
                 </AnimatePresence>
               </div>
 
-              <span className="text-[10px] font-bold text-accent/80 bg-accent/5 px-1.5 py-0.5 rounded border border-accent/10 flex-shrink-0">
+              <span className="text-[10px] font-bold text-accent/90 bg-accent/10 px-1.5 py-0.5 rounded border border-accent/20 flex-shrink-0">
                 {group.sessions.length} prompts
               </span>
 
             </div>
 
-            <div className="flex items-center gap-3 text-[11px] text-text-muted font-semibold">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3 opacity-60" />
+            <div className="flex items-center gap-3.5 text-[11px] text-text-secondary font-medium">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 opacity-75" />
                 {formatDuration(group.totalDuration)}
               </span>
 
-              <span className="opacity-50 font-mono tracking-tight">
+              <span className="text-text-secondary/80 font-mono tracking-tight">
                 {showFullDate && `${new Date(group.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
                 {formatTime(group.startedAt)}
               </span>
 
               {!showPublic && hasProject && (
-                <span className="flex items-center gap-0.5 text-text-muted/70" title={`Project: ${convProject}`}>
-                  <FolderKanban className="w-2.5 h-2.5 opacity-60" />
-                  <span className="max-w-[100px] truncate">{convProject}</span>
+                <span className="flex items-center gap-1 text-text-secondary/85" title={`Project: ${convProject}`}>
+                  <FolderKanban className="w-2.5 h-2.5 opacity-70" />
+                  <span className="max-w-[130px] truncate">{convProject}</span>
                 </span>
               )}
 
               {group.totalMilestones > 0 && (
-                <span className="flex items-center gap-0.5" title={`${group.totalMilestones} milestone${group.totalMilestones !== 1 ? 's' : ''}`}>
-                  <Flag className="w-2.5 h-2.5 opacity-60" />
+                <span className="flex items-center gap-1 text-text-secondary/85" title={`${group.totalMilestones} milestone${group.totalMilestones !== 1 ? 's' : ''}`}>
+                  <Flag className="w-2.5 h-2.5 opacity-70" />
                   {group.totalMilestones}
                 </span>
               )}
@@ -177,17 +178,24 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
         </button>
 
         {/* Action strip */}
-        <div className="flex items-center px-2 gap-1.5 border-l border-border/30 h-8 self-center">
+        <div className="flex items-center px-2.5 gap-1.5 border-l border-border/30 h-9 self-center">
           {onDeleteConversation && group.conversationId && (
-            <DeleteButton onDelete={() => onDeleteConversation(group.conversationId!)} className="opacity-0 group-hover/conv:opacity-100" />
+            <DeleteButton
+              onDelete={() => onDeleteConversation(group.conversationId!)}
+              className="opacity-0 group-hover/conv:opacity-100 focus-within:opacity-100"
+            />
           )}
-          {hasPrivacyDifference && !globalShowPublic && (
+          {canTogglePrivacy && (
             <button
-              onClick={() => setLocalShowPublic(!localShowPublic)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLocalShowPublic(!localShowPublic);
+              }}
               className={`p-1.5 rounded-lg transition-all ${
-                showPublic ? 'bg-success/10 text-success' : 'text-text-muted hover:bg-bg-surface-2'
+                showPublic ? 'bg-success/10 text-success' : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface-2'
               }`}
-              title={showPublic ? "Public Mode" : "Private Mode"}
+              title={showPublic ? 'Public title shown' : 'Private title shown'}
+              aria-label={showPublic ? 'Show private title' : 'Show public title'}
             >
               {showPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             </button>
@@ -196,8 +204,10 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
           <button
             onClick={() => setExpanded(!expanded)}
             className={`p-1.5 rounded-lg transition-all ${
-              expanded ? 'text-accent bg-accent/5' : 'text-text-muted hover:bg-bg-surface-2'
+              expanded ? 'text-accent bg-accent/8' : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface-2'
             }`}
+            title={expanded ? 'Collapse conversation' : 'Expand conversation'}
+            aria-label={expanded ? 'Collapse conversation' : 'Expand conversation'}
           >
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
           </button>
@@ -214,14 +224,14 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-2 relative">
+            <div className="px-3.5 pb-2.5 relative">
               {/* Thread connector line */}
               <div
                 className="absolute left-[1.75rem] top-0 bottom-2 w-px"
                 style={{ backgroundColor: `${color}25` }}
               />
               <div className="space-y-1 pl-10">
-                {group.sessions.map((sg) => (
+                {group.sessions.map((sg, idx) => (
                   <div key={sg.session.session_id} className="relative">
                     {/* Dot on thread line */}
                     <div
@@ -233,6 +243,7 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
                       milestones={sg.milestones}
                       defaultExpanded={false}
                       externalShowPublic={showPublic || undefined}
+                      contextLabel={`Prompt ${idx + 1}`}
                       hideClientAvatar
                       hideProject
                       showFullDate={showFullDate}
@@ -354,7 +365,7 @@ export function SessionList({ sessions, milestones, filters, globalShowPublic, s
   const visible = isTruncated ? conversations.slice(0, visibleCount) : conversations;
 
   return (
-    <div className="space-y-1.5 mb-4">
+    <div className="space-y-2 mb-4">
       {outsideWindowCounts && outsideWindowCounts.after > 0 && (
         <button
           onClick={onNavigateNewer}

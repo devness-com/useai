@@ -64,8 +64,8 @@ interface HeaderProps {
 
 export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange, config, onRefresh }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-4">
-      <div className="max-w-[1000px] mx-auto px-6 py-3 flex items-center justify-between relative">
+    <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-6">
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between relative">
         <div className="flex items-center gap-3">
           <UseAILogo className="h-6" />
           {health && health.active_sessions > 0 && (

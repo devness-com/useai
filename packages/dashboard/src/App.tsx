@@ -63,7 +63,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-bg-base selection:bg-accent/30 selection:text-text-primary">
       <Header health={health} updateInfo={updateInfo} onSearchOpen={() => setSearchOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} config={config} onRefresh={loadAll} />
-      <div className="max-w-[1000px] mx-auto px-6 pb-6">
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 pb-6">
         <SearchOverlay
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
