@@ -177,9 +177,12 @@ export function TimeScrubber({
           const totalDx = accDxRef.current;
           accDxRef.current = 0;
           setDragOffset(0);
-          // Calendar: clamp within the calendar window (windowEnd may be in the future).
-          // Rolling: clamp to Date.now() to prevent scrubbing into the future.
-          const raw = windowEnd + -totalDx / pxPerMs;
+          // Compute offset relative to current value position (not windowEnd).
+          // For calendar views, windowEnd can be far in the future — computing from
+          // windowEnd would produce future timestamps that get clamped to now,
+          // making the scrubber feel "sticky" on week/month views.
+          // For rolling views, value === windowEnd so this is equivalent.
+          const raw = value + -totalDx / pxPerMs;
           const newTime = isCalendar
             ? Math.max(Math.min(raw, windowEnd), windowStart)
             : Math.min(raw, Date.now());
@@ -187,7 +190,7 @@ export function TimeScrubber({
         }, 80);
       }
     },
-    [dragging, pxPerMs, windowEnd, windowStart, isCalendar, onChange],
+    [dragging, pxPerMs, value, windowEnd, windowStart, isCalendar, onChange],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -198,7 +201,7 @@ export function TimeScrubber({
       commitTimer.current = null;
     }
     if (accDxRef.current !== 0 && pxPerMs > 0) {
-      const raw = windowEnd + -accDxRef.current / pxPerMs;
+      const raw = value + -accDxRef.current / pxPerMs;
       const newTime = isCalendar
         ? Math.max(Math.min(raw, windowEnd), windowStart)
         : Math.min(raw, Date.now());
@@ -206,7 +209,7 @@ export function TimeScrubber({
       onChange(newTime);
     }
     setDragOffset(0);
-  }, [windowEnd, windowStart, isCalendar, pxPerMs, onChange]);
+  }, [value, windowEnd, windowStart, isCalendar, pxPerMs, onChange]);
 
   // Generate ticks — right-edge anchored at windowEnd
   const ticks = useMemo(() => {

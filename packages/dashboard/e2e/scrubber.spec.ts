@@ -24,9 +24,10 @@ async function waitForDashboard(page: Page) {
 
 /** Get the current mode text (Live or History) */
 async function getMode(page: Page): Promise<'live' | 'history'> {
-  const liveVisible = await page.getByText('Live', { exact: true }).first().isVisible().catch(() => false);
-  if (liveVisible) return 'live';
-  return 'history';
+  // Check for the "Go Live" button — it only exists in history mode.
+  // (Can't use getByText('Live') because the Go Live button also contains "Live" text.)
+  const goLiveVisible = await page.getByTestId('go-live-button').isVisible().catch(() => false);
+  return goLiveVisible ? 'history' : 'live';
 }
 
 /** Get the text of the time display */

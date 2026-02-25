@@ -95,7 +95,10 @@ export function TimeTravelPanel({
       // (prevents flicker loop: snap-to-live → useEffect restores calendar → re-transition).
       if (isCalendar) {
         const now = Date.now();
-        if (newTime >= now - 2000 && newTime <= now + 2000) {
+        // Snap to live if scrubbing near or past "now".
+        // With value-based drag computation, right-drags always produce past timestamps,
+        // so this only triggers for tiny drags (< 2s) or left-drags (into the future).
+        if (newTime >= now - 2000) {
           onChange(null);
           return;
         }
@@ -103,19 +106,15 @@ export function TimeTravelPanel({
         if (rollingEquiv) {
           onScaleChange(rollingEquiv);
         }
-        // Clamp to past — calendar windowEnd can be in the future, but rolling
-        // mode snaps to live within ±2s of now. Push at least 3s into the past
-        // to prevent immediate snap-to-live → calendar restore → transition loop.
-        onChange(Math.min(newTime, now - 3000));
+        onChange(newTime);
         return;
       }
 
       const now = Date.now();
 
-      // Snap to live when scrubbing close to "now" (within 2s in either direction).
-      // The upper bound prevents false snaps when windowEnd is in the future
-      // (e.g. after a calendar→rolling transition where windowEnd = end-of-day).
-      if (newTime >= now - 2000 && newTime <= now + 2000) {
+      // Snap to live when scrubbing close to "now" (within 2s).
+      // TimeScrubber already clamps rolling values to Date.now(), so newTime ≤ now.
+      if (newTime >= now - 2000) {
         snappedToLiveRef.current = true;
         snapTimeRef.current = now;
         onChange(null);
