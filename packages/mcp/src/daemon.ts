@@ -124,11 +124,17 @@ function sealOrphanFile(sessionId: string): void {
     }
 
     const chainTip = lastRecord.hash;
-    // Use the last record's timestamp as the end time — not Date.now() —
-    // so orphan-sealed sessions reflect actual activity, not sweep delay.
-    const endTime = lastRecord.timestamp;
-    const duration = Math.round((new Date(endTime).getTime() - new Date(startTime).getTime()) / 1000);
-    const now = endTime;
+    // Use the last record's timestamp as the end time when we have multiple records
+    // (heartbeats, etc.), so orphan-sealed sessions reflect actual activity.
+    // But if the chain has only session_start (single record), the last record IS
+    // the first record, giving 0 duration. In that case, use Date.now() — the session
+    // was active until now (it's being sealed because it's orphaned, not because it's idle).
+    const lastRecordTime = new Date(lastRecord.timestamp).getTime();
+    const startTimeMs = new Date(startTime).getTime();
+    const chainDuration = Math.round((lastRecordTime - startTimeMs) / 1000);
+    const useWallClock = chainDuration < 1; // single record or sub-second gap
+    const duration = useWallClock ? Math.round((Date.now() - startTimeMs) / 1000) : chainDuration;
+    const now = useWallClock ? new Date().toISOString() : lastRecord.timestamp;
 
     // Append session_end
     const endRecord = buildChainRecord('session_end', sessionId, {
@@ -729,23 +735,27 @@ function recoverEndSession(
 
   // For already-sealed sessions, extract the duration from the existing seal
   // rather than recalculating with Date.now() (which inflates idle time).
-  // For active sessions, use the last record's timestamp as the effective end.
+  // For active sessions, use Date.now() — the session is being ended right now
+  // by this useai_end call, so wall-clock time is the correct end time.
+  // (Using the last chain record's timestamp would give 0 when only session_start exists.)
   const lastLine = lines[lines.length - 1]!;
   const lastParsed = JSON.parse(lastLine) as ChainRecord;
+  const startTimeMs = new Date(startTime).getTime();
   let duration: number;
   let now: string;
   if (isAlreadySealed && lastParsed.type === 'session_seal' && lastParsed.data['seal']) {
     try {
       const existingSeal = JSON.parse(lastParsed.data['seal'] as string) as { duration_seconds?: number; ended_at?: string };
-      duration = existingSeal.duration_seconds ?? Math.round((new Date(lastParsed.timestamp).getTime() - new Date(startTime).getTime()) / 1000);
+      duration = existingSeal.duration_seconds ?? Math.round((new Date(lastParsed.timestamp).getTime() - startTimeMs) / 1000);
       now = existingSeal.ended_at ?? lastParsed.timestamp;
     } catch {
-      duration = Math.round((new Date(lastParsed.timestamp).getTime() - new Date(startTime).getTime()) / 1000);
+      duration = Math.round((new Date(lastParsed.timestamp).getTime() - startTimeMs) / 1000);
       now = lastParsed.timestamp;
     }
   } else {
-    now = lastParsed.timestamp;
-    duration = Math.round((new Date(now).getTime() - new Date(startTime).getTime()) / 1000);
+    // Active session: use wall-clock time as end time
+    now = new Date().toISOString();
+    duration = Math.round((Date.now() - startTimeMs) / 1000);
   }
 
   // If already sealed by orphan sweep, just update sessions.json with richer data + save milestones
