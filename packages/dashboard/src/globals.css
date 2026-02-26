@@ -7,23 +7,23 @@
 \* ──────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg-base: #09090b;
-  --bg-surface-1: #18181b;
-  --bg-surface-2: #27272a;
-  --bg-surface-3: #3f3f46;
-  --border: #27272a;
-  --border-accent: rgba(var(--accent-rgb), 0.2);
-  --glass-bg: rgba(24, 24, 27, 0.7);
+  --bg-base: #040405;
+  --bg-surface-1: #0e0e11;
+  --bg-surface-2: #18181b;
+  --bg-surface-3: #27272a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(var(--accent-rgb), 0.3);
+  --glass-bg: rgba(14, 14, 17, 0.6);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg-base: #ffffff;
-    --bg-surface-1: #f4f4f5;
-    --bg-surface-2: #e4e4e7;
-    --bg-surface-3: #d4d4d8;
+    --bg-base: #fafafa;
+    --bg-surface-1: #ffffff;
+    --bg-surface-2: #f4f4f5;
+    --bg-surface-3: #e4e4e7;
     --border: #e4e4e7;
-    --border-accent: rgba(var(--accent-rgb), 0.1);
+    --border-accent: rgba(var(--accent-rgb), 0.4);
     --glass-bg: rgba(255, 255, 255, 0.7);
   }
 }

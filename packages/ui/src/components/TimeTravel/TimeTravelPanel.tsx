@@ -260,7 +260,7 @@ export function TimeTravelPanel({
   };
 
   return (
-    <div data-testid="time-travel-panel" className="flex flex-col bg-bg-surface-1 border border-border/50 rounded-2xl overflow-hidden mb-8 shadow-xl">
+    <div data-testid="time-travel-panel" className="flex flex-col bg-bg-surface-1 border border-border/50 rounded-2xl overflow-hidden mb-8 shadow-sm">
       {/* Top bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-3 border-b border-border/50 gap-4">
         {/* Left: Time + date display */}
