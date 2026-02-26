@@ -23,7 +23,7 @@ export function buildInstructionsText(frameworkId?: string): string {
   const framework = getFramework(frameworkId);
   return [
     '## UseAI Session Tracking',
-    '- At the START of every response, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
+    '- At the START of every response to a **user message**, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
     '- To group multiple prompts in the same conversation, pass the `conversation_id` from the previous `useai_start` response (returned as `conversation_id=<value>`). Omit it for the first message or a new conversation.',
     '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
     framework.getInstructionText(),

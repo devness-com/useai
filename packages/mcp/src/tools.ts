@@ -38,7 +38,7 @@ export function getInstructionsText(): string {
 /** Static instructions text for backward compatibility (uses raw default). */
 export const USEAI_INSTRUCTIONS_TEXT = [
   '## UseAI Session Tracking',
-  '- At the START of every response, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
+  '- At the START of every response to a **user message**, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
   '- To group multiple prompts in the same conversation, pass the `conversation_id` from the previous `useai_start` response. Omit it for the first message or a new conversation.',
   '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
   '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones (generic descriptions only \u2014 no project names, file paths, or company names), and an `evaluation` object honestly assessing: prompt_quality (1-5), context_provided (1-5), task_outcome, iteration_count, independence_level (1-5), scope_quality (1-5), tools_leveraged count.',
@@ -168,7 +168,7 @@ const toolInstructions: Record<string, InstructionPlacement> = {
 const URL_SUPPORTED_TOOLS = new Set([
   'claude-code', 'claude-desktop', 'cursor', 'windsurf', 'vscode', 'vscode-insiders',
   'gemini-cli', 'antigravity', 'copilot-cli', 'trae', 'cline', 'roo-code', 'kilo-code',
-  'codex', 'goose', 'opencode', 'crush',
+  'opencode', 'crush',
 ]);
 
 const registryTools: AiTool[] = registry.tools.map((baseTool) => {
@@ -177,17 +177,13 @@ const registryTools: AiTool[] = registry.tools.map((baseTool) => {
     ...baseTool,
     supportsUrl,
     installHttp() {
-      // Write HTTP config entry
-      if (baseTool.configFormat === 'vscode') {
+      // Write HTTP config entry only for URL-supporting formats
+      if (baseTool.configFormat === 'vscode' && supportsUrl) {
         installVscodeHttp(baseTool.getConfigPath());
-      } else if (baseTool.configFormat === 'standard') {
+      } else if (baseTool.configFormat === 'standard' && supportsUrl) {
         installStandardHttp(baseTool.getConfigPath());
-      } else if (baseTool.configFormat === 'toml') {
-        installTomlHttp(baseTool.getConfigPath());
-      } else if (baseTool.configFormat === 'yaml') {
-        installYamlHttp(baseTool.getConfigPath());
       } else {
-        // Fall back to stdio for unsupported formats
+        // Fall back to stdio for unsupported formats (toml, yaml, zed, etc.)
         baseTool.install();
         return;
       }

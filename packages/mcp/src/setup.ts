@@ -513,9 +513,8 @@ export async function runSetup(args: string[]): Promise<void> {
   }
 
   if (isStatus) {
-    // Only show tools that are actually installed on this system
-    const detected = tools.filter((t) => t.detect());
-    (await getShared()).showStatus(detected);
+    // Show all tools — showStatus handles the "Not found" label for undetected ones
+    (await getShared()).showStatus(tools);
   } else if (isRemove) {
     await fullRemoveFlow(tools, autoYes, explicit);
   } else if (isStdio) {

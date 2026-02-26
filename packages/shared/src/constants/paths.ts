@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-export const USEAI_DIR = join(homedir(), '.useai');
+export const USEAI_DIR = process.env['USEAI_HOME'] ?? join(homedir(), '.useai');
 export const DATA_DIR = join(USEAI_DIR, 'data');
 export const ACTIVE_DIR = join(DATA_DIR, 'active');
 export const SEALED_DIR = join(DATA_DIR, 'sealed');
