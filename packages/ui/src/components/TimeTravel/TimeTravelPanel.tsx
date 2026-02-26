@@ -256,7 +256,7 @@ export function TimeTravelPanel({
       if (scale === 'week') return `${prefix} Week`;
       return `${prefix} Month`;
     }
-    return `${direction === -1 ? 'Back' : 'Forward'} ${SCALE_LABELS[scale]}`;
+    return `${direction === -1 ? 'Back' : 'Forward'} ${SCALE_LABELS[scale].toLowerCase()}`;
   };
 
   return (
@@ -334,7 +334,7 @@ export function TimeTravelPanel({
           {/* Date + period display */}
           <div className="flex items-center gap-2 text-sm text-text-secondary font-medium px-0.5">
             <Calendar className="w-3.5 h-3.5 text-text-muted" />
-            <span>
+            <span data-testid="date-display">
               {new Date(effectiveTime).toLocaleDateString([], {
                 weekday: 'short',
                 month: 'long',

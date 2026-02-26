@@ -25,6 +25,7 @@ interface StatusBadgeProps {
   icon?: ReactNode;
   glow?: boolean;
   className?: string;
+  'data-testid'?: string;
 }
 
 export function StatusBadge({
@@ -34,11 +35,13 @@ export function StatusBadge({
   icon,
   glow = false,
   className = '',
+  'data-testid': dataTestId,
 }: StatusBadgeProps) {
   const styles = COLOR_STYLES[color];
 
   return (
     <div
+      data-testid={dataTestId}
       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${styles.border} ${styles.bg} ${className}`}
       style={glow ? { boxShadow: '0 0 10px rgba(var(--accent-rgb), 0.1)' } : undefined}
     >

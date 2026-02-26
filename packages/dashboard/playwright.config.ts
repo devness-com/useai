@@ -10,9 +10,9 @@ export default defineConfig({
     // Slow down actions so scrub behavior is visible
     launchOptions: { slowMo: 50 },
     viewport: { width: 1280, height: 900 },
-    video: 'on',
-    screenshot: 'on',
-    trace: 'on',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
   },
   // Don't auto-start the dev server — you run it yourself
   webServer: undefined,

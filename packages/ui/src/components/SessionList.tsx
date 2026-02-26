@@ -231,7 +231,7 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
                 style={{ backgroundColor: `${color}25` }}
               />
               <div className="space-y-1 pl-10">
-                {group.sessions.map((sg, idx) => (
+                {group.sessions.map((sg) => (
                   <div key={sg.session.session_id} className="relative">
                     {/* Dot on thread line */}
                     <div
@@ -243,7 +243,6 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
                       milestones={sg.milestones}
                       defaultExpanded={false}
                       externalShowPublic={showPublic || undefined}
-                      contextLabel={`Prompt ${idx + 1}`}
                       hideClientAvatar
                       hideProject
                       showFullDate={showFullDate}
