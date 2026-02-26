@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { RotateCcw, ChevronLeft, ChevronRight, Edit2, Calendar, Clock } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { TimeScrubber } from './TimeScrubber';
@@ -75,6 +75,29 @@ export function TimeTravelPanel({
 
   // Compute window for scrubber
   const timeWindow = getTimeWindow(scale, effectiveTime);
+
+  // Period label
+  const periodLabel = useMemo(() => {
+    const { start, end } = timeWindow;
+    const fmtTime = (ts: number) =>
+      new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+    const fmtDateShort = (ts: number) =>
+      new Date(ts).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+    const isSameDay = new Date(start).toDateString() === new Date(end - 1).toDateString();
+
+    if (isLive) {
+      if (isSameDay) {
+        return `${fmtTime(start)} – Now`;
+      }
+      return `${fmtDateShort(start)}, ${fmtTime(start)} – Now`;
+    }
+
+    if (isSameDay) {
+      return `${fmtTime(start)} – ${fmtTime(end)}`;
+    }
+    return `${fmtDateShort(start)}, ${fmtTime(start)} – ${fmtDateShort(end)}, ${fmtTime(end)}`;
+  }, [timeWindow, isLive]);
 
   // Editing state
   const [isEditingTime, setIsEditingTime] = useState(false);
@@ -308,15 +331,19 @@ export function TimeTravelPanel({
             )}
           </div>
 
-          {/* Date display */}
+          {/* Date + period display */}
           <div className="flex items-center gap-2 text-sm text-text-secondary font-medium px-0.5">
             <Calendar className="w-3.5 h-3.5 text-text-muted" />
-            {new Date(effectiveTime).toLocaleDateString([], {
-              weekday: 'short',
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            })}
+            <span>
+              {new Date(effectiveTime).toLocaleDateString([], {
+                weekday: 'short',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+            <span className="text-text-muted">·</span>
+            <span className="text-text-muted text-xs tabular-nums">{periodLabel}</span>
           </div>
         </div>
 
