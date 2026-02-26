@@ -35,6 +35,11 @@ async function getTimeDisplay(page: Page): Promise<string> {
   return page.getByTestId('time-display').innerText();
 }
 
+/** Get the period label text (e.g. "12:00 AM – Now") */
+async function getPeriodLabel(page: Page): Promise<string> {
+  return page.getByTestId('period-label').innerText();
+}
+
 /** Click a scale button (e.g., 'day', 'week', 'month', '1h', '12h') */
 async function selectScale(page: Page, scale: string) {
   await page.getByTestId(`scale-${scale}`).click();
@@ -339,5 +344,99 @@ test.describe('TimeScrubber — Drag Smoothness', () => {
     const total = liveCount + historyCount;
     const dominant = Math.max(liveCount, historyCount);
     expect(dominant / total).toBeGreaterThan(0.6);
+  });
+});
+
+// ─── Period Label Tests ──────────────────────────────────────────────────────
+
+test.describe('TimeTravelPanel — Period Label', () => {
+  test.beforeEach(async ({ page }) => {
+    await waitForDashboard(page);
+  });
+
+  test('period label is visible', async ({ page }) => {
+    await expect(page.getByTestId('period-label')).toBeVisible();
+  });
+
+  test('live day shows "– Now" suffix', async ({ page }) => {
+    await selectScale(page, 'day');
+    const label = await getPeriodLabel(page);
+    expect(label).toContain('Now');
+    // Day starts at midnight: should contain "12:00 AM"
+    expect(label).toMatch(/12:00\s*AM/);
+  });
+
+  test('live rolling scale shows "– Now" suffix', async ({ page }) => {
+    await selectScale(page, '3h');
+    const label = await getPeriodLabel(page);
+    expect(label).toContain('Now');
+    // Should show a time range like "5:10 AM – Now" (no date prefix for same-day)
+    expect(label).toMatch(/\d{1,2}:\d{2}\s*(AM|PM)\s*[–-]\s*Now/);
+  });
+
+  test('live week shows multi-day range with "– Now"', async ({ page }) => {
+    await selectScale(page, 'week');
+    const label = await getPeriodLabel(page);
+    expect(label).toContain('Now');
+    // Multi-day range includes a weekday abbreviation
+    expect(label).toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/);
+  });
+
+  test('live month shows multi-day range with "– Now"', async ({ page }) => {
+    await selectScale(page, 'month');
+    const label = await getPeriodLabel(page);
+    expect(label).toContain('Now');
+    // Month range includes a month abbreviation
+    expect(label).toMatch(/Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/);
+  });
+
+  test('history mode shows start–end times instead of "Now"', async ({ page }) => {
+    await selectScale(page, 'day');
+    // Enter history mode via nav arrow (not drag, which triggers calendar→rolling transition)
+    await page.locator('button[title="Previous Day"]').click();
+    await page.waitForTimeout(300);
+    expect(await getMode(page)).toBe('history');
+
+    const label = await getPeriodLabel(page);
+    expect(label).not.toContain('Now');
+    // Should have two time references separated by a dash
+    expect(label).toMatch(/\d{1,2}:\d{2}\s*(AM|PM)\s*[–-]\s*\d{1,2}:\d{2}\s*(AM|PM)/);
+  });
+
+  test('history day shows midnight–midnight', async ({ page }) => {
+    // Navigate to previous day via the back arrow (stays on calendar 'day' scale)
+    await selectScale(page, 'day');
+    await page.locator('button[title="Previous Day"]').click();
+    await page.waitForTimeout(300);
+    expect(await getMode(page)).toBe('history');
+
+    const label = await getPeriodLabel(page);
+    // A full historical day: 12:00 AM – 12:00 AM
+    expect(label).toMatch(/12:00\s*AM\s*[–-]\s*12:00\s*AM/);
+  });
+
+  test('period label updates when switching scales', async ({ page }) => {
+    await selectScale(page, 'day');
+    const dayLabel = await getPeriodLabel(page);
+
+    await selectScale(page, '3h');
+    const rollingLabel = await getPeriodLabel(page);
+
+    // Labels should differ — day starts at midnight, rolling starts 3h ago
+    expect(dayLabel).not.toBe(rollingLabel);
+  });
+
+  test('returning to live restores "Now" suffix', async ({ page }) => {
+    await selectScale(page, 'day');
+    await dragScrubber(page, 200, { slow: true });
+    await page.waitForTimeout(300);
+    expect(await getMode(page)).toBe('history');
+    expect(await getPeriodLabel(page)).not.toContain('Now');
+
+    // Click "Go Live"
+    await page.getByTestId('go-live-button').click();
+    await page.waitForTimeout(300);
+    expect(await getMode(page)).toBe('live');
+    expect(await getPeriodLabel(page)).toContain('Now');
   });
 });

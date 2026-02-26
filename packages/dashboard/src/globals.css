@@ -1,29 +1,19 @@
 @import "tailwindcss";
+@import "../../ui/src/theme.css";
 @source "../../ui/src/**/*.tsx";
 
+/* ── Dashboard surface context ───────────────────────────────────────────── *\
+ *  Comfortable working palette — wider surface spread for data readability   *
+\* ──────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Dark theme (default) */
   --bg-base: #09090b;
   --bg-surface-1: #18181b;
   --bg-surface-2: #27272a;
   --bg-surface-3: #3f3f46;
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --accent: #b4f82c;
-  --accent-rgb: 180, 248, 44;
-  --accent-bright: #d4fc6e;
-  --accent-dim: #4d7c0f;
   --border: #27272a;
   --border-accent: rgba(var(--accent-rgb), 0.2);
   --glass-bg: rgba(24, 24, 27, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --streak: #f59e0b;
-  --streak-bg: rgba(245, 158, 11, 0.06);
-  --streak-border: rgba(245, 158, 11, 0.2);
-  --streak-muted: rgba(245, 158, 11, 0.5);
-  --history: #60a5fa;
-  --history-rgb: 96, 165, 250;
 }
 
 @media (prefers-color-scheme: light) {
@@ -32,73 +22,13 @@
     --bg-surface-1: #f4f4f5;
     --bg-surface-2: #e4e4e7;
     --bg-surface-3: #d4d4d8;
-    --text-primary: #09090b;
-    --text-secondary: #52525b;
-    --text-muted: #5f6068;
-    --accent: #65a30d;
-    --accent-rgb: 101, 163, 13;
-    --accent-bright: #84cc16;
-    --accent-dim: #f7fee7;
     --border: #e4e4e7;
     --border-accent: rgba(var(--accent-rgb), 0.1);
     --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.05);
-    --streak: #b45309;
-    --streak-bg: rgba(180, 83, 9, 0.06);
-    --streak-border: rgba(180, 83, 9, 0.2);
-    --streak-muted: rgba(180, 83, 9, 0.5);
-    --history: #2563eb;
-    --history-rgb: 37, 99, 235;
   }
 }
 
-@theme {
-  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
-
-  /* Backgrounds */
-  --color-bg-base: var(--bg-base);
-  --color-bg-surface-1: var(--bg-surface-1);
-  --color-bg-surface-2: var(--bg-surface-2);
-  --color-bg-surface-3: var(--bg-surface-3);
-
-  /* Text */
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-
-  /* Accent */
-  --color-accent: var(--accent);
-  --color-accent-bright: var(--accent-bright);
-  --color-accent-dim: var(--accent-dim);
-
-  /* Borders */
-  --color-border: var(--border);
-  --color-border-accent: var(--border-accent);
-
-  /* Streak (global, not time-bound) */
-  --color-streak: var(--streak);
-  --color-streak-bg: var(--streak-bg);
-  --color-streak-border: var(--streak-border);
-  --color-streak-muted: var(--streak-muted);
-
-  /* History mode (time travel) */
-  --color-history: var(--history);
-
-  /* Semantic — success aliases accent for unified color */
-  --color-success: var(--accent);
-  --color-error: #ef4444;
-  --color-blue: #3b82f6;
-  --color-purple: #8b5cf6;
-
-  /* Animations */
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-::selection {
-  background: rgba(var(--accent-rgb), 0.3);
-  color: var(--color-text-primary);
-}
+/* ── Dashboard-specific styles ───────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
   width: 5px;
@@ -119,7 +49,7 @@
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   background: var(--color-bg-base);
   color: var(--color-text-primary);
   line-height: 1.6;
@@ -133,25 +63,4 @@ body {
   * {
     border-color: var(--color-border);
   }
-}
-
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.subtle-glow {
-  position: relative;
-}
-
-.subtle-glow::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  background: linear-gradient(45deg, transparent, rgba(var(--accent-rgb), 0.1), transparent);
-  border-radius: inherit;
-  z-index: -1;
-  pointer-events: none;
 }

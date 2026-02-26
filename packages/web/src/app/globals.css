@@ -1,36 +1,19 @@
 @import "tailwindcss";
+@import "../../../ui/src/theme.css";
 @source "../../../ui/src/**/*.tsx";
 
+/* ── Website surface context ──────────────────────────────────────────── *\
+ *  Deeper, cinematic canvas — neon accents and grain effects pop here      *
+\* ──────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Dark theme (default) — matches dashboard */
-  --bg-base: #040405; /* slightly darker for better contrast with neon */
+  --bg-base: #040405;
   --bg-surface-1: #0e0e11;
   --bg-surface-2: #18181b;
   --bg-surface-3: #27272a;
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --accent: #b4f82c;
-  --accent-bright: #d4fc6e;
-  --accent-dim: #4d7c0f;
-  --accent-rgb: 180, 248, 44;
-  --success: #b4f82c;
-  --error: #ef4444;
-  --streak: #f59e0b;
-  --streak-bg: rgba(245, 158, 11, 0.06);
-  --streak-border: rgba(245, 158, 11, 0.2);
-  --streak-muted: rgba(245, 158, 11, 0.5);
-  --history: #60a5fa;
-  --history-rgb: 96, 165, 250;
   --border: rgba(255, 255, 255, 0.08);
   --border-accent: rgba(var(--accent-rgb), 0.3);
   --glass-bg: rgba(14, 14, 17, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --grid-color: rgba(255, 255, 255, 0.08);
-  --glow-opacity: 0.15;
-  --glow-blue: rgba(59, 130, 246, 0.15);
-  --shadow-glow: rgba(var(--accent-rgb), 0.1);
-  --accent-alpha: rgba(var(--accent-rgb), 0.05);
 }
 
 @media (prefers-color-scheme: light) {
@@ -39,61 +22,15 @@
     --bg-surface-1: #ffffff;
     --bg-surface-2: #f4f4f5;
     --bg-surface-3: #e4e4e7;
-    --text-primary: #09090b;
-    --text-secondary: #52525b;
-    --text-muted: #5f6068;
-    --accent: #65a30d;
-    --accent-bright: #84cc16;
-    --accent-dim: #f7fee7;
-    --accent-rgb: 101, 163, 13;
-    --success: #65a30d;
-    --error: #dc2626;
-    --streak: #b45309;
-    --streak-bg: rgba(180, 83, 9, 0.06);
-    --streak-border: rgba(180, 83, 9, 0.2);
-    --streak-muted: rgba(180, 83, 9, 0.5);
-    --history: #2563eb;
-    --history-rgb: 37, 99, 235;
     --border: #e4e4e7;
     --border-accent: rgba(var(--accent-rgb), 0.4);
     --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.05);
-    --grid-color: rgba(0, 0, 0, 0.04);
-    --glow-opacity: 0.25;
-    --glow-blue: rgba(59, 130, 246, 0.25);
-    --shadow-glow: rgba(0, 0, 0, 0.08);
-    --accent-alpha: rgba(var(--accent-rgb), 0.15);
   }
 }
 
+/* ── Website-specific font override (Next.js font optimization) ──────── */
 @theme {
-  --color-bg-base: var(--bg-base);
-  --color-bg-surface-1: var(--bg-surface-1);
-  --color-bg-surface-2: var(--bg-surface-2);
-  --color-bg-surface-3: var(--bg-surface-3);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-bright: var(--accent-bright);
-  --color-accent-dim: var(--accent-dim);
-  --color-success: var(--success);
-  --color-error: var(--error);
-  --color-streak: var(--streak);
-  --color-streak-bg: var(--streak-bg);
-  --color-streak-border: var(--streak-border);
-  --color-streak-muted: var(--streak-muted);
-  --color-history: var(--history);
-  --color-border: var(--border);
-  --color-border-accent: var(--border-accent);
-  --color-purple: #8b5cf6;
-  --color-blue: #3b82f6;
-  --color-emerald: #34d399;
-  --color-glass-bg: var(--glass-bg);
-  --color-glass-border: var(--glass-border);
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-mono), "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -113,48 +50,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-::selection {
-  background-color: rgba(var(--accent-rgb), 0.3);
-  color: var(--accent-bright);
-}
-
-/* ────────────────────────────────────────────────────────────────── *\
-/*  Futuristic UI Utilities                                           */
-/* ────────────────────────────────────────────────────────────────── */
-
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  transform: translateZ(0);
-  will-change: transform, backdrop-filter;
-}
-
-.hud-border {
-  position: relative;
-  background: var(--bg-surface-1);
-}
-.hud-border::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border: 1px solid rgba(var(--accent-rgb), 0.2);
-  pointer-events: none;
-  border-radius: inherit;
-  mask-image: linear-gradient(to bottom, black, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
-}
-.hud-border::after {
-  content: "";
-  position: absolute;
-  top: -1px; left: -1px;
-  width: 10px; height: 10px;
-  border-top: 2px solid var(--accent);
-  border-left: 2px solid var(--accent);
-  border-top-left-radius: inherit;
-}
+/* ── Website-specific components ─────────────────────────────────────── */
 
 .cyber-button {
   position: relative;
@@ -181,26 +77,10 @@ body {
   left: 150%;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.gradient-text-accent {
-  background: linear-gradient(135deg, var(--accent), var(--accent-bright));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
-}
-
-/* ────────────────────────────────────────────────────────────────── *\
-/*  Background Animations                                             */
-/* ────────────────────────────────────────────────────────────────── */
+/* ── Background Animations ───────────────────────────────────────────── */
 
 .cyber-grid {
-  background-image: 
+  background-image:
     linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
   background-size: 50px 50px;
@@ -294,11 +174,8 @@ body {
   will-change: transform;
 }
 
-/* ────────────────────────────────────────────────────────────────── *\
-/*  Hero Heading — Speed Rush Effect                                   */
-/* ────────────────────────────────────────────────────────────────── */
+/* ── Hero Heading — Speed Rush Effect ────────────────────────────────── */
 
-/* Shake — rapid micro-vibration like high-speed turbulence */
 .speed-shake {
   animation: speed-shake 0.06s steps(2) infinite;
 }
@@ -311,7 +188,6 @@ body {
   100% { transform: translate(2px, 0.5px); }
 }
 
-/* Motion blur ghost — a blurred copy that trails and fades */
 .speed-blur-ghost {
   position: absolute;
   top: 0;
@@ -330,7 +206,6 @@ body {
   100% { opacity: 0; transform: translateX(0); filter: blur(0px); }
 }
 
-/* Container for speed trail lines */
 .speed-trails {
   position: absolute;
   top: 0;
@@ -341,7 +216,6 @@ body {
   z-index: -1;
 }
 
-/* Individual speed lines — horizontal streaks */
 .speed-line {
   position: absolute;
   left: -25%;
@@ -351,7 +225,6 @@ body {
   will-change: transform, opacity;
 }
 
-/* Vary vertical position, width, color, thickness, and delay for each line */
 .speed-line-1 {
   top: 8%;
   width: 90%;
@@ -408,7 +281,6 @@ body {
   height: 1.5px;
 }
 
-/* Speed lines shrink from left and fade out */
 @keyframes speed-streak {
   0% {
     transform: translateX(0) scaleX(1);
@@ -424,14 +296,13 @@ body {
   }
 }
 
-/* Settled glow after speed trails fade */
 .hero-glow-settled {
   filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.4))
           drop-shadow(0 0 40px rgba(var(--accent-rgb), 0.15));
   transition: filter 0.8s ease-out;
 }
 
-/* ── Reduced motion — skip speed effects ── */
+/* ── Reduced motion ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .speed-shake {
     animation: none !important;

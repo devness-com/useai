@@ -343,7 +343,7 @@ export function TimeTravelPanel({
               })}
             </span>
             <span className="text-text-muted">·</span>
-            <span className="text-text-muted text-xs tabular-nums">{periodLabel}</span>
+            <span data-testid="period-label" className="text-text-muted text-xs tabular-nums">{periodLabel}</span>
           </div>
         </div>
 

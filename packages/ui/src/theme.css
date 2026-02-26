@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════════════════════════ *\
+ *  UseAI Design Tokens — Shared Brand Identity                               *
+ *  Import this file from every app to ensure visual parity.                  *
+ *                                                                            *
+ *  Surface tokens (--bg-base, --bg-surface-*, --border, --glass-bg) are      *
+ *  defined per-app in each globals.css — allowing the website to use a       *
+ *  darker cinematic canvas while the dashboard uses a comfortable working    *
+ *  palette. Everything else (accent, text, semantic, effects) is shared.     *
+\* ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Text ── */
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* ── Accent (lime neon) ── */
+  --accent: #b4f82c;
+  --accent-bright: #d4fc6e;
+  --accent-dim: #4d7c0f;
+  --accent-rgb: 180, 248, 44;
+
+  /* ── Semantic ── */
+  --success: #b4f82c;
+  --error: #ef4444;
+
+  /* ── Streak (amber) ── */
+  --streak: #f59e0b;
+  --streak-bg: rgba(245, 158, 11, 0.06);
+  --streak-border: rgba(245, 158, 11, 0.2);
+  --streak-muted: rgba(245, 158, 11, 0.5);
+
+  /* ── History / time-travel (blue) ── */
+  --history: #60a5fa;
+  --history-rgb: 96, 165, 250;
+
+  /* ── Glass border (shared — same on both surfaces) ── */
+  --glass-border: rgba(255, 255, 255, 0.05);
+
+  /* ── Effects ── */
+  --grid-color: rgba(255, 255, 255, 0.08);
+  --glow-opacity: 0.15;
+  --glow-blue: rgba(59, 130, 246, 0.15);
+  --shadow-glow: rgba(var(--accent-rgb), 0.1);
+  --accent-alpha: rgba(var(--accent-rgb), 0.05);
+}
+
+/* ── Light theme ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --text-primary: #09090b;
+    --text-secondary: #52525b;
+    --text-muted: #5f6068;
+
+    --accent: #65a30d;
+    --accent-bright: #84cc16;
+    --accent-dim: #f7fee7;
+    --accent-rgb: 101, 163, 13;
+
+    --success: #65a30d;
+    --error: #dc2626;
+
+    --streak: #b45309;
+    --streak-bg: rgba(180, 83, 9, 0.06);
+    --streak-border: rgba(180, 83, 9, 0.2);
+    --streak-muted: rgba(180, 83, 9, 0.5);
+
+    --history: #2563eb;
+    --history-rgb: 37, 99, 235;
+
+    --glass-border: rgba(0, 0, 0, 0.05);
+
+    --grid-color: rgba(0, 0, 0, 0.04);
+    --glow-opacity: 0.25;
+    --glow-blue: rgba(59, 130, 246, 0.25);
+    --shadow-glow: rgba(0, 0, 0, 0.08);
+    --accent-alpha: rgba(var(--accent-rgb), 0.15);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ *\
+ *  Tailwind v4 Theme Mappings                                                *
+\* ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Backgrounds (values set per-app) */
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface-1: var(--bg-surface-1);
+  --color-bg-surface-2: var(--bg-surface-2);
+  --color-bg-surface-3: var(--bg-surface-3);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Accent */
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
+
+  /* Semantic */
+  --color-success: var(--success);
+  --color-error: var(--error);
+
+  /* Streak */
+  --color-streak: var(--streak);
+  --color-streak-bg: var(--streak-bg);
+  --color-streak-border: var(--streak-border);
+  --color-streak-muted: var(--streak-muted);
+
+  /* History */
+  --color-history: var(--history);
+
+  /* Borders (values set per-app) */
+  --color-border: var(--border);
+  --color-border-accent: var(--border-accent);
+
+  /* Glass */
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+
+  /* Static palette */
+  --color-purple: #8b5cf6;
+  --color-blue: #3b82f6;
+  --color-emerald: #34d399;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
+
+  /* Easing */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ *\
+ *  Shared Utility Classes                                                    *
+\* ═══════════════════════════════════════════════════════════════════════════ */
+
+::selection {
+  background-color: rgba(var(--accent-rgb), 0.3);
+  color: var(--accent-bright);
+}
+
+/* Glass card — soft blur with subtle border (dashboard default) */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Glass panel — heavier blur with inset glow (hero sections) */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+}
+
+/* HUD border — accent corner bracket with fading border */
+.hud-border {
+  position: relative;
+  background: var(--bg-surface-1);
+}
+.hud-border::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  pointer-events: none;
+  border-radius: inherit;
+  mask-image: linear-gradient(to bottom, black, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+}
+.hud-border::after {
+  content: "";
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 10px; height: 10px;
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
+  border-top-left-radius: inherit;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
+}
+
+/* Subtle glow border — accent gradient behind element */
+.subtle-glow {
+  position: relative;
+}
+.subtle-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(45deg, transparent, rgba(var(--accent-rgb), 0.1), transparent);
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+}

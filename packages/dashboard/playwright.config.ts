@@ -6,8 +6,7 @@ export default defineConfig({
   expect: { timeout: 5_000 },
   use: {
     baseURL: 'http://localhost:5174',
-    // Headed mode by default so you can watch the tests
-    headless: false,
+    headless: true,
     // Slow down actions so scrub behavior is visible
     launchOptions: { slowMo: 50 },
     viewport: { width: 1280, height: 900 },
