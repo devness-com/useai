@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Clock, Rocket, Bug, Brain, Zap, Target, CheckCircle, FolderGit2 } from 'lucide-react';
+import { Clock, Rocket, Bug, Brain, Zap, Target, Layers, Timer } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { StatCardType } from './StatDetailPanel';
 
@@ -35,6 +35,7 @@ function StatCard({
   clickable = false,
   selected = false,
   onClick,
+  subtitle,
 }: {
   label: string;
   value: number;
@@ -46,6 +47,7 @@ function StatCard({
   clickable?: boolean;
   selected?: boolean;
   onClick?: () => void;
+  subtitle?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const prevValue = useRef(0);
@@ -91,6 +93,7 @@ function StatCard({
           {suffix && <span className="text-[10px] text-text-muted font-medium">{suffix}</span>}
         </div>
         <span className="text-[9px] font-mono text-text-muted uppercase tracking-wider leading-none mt-0.5">{label}</span>
+        {subtitle && <span className="text-[8px] text-text-muted/50 leading-none mt-0.5 truncate">{subtitle}</span>}
       </div>
     </motion.div>
   );
@@ -99,6 +102,10 @@ function StatCard({
 interface StatsBarProps {
   totalHours: number;
   totalSessions: number;
+  actualSpanHours: number;
+  coveredHours: number;
+  aiMultiplier: number;
+  peakConcurrency: number;
   currentStreak: number;
   filesTouched: number;
   featuresShipped: number;
@@ -113,13 +120,13 @@ interface StatsBarProps {
 
 export function StatsBar({
   totalHours,
+  coveredHours,
+  aiMultiplier,
   featuresShipped,
   bugsFixed,
   complexSolved,
   currentStreak,
   totalMilestones,
-  completionRate,
-  activeProjects,
   selectedCard,
   onCardClick,
 }: StatsBarProps) {
@@ -131,18 +138,43 @@ export function StatsBar({
     <div className="flex gap-2 mb-4">
       <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 flex-1">
         <StatCard
-          label={totalHours < 1 ? 'Active Time' : 'Active Hours'}
+          label="Spent Time"
+          value={coveredHours < 1 / 60 ? 0 : coveredHours < 1 ? Math.round(coveredHours * 60) : coveredHours}
+          suffix={coveredHours < 1 ? 'min' : 'hrs'}
+          decimals={coveredHours >= 1 ? 1 : 0}
+          icon={Clock}
+          delay={0.1}
+          clickable
+          selected={selectedCard === 'activeTime'}
+          onClick={() => handleClick('activeTime')}
+        />
+        <StatCard
+          label="Gained Time"
           value={totalHours < 1 ? Math.round(totalHours * 60) : totalHours}
           suffix={totalHours < 1 ? 'min' : 'hrs'}
           decimals={totalHours < 1 ? 0 : 1}
-          icon={Clock}
-          delay={0.1}
+          icon={Timer}
+          delay={0.12}
+          clickable
+          selected={selectedCard === 'aiTime'}
+          onClick={() => handleClick('aiTime')}
+        />
+        <StatCard
+          label="Boost"
+          value={aiMultiplier}
+          suffix="x"
+          decimals={1}
+          icon={Layers}
+          delay={0.15}
+          clickable
+          selected={selectedCard === 'parallel'}
+          onClick={() => handleClick('parallel')}
         />
         <StatCard
           label="Milestones"
           value={totalMilestones}
           icon={Target}
-          delay={0.15}
+          delay={0.2}
           clickable
           selected={selectedCard === 'milestones'}
           onClick={() => handleClick('milestones')}
@@ -151,7 +183,7 @@ export function StatsBar({
           label="Features"
           value={featuresShipped}
           icon={Rocket}
-          delay={0.2}
+          delay={0.25}
           clickable
           selected={selectedCard === 'features'}
           onClick={() => handleClick('features')}
@@ -160,7 +192,7 @@ export function StatsBar({
           label="Bugs Fixed"
           value={bugsFixed}
           icon={Bug}
-          delay={0.25}
+          delay={0.3}
           clickable
           selected={selectedCard === 'bugs'}
           onClick={() => handleClick('bugs')}
@@ -169,23 +201,10 @@ export function StatsBar({
           label="Complex"
           value={complexSolved}
           icon={Brain}
-          delay={0.3}
+          delay={0.35}
           clickable
           selected={selectedCard === 'complex'}
           onClick={() => handleClick('complex')}
-        />
-        <StatCard
-          label="Completed"
-          value={completionRate}
-          suffix="%"
-          icon={CheckCircle}
-          delay={0.35}
-        />
-        <StatCard
-          label="Projects"
-          value={activeProjects}
-          icon={FolderGit2}
-          delay={0.4}
         />
       </div>
       <div className="w-px bg-border/30 self-stretch my-1" />
@@ -196,6 +215,9 @@ export function StatsBar({
         icon={Zap}
         delay={0.45}
         variant="accent"
+        clickable
+        selected={selectedCard === 'streak'}
+        onClick={() => handleClick('streak')}
       />
     </div>
   );

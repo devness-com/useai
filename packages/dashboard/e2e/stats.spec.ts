@@ -15,11 +15,9 @@ test.describe('Stats Bar', () => {
   test('renders all stat card labels', async ({ page }) => {
     await gotoWithMocks(page, { sessions, milestones });
     // Check labels are visible
-    for (const label of ['Milestones', 'Features', 'Bugs Fixed', 'Complex', 'Completed', 'Projects', 'Streak']) {
+    for (const label of ['Spent Time', 'Gained Time', 'Boost', 'Milestones', 'Features', 'Bugs Fixed', 'Complex', 'Streak']) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
-    // Active Hours or Active Time should also be present
-    await expect(page.getByText(/Active (Hours|Time)/).first()).toBeVisible();
   });
 
   test('clicking Milestones card opens detail panel', async ({ page }) => {

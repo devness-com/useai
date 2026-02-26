@@ -15,6 +15,7 @@ export { SessionList } from './components/SessionList';
 export { SkillRadar } from './components/SkillRadar';
 export { StatDetailPanel } from './components/StatDetailPanel';
 export { StatsBar } from './components/StatsBar';
+export { TimeDetailPanel } from './components/TimeDetailPanel';
 export { SummaryChips } from './components/SummaryChips';
 export { TabBar } from './components/TabBar';
 export { TaskTypeBreakdown } from './components/TaskTypeBreakdown';

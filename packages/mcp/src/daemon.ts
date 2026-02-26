@@ -767,6 +767,7 @@ function recoverEndSession(
         const durationMinutes = Math.round(duration / 60);
         const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
         for (const m of milestonesInput) {
+          if (!m.title || !m.category) continue;
           allMilestones.push({
             id: `m_${randomUUID().slice(0, 8)}`,
             session_id: useaiSessionId,
@@ -850,6 +851,7 @@ function recoverEndSession(
       const durationMinutes = Math.round(duration / 60);
       const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
       for (const m of milestonesInput) {
+        if (!m.title || !m.category) continue;
         const mRecord = buildChainRecord('milestone', useaiSessionId, {
           title: m.title, private_title: m.private_title,
           category: m.category, complexity: m.complexity ?? 'medium',

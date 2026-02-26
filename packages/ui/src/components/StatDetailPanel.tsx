@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { Milestone } from '@useai/shared/types';
 import { CATEGORY_COLORS, TOOL_INITIALS, TOOL_COLORS, TOOL_ICONS, resolveClient } from '../constants';
 
-export type StatCardType = 'features' | 'bugs' | 'complex' | 'milestones' | null;
+export type StatCardType = 'features' | 'bugs' | 'complex' | 'milestones' | 'activeTime' | 'aiTime' | 'parallel' | 'streak' | null;
 
-const PANEL_CONFIG: Record<Exclude<StatCardType, null>, {
+type MilestoneCardType = 'features' | 'bugs' | 'complex' | 'milestones';
+
+const PANEL_CONFIG: Record<MilestoneCardType, {
   title: string;
   icon: typeof Rocket;
   filter: (m: Milestone) => boolean;
@@ -83,7 +85,8 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
     return () => { document.body.style.overflow = ''; };
   }, [type]);
 
-  if (!type) return null;
+  const isMilestoneType = type === 'features' || type === 'bugs' || type === 'complex' || type === 'milestones';
+  if (!type || !isMilestoneType) return null;
 
   const config = PANEL_CONFIG[type];
   const Icon = config.icon;

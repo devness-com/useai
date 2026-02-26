@@ -295,13 +295,19 @@ export default function LeaderboardPage() {
 
                   {/* Username */}
                   <span className="min-w-0">
-                    <Link
-                      href={`/${entry.username}`}
-                      className="text-sm font-bold text-text-primary hover:text-accent transition-colors truncate block"
-                    >
-                      {entry.display_name || entry.username}
-                    </Link>
-                    {entry.display_name && (
+                    {entry.has_profile ? (
+                      <Link
+                        href={`/${entry.username}`}
+                        className="text-sm font-bold text-text-primary hover:text-accent transition-colors truncate block"
+                      >
+                        {entry.display_name || entry.username}
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-bold text-text-primary truncate block">
+                        {entry.display_name || entry.username}
+                      </span>
+                    )}
+                    {entry.has_profile && entry.display_name && (
                       <span className="text-[10px] font-mono text-text-muted">
                         @{entry.username}
                       </span>

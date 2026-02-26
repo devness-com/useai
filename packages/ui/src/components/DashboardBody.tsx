@@ -8,6 +8,7 @@ import { ALL_SCALES, SCALE_LABELS, SCRUB_CALENDAR_MAP, isCalendarScale, getTimeW
 import { computeStats, calculateStreak, filterSessionsByWindow, filterMilestonesByWindow, countSessionsOutsideWindow } from '../stats';
 import { StatsBar } from './StatsBar';
 import { StatDetailPanel } from './StatDetailPanel';
+import { TimeDetailPanel } from './TimeDetailPanel';
 import { TabBar } from './TabBar';
 import { FilterChips } from './FilterChips';
 import { SessionList } from './SessionList';
@@ -224,6 +225,10 @@ export function DashboardBody({
       <StatsBar
         totalHours={stats.totalHours}
         totalSessions={stats.totalSessions}
+        actualSpanHours={stats.actualSpanHours}
+        coveredHours={stats.coveredHours}
+        aiMultiplier={stats.aiMultiplier}
+        peakConcurrency={stats.peakConcurrency}
         currentStreak={globalStreak}
         filesTouched={stats.filesTouched}
         featuresShipped={stats.featuresShipped}
@@ -239,6 +244,21 @@ export function DashboardBody({
       <StatDetailPanel
         type={selectedStatCard}
         milestones={filteredMilestones}
+        showPublic={globalShowPublic}
+        onClose={() => setSelectedStatCard(null)}
+      />
+
+      <TimeDetailPanel
+        type={selectedStatCard}
+        sessions={filteredSessions}
+        allSessions={sessions}
+        currentStreak={globalStreak}
+        stats={{
+          totalHours: stats.totalHours,
+          coveredHours: stats.coveredHours,
+          aiMultiplier: stats.aiMultiplier,
+          peakConcurrency: stats.peakConcurrency,
+        }}
         showPublic={globalShowPublic}
         onClose={() => setSelectedStatCard(null)}
       />

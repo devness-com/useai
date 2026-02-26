@@ -16,6 +16,14 @@ export function parseTimestamp(iso: string): number {
 export interface ComputedStats {
   totalHours: number;
   totalSessions: number;
+  /** Wall-clock span from earliest session start to latest session end (hours) */
+  actualSpanHours: number;
+  /** Union of all session intervals — real time where at least 1 session was active (hours) */
+  coveredHours: number;
+  /** Ratio of total AI time to covered time (totalHours / coveredHours). >= 1.0 always. */
+  aiMultiplier: number;
+  /** Maximum number of sessions running concurrently at any point */
+  peakConcurrency: number;
   currentStreak: number;
   filesTouched: number;
   featuresShipped: number;
@@ -73,6 +81,53 @@ export function computeStats(sessions: SessionSeal[], milestones: Milestone[] = 
     }
   }
 
+  // Actual time span, covered time, and peak concurrency (sweep-line)
+  let actualSpanHours = 0;
+  let coveredHours = 0;
+  let aiMultiplier = 0;
+  let peakConcurrency = 0;
+
+  if (sessions.length > 0) {
+    let minStart = Infinity;
+    let maxEnd = -Infinity;
+    const events: { time: number; delta: number }[] = [];
+
+    for (const s of sessions) {
+      const sStart = parseTimestamp(s.started_at);
+      const sEnd = parseTimestamp(s.ended_at);
+      if (sStart < minStart) minStart = sStart;
+      if (sEnd > maxEnd) maxEnd = sEnd;
+      events.push({ time: sStart, delta: 1 });
+      events.push({ time: sEnd, delta: -1 });
+    }
+
+    actualSpanHours = (maxEnd - minStart) / 3600000;
+
+    // Sort events: by time, then ends (-1) before starts (+1) at same timestamp
+    events.sort((a, b) => a.time - b.time || a.delta - b.delta);
+    let running = 0;
+    let coveredMs = 0; // total time where at least 1 session was active
+    let lastActiveStart = 0;
+    for (const e of events) {
+      const wasActive = running > 0;
+      running += e.delta;
+      if (running > peakConcurrency) peakConcurrency = running;
+
+      if (!wasActive && running > 0) {
+        // Transition from idle → active
+        lastActiveStart = e.time;
+      } else if (wasActive && running === 0) {
+        // Transition from active → idle
+        coveredMs += e.time - lastActiveStart;
+      }
+    }
+
+    coveredHours = coveredMs / 3600000;
+    // Multiplier = total AI time / time where AI was active (not the full span)
+    // 1.0x = no parallelism, 2.0x = avg 2 sessions running when active
+    aiMultiplier = coveredHours > 0 ? (totalSeconds / 3600) / coveredHours : 0;
+  }
+
   const milestoneStats = computeMilestoneStats(milestones);
 
   // Completion rate from sessions with evaluations
@@ -86,6 +141,10 @@ export function computeStats(sessions: SessionSeal[], milestones: Milestone[] = 
   return {
     totalHours: totalSeconds / 3600,
     totalSessions: sessions.length,
+    actualSpanHours,
+    coveredHours,
+    aiMultiplier,
+    peakConcurrency,
     currentStreak: calculateStreak(sessions),
     filesTouched: Math.round(filesTouched),
     ...milestoneStats,

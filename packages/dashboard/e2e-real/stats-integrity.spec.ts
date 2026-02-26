@@ -24,27 +24,10 @@ import {
   FEATURES_COUNT,
   BUGS_COUNT,
   COMPLEX_COUNT,
-  UNIQUE_PROJECTS,
   SEED_MILESTONES,
 } from './seed-data';
 
 // ─── Derived constants ────────────────────────────────────────────────────────
-
-/** Sessions with evaluations: all except sess-e2e-008 (no evaluation) */
-const EVALUATED_COUNT = 9;
-
-/**
- * Evaluated sessions with task_outcome='completed'.
- * sess-e2e-009 is 'partial', sess-e2e-008 has no evaluation.
- * Remaining 8 of 9 evaluated sessions are 'completed'.
- */
-const COMPLETED_COUNT = 8;
-
-/**
- * Completion rate displayed in the Stats Bar.
- * Formula: Math.round(completed / evaluated * 100)
- */
-const COMPLETION_RATE_PCT = Math.round((COMPLETED_COUNT / EVALUATED_COUNT) * 100); // 89
 
 /**
  * Streak = consecutive days with sessions, counting backwards from today.
@@ -121,21 +104,18 @@ test.describe('Stats Integrity — Real Daemon Data', () => {
     await expect(page.getByText(String(COMPLEX_COUNT)).first()).toBeVisible();
   });
 
-  test('Projects stat card shows unique project count (3)', async ({ page }) => {
+  test('Gained Time stat card is visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
     await selectScale(page, 'month');
 
-    await expect(page.getByText('Projects', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(String(UNIQUE_PROJECTS.length)).first()).toBeVisible();
+    await expect(page.getByText('Gained Time', { exact: true }).first()).toBeVisible();
   });
 
-  test('Completed stat card shows correct completion rate percentage (89%)', async ({ page }) => {
+  test('Boost stat card is visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
     await selectScale(page, 'month');
 
-    await expect(page.getByText('Completed', { exact: true }).first()).toBeVisible();
-    // Completion rate is shown as a percentage (e.g. "89%")
-    await expect(page.getByText(`${COMPLETION_RATE_PCT}%`).first()).toBeVisible();
+    await expect(page.getByText('Boost', { exact: true }).first()).toBeVisible();
   });
 
   // ── 8. Streak ────────────────────────────────────────────────────────────
@@ -147,11 +127,12 @@ test.describe('Stats Integrity — Real Daemon Data', () => {
     await expect(page.getByText(`${EXPECTED_STREAK}`).first()).toBeVisible();
   });
 
-  // ── 9. Active Hours / Active Time label ──────────────────────────────────
+  // ── 9. Time metric labels ───────────────────────────────────────────────
 
-  test('Active Hours or Active Time label is visible in stats bar', async ({ page }) => {
+  test('Spent Time and Gained Time labels are visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
-    await expect(page.getByText(/Active (Hours|Time)/).first()).toBeVisible();
+    await expect(page.getByText('Spent Time', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Gained Time', { exact: true }).first()).toBeVisible();
   });
 
   // ── 10. Click Features → filtered panel shows 4 milestones ───────────────
