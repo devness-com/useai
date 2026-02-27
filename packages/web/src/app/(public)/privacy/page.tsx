@@ -405,7 +405,7 @@ export default function PrivacyPage() {
               >
                 open source
               </a>{' '}
-              and auditable under the MIT license.
+              and auditable under the AGPL-3.0 license.
             </p>
             <p className="text-sm text-text-muted leading-relaxed mb-3">
               The cloud API (useai.dev backend) is <span className="text-text-primary font-bold">not open source</span>.

@@ -207,4 +207,4 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instr
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE)

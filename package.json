@@ -4,7 +4,7 @@
   "private": true,
   "description": "useai.dev — Track your AI-assisted development workflow",
   "author": "nabeelkausari",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "build": "turbo build",

@@ -470,7 +470,7 @@ export default function ExplorePage() {
             <p className="text-sm text-text-muted leading-relaxed">
               The entire project is{' '}
               <a href="https://github.com/devness-com/useai" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-bright border-b border-accent/30">
-                open source under the MIT license
+                open source under the AGPL-3.0 license
               </a>
               . You can audit every line of code that runs on your machine.
             </p>

@@ -128,7 +128,7 @@ export function Footer() {
               &copy; {new Date().getFullYear()} DEVNESS NETWORK
             </span>
             <span className="text-[10px] text-text-muted font-mono">&middot;</span>
-            <span className="text-[10px] text-accent/70 font-mono tracking-widest">MIT LICENSE</span>
+            <span className="text-[10px] text-accent/70 font-mono tracking-widest">AGPL-3.0 LICENSE</span>
           </div>
 
           <a

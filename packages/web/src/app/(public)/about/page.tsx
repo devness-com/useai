@@ -35,7 +35,7 @@ const PRINCIPLES = [
     icon: Eye,
     title: 'FULL TRANSPARENCY',
     description:
-      'The MCP server, CLI, and all client-side code are open source under the MIT license. Audit every line that runs on your machine.',
+      'The MCP server, CLI, and all client-side code are open source under the AGPL-3.0 license. Audit every line that runs on your machine.',
   },
   {
     icon: Lock,
@@ -65,7 +65,7 @@ const TIMELINE = [
 
 const STATS = [
   { label: 'AI tools supported', value: '30+' },
-  { label: 'License', value: 'MIT' },
+  { label: 'License', value: 'AGPL-3.0' },
   { label: 'Network calls during coding', value: '0' },
   { label: 'Code ever transmitted', value: 'None' },
 ];
@@ -269,7 +269,7 @@ export default function AboutPage() {
                 rel="noopener noreferrer"
                 className="text-accent hover:text-accent-bright border-b border-accent/30"
               >
-                MIT license
+                AGPL-3.0 license
               </a>
               . We welcome contributions, feedback, and collaboration from the developer community.
             </p>

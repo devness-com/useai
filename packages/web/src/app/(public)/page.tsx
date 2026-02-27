@@ -678,8 +678,6 @@ export default function LandingPage() {
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-accent" /> Local-first</span>
                 <span className="text-border">|</span>
                 <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-accent" /> No code ever leaves your machine</span>
-                <span className="text-border">|</span>
-                <span className="flex items-center gap-1.5"><Github className="w-3.5 h-3.5 text-accent" /> MIT Licensed</span>
               </motion.div>
 
               <motion.div
@@ -755,19 +753,19 @@ export default function LandingPage() {
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-100px' }} variants={stagger}
             className="text-center mb-10 sm:mb-14 max-w-3xl mx-auto"
           >
-            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4">OPEN_SOURCE · MIT_LICENSE</motion.div>
+            <motion.div variants={fadeUp} className="text-[10px] font-mono tracking-widest text-accent mb-3 sm:mb-4">OPEN_SOURCE · AGPL-3.0_LICENSE</motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-text-primary mb-4 sm:mb-6">
               Privacy by <span className="gradient-text">Design</span>
             </motion.h2>
             <motion.p variants={fadeUp} className="text-sm sm:text-base text-text-muted leading-relaxed">
-              UseAI is fully open source under the MIT license. No source code, no file paths, no prompts — nothing
+              UseAI is fully open source under the AGPL-3.0 license. No source code, no file paths, no prompts — nothing
               sensitive ever leaves your machine. Audit the code yourself.
             </motion.p>
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
             {[
-              { icon: Code2, title: 'OPEN SOURCE', desc: 'Full source code on GitHub under the MIT license. Fork it, audit it, contribute to it.' },
+              { icon: Code2, title: 'OPEN SOURCE', desc: 'Full source code on GitHub under the AGPL-3.0 license. Fork it, audit it, contribute to it.' },
               { icon: Eye, title: 'PUBLIC TITLES ONLY', desc: 'Milestones use generic descriptions like "Fixed auth bug" — no project names, file paths, or company info appear publicly.' },
               { icon: Database, title: 'ZERO PAYLOAD', desc: 'No source code, file paths, or prompt contents are ever transmitted. Only aggregate metrics.' },
               { icon: Lock, title: 'LOCAL DAEMON', desc: 'All processing happens locally in ~/.useai. You fully own and control your raw data.' },

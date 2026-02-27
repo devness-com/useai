@@ -65,7 +65,7 @@ export default function TermsPage() {
                 <li className="flex items-start gap-2"><span className="text-accent shrink-0">&bull;</span> <span><span className="text-text-primary">Cloud API</span> — optional sync and storage service for session data</span></li>
               </ul>
               <p className="text-sm text-text-muted leading-relaxed">
-                The MCP server and CLI are open source under the MIT license. The cloud API and website
+                The MCP server and CLI are open source under the AGPL-3.0 license. The cloud API and website
                 backend are proprietary.
               </p>
             </div>
@@ -164,7 +164,7 @@ export default function TermsPage() {
                   rel="noopener noreferrer"
                   className="text-accent hover:text-accent-bright border-b border-accent/30"
                 >
-                  MIT License
+                  AGPL-3.0 License
                 </a>
                 . Your use of these components is governed by that license.
               </p>
