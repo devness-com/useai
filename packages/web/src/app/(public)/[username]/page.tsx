@@ -5,6 +5,7 @@ import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { Badge } from '@/components/Badge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { InfoTip } from '@/components/InfoTip';
+import { ProfileBreakdowns } from '@/components/ProfileBreakdowns';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -17,9 +18,9 @@ interface Profile {
   total_sessions: number;
   current_streak: number;
   longest_streak: number;
-  top_clients: { name: string; hours: number }[];
-  top_languages: { name: string; hours: number }[];
-  task_types: { name: string; hours: number }[];
+  top_clients: { name: string; hours: number; user_hours: number }[];
+  top_languages: { name: string; hours: number; user_hours: number }[];
+  task_types: { name: string; hours: number; user_hours: number }[];
   verification_rate: number;
   member_since: string;
   total_milestones: number;
@@ -501,105 +502,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           </section>
 
           {/* ── Languages + AI Tools + Task Types (bar charts) ── */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-            {/* Languages */}
-            {topLanguages.length > 0 && (
-              <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
-                    LANGUAGES
-                  </div>
-                  <InfoTip text="Programming languages used during AI sessions, ranked by total hours." />
-                </div>
-                <div className="space-y-2.5">
-                  {(() => {
-                    const maxHours = Math.max(...topLanguages.map((l) => l.hours), 1);
-                    return topLanguages.map((l) => (
-                      <div key={l.name} className="flex items-center gap-3">
-                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
-                          {l.name}
-                        </span>
-                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-accent"
-                            style={{ width: `${(l.hours / maxHours) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
-                          {l.hours}h
-                        </span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* AI Tools */}
-            {topClients.length > 0 && (
-              <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
-                    AI_TOOLS
-                  </div>
-                  <InfoTip text="AI coding tools used, ranked by total hours." />
-                </div>
-                <div className="space-y-2.5">
-                  {(() => {
-                    const maxHours = Math.max(...topClients.map((t) => t.hours), 1);
-                    return topClients.map((t) => (
-                      <div key={t.name} className="flex items-center gap-3">
-                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
-                          {t.name}
-                        </span>
-                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-blue"
-                            style={{ width: `${(t.hours / maxHours) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
-                          {t.hours}h
-                        </span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* Task Types */}
-            {taskTypes.length > 0 && (
-              <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
-                    TASK_TYPES
-                  </div>
-                  <InfoTip text="Categories of work performed during AI sessions, ranked by total hours." />
-                </div>
-                <div className="space-y-2.5">
-                  {(() => {
-                    const maxHours = Math.max(...taskTypes.map((t) => t.hours), 1);
-                    return taskTypes.map((t) => (
-                      <div key={t.name} className="flex items-center gap-3">
-                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
-                          {t.name}
-                        </span>
-                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-text-muted/50"
-                            style={{ width: `${(t.hours / maxHours) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
-                          {t.hours}h
-                        </span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-            )}
+          <section className="mb-10">
+            <ProfileBreakdowns
+              topLanguages={topLanguages}
+              topClients={topClients}
+              taskTypes={taskTypes}
+            />
           </section>
 
           {/* ── Badges ── */}
