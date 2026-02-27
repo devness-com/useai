@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, readFileSync, renameSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -774,6 +774,113 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
           },
         ],
       };
+    },
+  );
+
+  // ── Tool 4: Backup ──────────────────────────────────────────────────────
+
+  server.tool(
+    'useai_backup',
+    'Export UseAI session data (sealed sessions, milestones) as a JSON backup. ' +
+      'Does NOT include auth tokens or encryption keys for security.',
+    {},
+    async () => {
+      try {
+        const sessions = getSessions();
+        const milestones = getMilestones();
+
+        // Collect all sealed chain files (JSONL session logs)
+        const sealedChains: Record<string, string> = {};
+        if (existsSync(SEALED_DIR)) {
+          const files = readdirSync(SEALED_DIR).filter(f => f.endsWith('.jsonl'));
+          for (const file of files) {
+            sealedChains[file] = readFileSync(join(SEALED_DIR, file), 'utf-8');
+          }
+        }
+
+        const backup = {
+          version: 1,
+          exported_at: new Date().toISOString(),
+          sessions,
+          milestones,
+          sealed_chains: sealedChains,
+        };
+
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(backup) }],
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: message }) }],
+        };
+      }
+    },
+  );
+
+  // ── Tool 5: Restore ─────────────────────────────────────────────────────
+
+  server.tool(
+    'useai_restore',
+    'Import UseAI session data from a JSON backup. ' +
+      'Merges sessions and milestones (deduplicates by ID). Writes sealed chain files that do not already exist.',
+    {
+      backup_json: z.string().describe('JSON string from a previous useai_backup export'),
+    },
+    async ({ backup_json }) => {
+      try {
+        const backup = JSON.parse(backup_json) as {
+          version?: number;
+          sessions?: SessionSeal[];
+          milestones?: Milestone[];
+          sealed_chains?: Record<string, string>;
+        };
+
+        let restored = 0;
+
+        // Merge sessions (deduplicate by session_id)
+        if (backup.sessions && backup.sessions.length > 0) {
+          const existing = getSessions();
+          const existingIds = new Set(existing.map(s => s.session_id));
+          const newSessions = backup.sessions.filter(s => !existingIds.has(s.session_id));
+          if (newSessions.length > 0) {
+            writeJson(SESSIONS_FILE, [...existing, ...newSessions]);
+            restored += newSessions.length;
+          }
+        }
+
+        // Merge milestones (deduplicate by id)
+        if (backup.milestones && backup.milestones.length > 0) {
+          const existing = getMilestones();
+          const existingIds = new Set(existing.map(m => m.id));
+          const newMilestones = backup.milestones.filter(m => !existingIds.has(m.id));
+          if (newMilestones.length > 0) {
+            writeJson(MILESTONES_FILE, [...existing, ...newMilestones]);
+            restored += newMilestones.length;
+          }
+        }
+
+        // Write sealed chain files (skip existing to avoid overwriting)
+        if (backup.sealed_chains) {
+          mkdirSync(SEALED_DIR, { recursive: true });
+          for (const [filename, content] of Object.entries(backup.sealed_chains)) {
+            const filePath = join(SEALED_DIR, filename);
+            if (!existsSync(filePath)) {
+              writeFileSync(filePath, content, 'utf-8');
+              restored++;
+            }
+          }
+        }
+
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({ success: true, restored }) }],
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: message }) }],
+        };
+      }
     },
   );
 }
