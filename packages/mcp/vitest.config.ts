@@ -2,6 +2,12 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    setupFiles: ['./src/vitest-setup.ts'],
+    env: {
+      // Safety net: redirect all @useai/shared path constants to a temp directory.
+      // Even if a test forgets to mock paths, this prevents writes to ~/.useai/.
+      USEAI_HOME: '/tmp/useai-test',
+    },
     exclude: ['dist/**', 'node_modules/**'],
     server: {
       deps: {

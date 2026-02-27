@@ -163,7 +163,7 @@ export function calculateStreak(sessions: SessionSeal[]): number {
 
   const days = new Set<string>();
   for (const s of sessions) {
-    days.add(s.started_at.slice(0, 10));
+    if (s.started_at) days.add(s.started_at.slice(0, 10));
   }
 
   const sorted = [...days].sort().reverse();
@@ -438,8 +438,8 @@ export function getDailyActivity(sessions: SessionSeal[], days: number): { date:
 
     let seconds = 0;
     for (const s of sessions) {
-      const sDate = s.started_at.slice(0, 10);
-      if (sDate === dateStr) {
+      const sDate = s.started_at?.slice(0, 10);
+      if (sDate && sDate === dateStr) {
         seconds += s.duration_seconds;
       }
     }

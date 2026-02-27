@@ -1,3 +1,22 @@
+import type { SessionSeal } from '../types/chain.js';
+
+/**
+ * Validate that a session seal has all required fields with correct types.
+ * Use this before writing sessions to storage or merging from external sources.
+ */
+export function isValidSessionSeal(s: unknown): s is SessionSeal {
+  if (!s || typeof s !== 'object') return false;
+  const obj = s as Record<string, unknown>;
+  return (
+    typeof obj.session_id === 'string' && obj.session_id.length > 0 &&
+    typeof obj.started_at === 'string' && obj.started_at.length > 0 &&
+    typeof obj.ended_at === 'string' && obj.ended_at.length > 0 &&
+    typeof obj.duration_seconds === 'number' &&
+    typeof obj.client === 'string' &&
+    typeof obj.task_type === 'string'
+  );
+}
+
 export const MAX_DAILY_HOURS = 18;
 export const MAX_CONTINUOUS_HOURS = 6;
 export const SPIKE_MULTIPLIER = 10;

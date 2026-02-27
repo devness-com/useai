@@ -29,6 +29,7 @@ import {
   killDaemon,
   fetchLatestVersion,
   formatDuration,
+  isValidSessionSeal,
 } from '@useai/shared';
 import type { SessionSeal, SessionEvaluation, ChainRecord, Keystore, Milestone } from '@useai/shared';
 import { migrateConfig as migrateConfigFn } from '@useai/shared';
@@ -55,6 +56,7 @@ import {
   handleDeleteSession,
   handleDeleteConversation,
   handleDeleteMilestone,
+  handleCloudPull,
   performSync,
   setOnConfigUpdated,
 } from './dashboard/local-api.js';
@@ -271,13 +273,20 @@ function sealRichness(s: SessionSeal): number {
   return score;
 }
 
-/** Deduplicate sessions.json, keeping the richest entry per session_id. */
+/** Deduplicate sessions.json, keeping the richest entry per session_id. Removes invalid entries. */
 function deduplicateSessionsIndex(): void {
   const allSessions = readJson<SessionSeal[]>(SESSIONS_FILE, []);
   if (allSessions.length === 0) return;
 
+  // Filter out invalid entries (missing required fields like started_at)
+  const valid = allSessions.filter(s => isValidSessionSeal(s));
+  const invalidCount = allSessions.length - valid.length;
+  if (invalidCount > 0) {
+    console.log(`Removed ${invalidCount} invalid session(s) from sessions.json`);
+  }
+
   const seen = new Map<string, SessionSeal>();
-  for (const s of allSessions) {
+  for (const s of valid) {
     const existing = seen.get(s.session_id);
     if (!existing || sealRichness(s) > sealRichness(existing)) {
       seen.set(s.session_id, s);
@@ -1181,6 +1190,10 @@ export async function startDaemon(port?: number): Promise<void> {
     }
     if (url.pathname === '/api/local/sync/mark' && req.method === 'POST') {
       await handleLocalSyncMark(req, res);
+      return;
+    }
+    if (url.pathname === '/api/local/cloud/pull' && req.method === 'POST') {
+      await handleCloudPull(req, res);
       return;
     }
 

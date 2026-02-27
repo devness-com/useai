@@ -37,10 +37,18 @@ vi.mock('@useai/shared', async () => {
 
 const mockExistsSync = vi.fn();
 const mockRenameSync = vi.fn();
+const mockReadFileSync = vi.fn();
+const mockWriteFileSync = vi.fn();
+const mockReaddirSync = vi.fn();
+const mockMkdirSync = vi.fn();
 
 vi.mock('node:fs', () => ({
   existsSync: (...args: unknown[]) => mockExistsSync(...args),
   renameSync: (...args: unknown[]) => mockRenameSync(...args),
+  readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
+  writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
+  readdirSync: (...args: unknown[]) => mockReaddirSync(...args),
+  mkdirSync: (...args: unknown[]) => mockMkdirSync(...args),
 }));
 
 // ── Mock node:crypto (only randomUUID) ─────────────────────────────────────────
@@ -943,6 +951,136 @@ describe('registerTools', () => {
           ]),
         );
       });
+    });
+  });
+
+  // ── useai_backup ───────────────────────────────────────────────────────────
+
+  describe('useai_backup', () => {
+    let handler: ToolHandler;
+
+    beforeEach(() => {
+      registerTools(server as never, session as never);
+      handler = server.getToolHandler('useai_backup');
+    });
+
+    it('reads sessions and milestones from mocked paths', async () => {
+      mockReadJson.mockImplementation((path: string) => {
+        if (path.includes('sessions')) return [{ session_id: 's1' }];
+        if (path.includes('milestones')) return [{ id: 'm1' }];
+        return [];
+      });
+      mockExistsSync.mockReturnValue(false);
+
+      const result = await handler({});
+      const data = JSON.parse(result.content[0]!.text);
+
+      expect(data.sessions).toEqual([{ session_id: 's1' }]);
+      expect(data.milestones).toEqual([{ id: 'm1' }]);
+    });
+
+    it('reads sealed chain files from mocked SEALED_DIR', async () => {
+      mockReadJson.mockReturnValue([]);
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['abc.jsonl']);
+      mockReadFileSync.mockReturnValue('chain-content');
+
+      const result = await handler({});
+      const data = JSON.parse(result.content[0]!.text);
+
+      expect(mockReaddirSync).toHaveBeenCalledWith('/tmp/useai/sealed');
+      expect(mockReadFileSync).toHaveBeenCalledWith('/tmp/useai/sealed/abc.jsonl', 'utf-8');
+      expect(data.sealed_chains).toEqual({ 'abc.jsonl': 'chain-content' });
+    });
+  });
+
+  // ── useai_restore ──────────────────────────────────────────────────────────
+
+  describe('useai_restore', () => {
+    let handler: ToolHandler;
+
+    beforeEach(() => {
+      registerTools(server as never, session as never);
+      handler = server.getToolHandler('useai_restore');
+    });
+
+    it('rejects sessions missing required fields', async () => {
+      mockReadJson.mockReturnValue([]);
+
+      const backup = JSON.stringify({
+        sessions: [
+          { session_id: 'a', data: 'dummy' },
+          { session_id: 'b', data: 'dummy' },
+        ],
+      });
+
+      const result = await handler({ backup_json: backup });
+      const data = JSON.parse(result.content[0]!.text);
+
+      expect(data.success).toBe(true);
+      expect(data.restored).toBe(0);
+      expect(data.skipped_invalid).toBe(2);
+      expect(mockWriteJson).not.toHaveBeenCalled();
+    });
+
+    it('accepts valid sessions and merges them', async () => {
+      mockReadJson.mockReturnValue([]);
+
+      const validSession = {
+        session_id: 'valid-1234-5678-abcd-ef1234567890',
+        started_at: '2026-02-27T10:00:00Z',
+        ended_at: '2026-02-27T10:10:00Z',
+        duration_seconds: 600,
+        client: 'claude-code',
+        task_type: 'coding',
+        languages: ['typescript'],
+        files_touched: 3,
+        heartbeat_count: 0,
+        record_count: 2,
+        chain_start_hash: 'abc',
+        chain_end_hash: 'def',
+        seal_signature: 'sig',
+      };
+
+      const backup = JSON.stringify({ sessions: [validSession] });
+      const result = await handler({ backup_json: backup });
+      const data = JSON.parse(result.content[0]!.text);
+
+      expect(data.success).toBe(true);
+      expect(data.restored).toBe(1);
+      expect(mockWriteJson).toHaveBeenCalledWith(
+        '/tmp/useai/sessions.json',
+        expect.arrayContaining([expect.objectContaining({ session_id: validSession.session_id })]),
+      );
+    });
+
+    it('writes sealed chain files to mocked SEALED_DIR only', async () => {
+      mockReadJson.mockReturnValue([]);
+      mockExistsSync.mockReturnValue(false);
+
+      const backup = JSON.stringify({
+        sealed_chains: { 'test.jsonl': 'chain-data' },
+      });
+
+      const result = await handler({ backup_json: backup });
+      const data = JSON.parse(result.content[0]!.text);
+
+      expect(data.success).toBe(true);
+      expect(mockMkdirSync).toHaveBeenCalledWith('/tmp/useai/sealed', { recursive: true });
+      expect(mockWriteFileSync).toHaveBeenCalledWith('/tmp/useai/sealed/test.jsonl', 'chain-data', 'utf-8');
+    });
+
+    it('skips existing chain files without overwriting', async () => {
+      mockReadJson.mockReturnValue([]);
+      mockExistsSync.mockReturnValue(true);
+
+      const backup = JSON.stringify({
+        sealed_chains: { 'existing.jsonl': 'new-data' },
+      });
+
+      await handler({ backup_json: backup });
+
+      expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
   });
 });

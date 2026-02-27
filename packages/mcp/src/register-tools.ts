@@ -21,6 +21,7 @@ import {
   milestoneCategorySchema,
   complexitySchema,
   generateSessionId,
+  isValidSessionSeal,
 } from '@useai/shared';
 import type { SessionSeal, SessionEvaluation, Milestone, LocalConfig } from '@useai/shared';
 import { getFramework, migrateConfig } from '@useai/shared';
@@ -859,11 +860,15 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
 
         let restored = 0;
 
-        // Merge sessions (deduplicate by session_id)
+        // Merge sessions (deduplicate by session_id, validate required fields)
+        let skipped = 0;
         if (backup.sessions && backup.sessions.length > 0) {
           const existing = getSessions();
           const existingIds = new Set(existing.map(s => s.session_id));
-          const newSessions = backup.sessions.filter(s => !existingIds.has(s.session_id));
+          const newSessions = backup.sessions.filter(s => {
+            if (!isValidSessionSeal(s)) { skipped++; return false; }
+            return !existingIds.has(s.session_id);
+          });
           if (newSessions.length > 0) {
             writeJson(SESSIONS_FILE, [...existing, ...newSessions]);
             restored += newSessions.length;
@@ -894,7 +899,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         }
 
         return {
-          content: [{ type: 'text' as const, text: JSON.stringify({ success: true, restored }) }],
+          content: [{ type: 'text' as const, text: JSON.stringify({ success: true, restored, ...(skipped > 0 && { skipped_invalid: skipped }) }) }],
         };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

@@ -10,6 +10,7 @@ import {
   SEALED_DIR,
   migrateConfig,
   sanitizeSealForSync,
+  isValidSessionSeal,
 } from '@useai/shared';
 import type { SessionSeal, Milestone, UseaiConfig } from '@useai/shared';
 import { reInjectAllInstructions } from '../tools.js';
@@ -36,10 +37,11 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-/** Deduplicate sessions by session_id, keeping the longest (latest sealed) entry */
+/** Deduplicate sessions by session_id, keeping the longest (latest sealed) entry. Filters out invalid entries. */
 function deduplicateSessions(sessions: SessionSeal[]): SessionSeal[] {
   const map = new Map<string, SessionSeal>();
   for (const s of sessions) {
+    if (!isValidSessionSeal(s)) continue;
     const existing = map.get(s.session_id);
     if (!existing || s.duration_seconds > existing.duration_seconds) {
       map.set(s.session_id, s);
@@ -53,7 +55,7 @@ function calculateStreak(sessions: SessionSeal[]): number {
 
   const days = new Set<string>();
   for (const s of sessions) {
-    days.add(s.started_at.slice(0, 10));
+    if (s.started_at) days.add(s.started_at.slice(0, 10));
   }
 
   const sorted = [...days].sort().reverse();
@@ -255,6 +257,7 @@ export async function performSync(): Promise<{ success: boolean; last_sync_at?: 
   const byDate = new Map<string, SessionSeal[]>();
 
   for (const s of sessions) {
+    if (!s.started_at) continue;
     const date = s.started_at.slice(0, 10);
     const arr = byDate.get(date);
     if (arr) arr.push(s);
@@ -634,6 +637,74 @@ export function handleDeleteMilestone(req: IncomingMessage, res: ServerResponse,
     writeJson(MILESTONES_FILE, milestones);
 
     json(res, 200, { deleted: true, milestone_id: milestoneId });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── Cloud Pull (fetch sessions from cloud and merge into local) ──────────────
+
+export async function handleCloudPull(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    await readBody(req);
+
+    const config = migrateConfig(readJson<Record<string, unknown>>(CONFIG_FILE, {})) as UseaiConfig;
+    if (!config.auth?.token) {
+      json(res, 401, { error: 'Not authenticated. Login at useai.dev first.' });
+      return;
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.auth.token}`,
+    };
+
+    // Fetch all sessions from cloud (paginated)
+    const PAGE_SIZE = 500;
+    const cloudSessions: SessionSeal[] = [];
+    let offset = 0;
+
+    while (true) {
+      const sessionsRes = await fetch(
+        `${USEAI_API}/api/sync/sessions?limit=${PAGE_SIZE}&offset=${offset}`,
+        { headers },
+      );
+      if (!sessionsRes.ok) {
+        const errBody = await sessionsRes.text();
+        json(res, 502, { error: `Cloud fetch failed: ${sessionsRes.status} ${errBody}` });
+        return;
+      }
+
+      const page = (await sessionsRes.json()) as SessionSeal[];
+      cloudSessions.push(...page);
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    // Merge with local sessions (dedup by session_id, prefer local)
+    const localSessions = readJson<SessionSeal[]>(SESSIONS_FILE, []);
+    const localIds = new Set(localSessions.map(s => s.session_id));
+
+    let merged = 0;
+    for (const cs of cloudSessions) {
+      if (!cs.session_id || !cs.started_at) continue;
+      if (!localIds.has(cs.session_id)) {
+        localSessions.push(cs);
+        localIds.add(cs.session_id);
+        merged++;
+      }
+    }
+
+    if (merged > 0) {
+      writeJson(SESSIONS_FILE, localSessions);
+    }
+
+    json(res, 200, {
+      success: true,
+      cloud_sessions: cloudSessions.length,
+      merged,
+      total_local: localSessions.length,
+    });
   } catch (err) {
     json(res, 500, { error: (err as Error).message });
   }
