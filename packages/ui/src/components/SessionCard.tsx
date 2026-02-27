@@ -54,18 +54,14 @@ function computeAvgScore(ev: SessionEvaluation): number {
   return (ev.prompt_quality + ev.context_provided + ev.scope_quality + ev.independence_level) / 4;
 }
 
-function scoreColor(score: number): string {
-  if (score >= 4) return 'text-success';
-  if (score >= 3) return 'text-accent';
-  if (score >= 2) return 'text-orange-400';
-  return 'text-error';
-}
-
 function ScoreNum({ score, decimal }: { score: number; decimal?: boolean }) {
-  const display = decimal ? score.toFixed(1) : String(Math.round(score));
+  const isPerfect = score >= 5;
+  const colorClass = isPerfect ? 'text-text-secondary' : score >= 4 ? 'text-amber-500' : score >= 3 ? 'text-orange-500' : 'text-error';
+  const raw = decimal ? score.toFixed(1) : String(Math.round(score));
+  const display = raw.endsWith('.0') ? raw.slice(0, -2) : raw;
   return (
-    <span className="text-[10px] font-mono font-bold" title={`${score.toFixed(1)}/5`}>
-      <span className={scoreColor(score)}>{display}</span>
+    <span className={`text-[10px] font-mono ${isPerfect ? '' : 'font-bold'}`} title={`${score.toFixed(1)}/5`}>
+      <span className={colorClass}>{display}</span>
       <span className="text-text-muted/50">/5</span>
     </span>
   );

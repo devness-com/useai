@@ -14,9 +14,10 @@ interface ScoreRow {
 }
 
 function getBarColor(score: number): string {
-  if (score >= 4) return 'var(--color-accent)';
-  if (score >= 3) return 'var(--color-success)';
-  return 'var(--color-text-muted)';
+  if (score >= 5) return 'var(--color-text-muted)';
+  if (score >= 4) return '#f59e0b';
+  if (score >= 3) return '#f97316';
+  return 'var(--color-error)';
 }
 
 export function EvaluationSummary({ sessions }: EvaluationSummaryProps) {
@@ -85,10 +86,11 @@ export function EvaluationSummary({ sessions }: EvaluationSummaryProps) {
           <div className="space-y-3">
             {scores.map((row, index) => {
               const pct = (row.value / row.max) * 100;
-              const displayValue =
-                row.label === 'Completion'
+              const isCompletion = row.label === 'Completion';
+              const displayValue = isCompletion
                   ? `${Math.round(pct)}%`
-                  : row.value.toFixed(1);
+                  : row.value >= 5 ? '5/5' : `${row.value.toFixed(1)}/5`;
+              const isPerfect = row.value >= row.max;
 
               return (
                 <div key={row.label} className="flex items-center gap-3">
@@ -108,7 +110,10 @@ export function EvaluationSummary({ sessions }: EvaluationSummaryProps) {
                       }}
                     />
                   </div>
-                  <span className="text-xs text-text-muted font-mono w-10 text-right shrink-0">
+                  <span
+                    className={`text-xs font-mono w-10 text-right shrink-0 ${isPerfect ? 'text-text-muted' : 'font-bold'}`}
+                    style={isPerfect ? undefined : { color: getBarColor(row.value) }}
+                  >
                     {displayValue}
                   </span>
                 </div>
