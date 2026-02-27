@@ -1,15 +1,10 @@
-import { readJson, writeJson } from '@useai/shared/utils';
+import { readJson, writeJson, migrateConfig } from '@useai/shared/utils';
 import { CONFIG_FILE } from '@useai/shared/constants';
-import { DEFAULT_CONFIG, DEFAULT_SYNC_INTERVAL_HOURS } from '@useai/shared/constants';
 import type { UseaiConfig } from '@useai/shared/types';
 
-const DEFAULT_USEAI_CONFIG: UseaiConfig = {
-  ...DEFAULT_CONFIG,
-  sync_interval_hours: DEFAULT_SYNC_INTERVAL_HOURS,
-};
-
 export function getConfig(): UseaiConfig {
-  return readJson<UseaiConfig>(CONFIG_FILE, DEFAULT_USEAI_CONFIG);
+  const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+  return migrateConfig(raw) as UseaiConfig;
 }
 
 export function saveConfig(config: UseaiConfig): void {

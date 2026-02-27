@@ -416,7 +416,7 @@ function SessionList({ sessions, showPublic }: { sessions: SessionSeal[]; showPu
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [sessions, visibleCount]);
 
   useEffect(() => {
     setVisibleCount(SESSION_BATCH_SIZE);

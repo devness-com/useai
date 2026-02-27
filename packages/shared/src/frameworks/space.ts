@@ -1,5 +1,5 @@
 import type { SessionEvaluation } from '../types/chain.js';
-import type { EvaluationFramework, DimensionRubric } from './types.js';
+import type { EvaluationFramework, DimensionRubric, InstructionTextOpts } from './types.js';
 
 const rubrics: DimensionRubric[] = [
   {
@@ -73,8 +73,9 @@ export const spaceFramework: EvaluationFramework = {
     ) * 100;
   },
 
-  getInstructionText(): string {
-    return [
+  getInstructionText(opts?: InstructionTextOpts): string {
+    const reasonsLevel = opts?.evaluationReasons ?? 'all';
+    const lines = [
       '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones, and an `evaluation` object.',
       '  - **milestones**: Array of objects, each with required `title` (string, generic — no project/file names), `category` (string), and optional `private_title` (string, detailed — can include project names and specifics). Example: `[{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}]`',
       '  - **milestone category values**: feature, bugfix, refactor, test, docs, setup, deployment, fix, analysis, research, investigation, performance, cleanup, chore, security, migration, design, devops, config, other',
@@ -85,7 +86,13 @@ export const spaceFramework: EvaluationFramework = {
       '  - **independence_level** (Efficiency, weight 0.25): 1=constant guidance needed, 3=some back-and-forth, 5=clear spec with autonomous execution',
       '  - **scope_quality** (Performance, weight 0.20): 1=vague/impossibly broad, 3=reasonable with ambiguity, 5=precise and well-decomposed',
       '- Also include: task_outcome (completed/partial/abandoned/blocked), iteration_count, tools_leveraged count.',
-      '- For EVERY scored metric, you MUST provide a *_reason field explaining the score. For < 5: what was lacking + tip to improve. For 5: what the user did well. Always provide task_outcome_reason.',
-    ].join('\n');
+    ];
+    if (reasonsLevel === 'all') {
+      lines.push('- For EVERY scored metric, you MUST provide a *_reason field explaining the score. For < 5: what was lacking + tip to improve. For 5: what the user did well. Always provide task_outcome_reason.');
+    } else if (reasonsLevel === 'below_perfect') {
+      lines.push('- For any scored metric < 5, you MUST provide a *_reason field explaining what was lacking and a tip to improve. Only skip *_reason for a perfect 5. Always provide task_outcome_reason if outcome is not "completed".');
+    }
+    // 'none' → no mention of reasons
+    return lines.join('\n');
   },
 };

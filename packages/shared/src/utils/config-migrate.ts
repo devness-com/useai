@@ -8,7 +8,7 @@ import { DEFAULT_CAPTURE_CONFIG, DEFAULT_SYNC_CONFIG, DEFAULT_SYNC_INCLUDE_CONFI
  * - Fills missing nested fields with defaults
  */
 export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
-  const config = { ...raw } as UseaiConfig;
+  const config = { ...raw } as unknown as UseaiConfig;
 
   // ── Capture config ──────────────────────────────────────────────────────
   if (!config.capture || typeof config.capture !== 'object') {
@@ -54,7 +54,6 @@ export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
       include: {
         sessions: include.sessions ?? DEFAULT_SYNC_INCLUDE_CONFIG.sessions,
         evaluations: include.evaluations ?? DEFAULT_SYNC_INCLUDE_CONFIG.evaluations,
-        evaluation_reasons: include.evaluation_reasons ?? DEFAULT_SYNC_INCLUDE_CONFIG.evaluation_reasons,
         milestones: include.milestones ?? DEFAULT_SYNC_INCLUDE_CONFIG.milestones,
         prompts: include.prompts ?? DEFAULT_SYNC_INCLUDE_CONFIG.prompts,
         private_titles: include.private_titles ?? DEFAULT_SYNC_INCLUDE_CONFIG.private_titles,

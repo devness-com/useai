@@ -11,7 +11,6 @@ export interface CaptureConfig {
 export interface SyncIncludeConfig {
   sessions: boolean;                  // default: true
   evaluations: boolean;               // default: true
-  evaluation_reasons: EvaluationReasonsLevel; // default: 'all'
   milestones: boolean;                // default: true
   prompts: boolean;                   // default: false (NEVER default true)
   private_titles: boolean;            // default: false

@@ -1,14 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { HealthInfo, UpdateInfo, LocalConfig } from '../lib/api';
-import { ArrowUpCircle, Copy, Check, Search } from 'lucide-react';
+import { ArrowUpCircle, Copy, Check, Search, Sparkles } from 'lucide-react';
 import { UseAILogo, TabBar, StatusBadge } from '@useai/ui';
 import type { ActiveTab, ExternalNavLink } from '@useai/ui';
 import { ProfileDropdown } from './ProfileDropdown';
+import type { ProfileDropdownHandle } from './ProfileDropdown';
 
 const UPDATE_COMMAND = 'npx -y @devness/useai update';
 
-const STATIC_WEB_LINKS: ExternalNavLink[] = [
+const WEB_LINKS_WITH_PROFILE = (username: string): ExternalNavLink[] => [
   { label: 'Leaderboard', href: 'https://useai.dev/leaderboard' },
+  { label: 'Profile', href: `https://useai.dev/${username}` },
 ];
 
 function UpdateBanner({ updateInfo }: { updateInfo: UpdateInfo }) {
@@ -67,12 +69,11 @@ interface HeaderProps {
 }
 
 export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange, config, onRefresh }: HeaderProps) {
+  const profileRef = useRef<ProfileDropdownHandle>(null);
+
   const webLinks = useMemo(() => {
-    const links = [...STATIC_WEB_LINKS];
-    if (config?.username) {
-      links.push({ label: 'Profile', href: `https://useai.dev/${config.username}` });
-    }
-    return links;
+    if (config?.username) return WEB_LINKS_WITH_PROFILE(config.username);
+    return undefined;
   }, [config?.username]);
 
   return (
@@ -94,6 +95,15 @@ export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChang
         </div>
 
         <div className="flex items-center gap-4">
+          {config?.authenticated && !config?.username && (
+            <button
+              onClick={() => profileRef.current?.open()}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/25 text-[11px] font-medium text-accent hover:bg-accent/15 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3 h-3" />
+              Claim your username
+            </button>
+          )}
           {onSearchOpen && (
             <button
               onClick={onSearchOpen}
@@ -109,7 +119,7 @@ export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChang
           {updateInfo?.update_available && (
             <UpdateBanner updateInfo={updateInfo} />
           )}
-          <ProfileDropdown config={config} onRefresh={onRefresh} />
+          <ProfileDropdown ref={profileRef} config={config} onRefresh={onRefresh} />
         </div>
       </div>
     </header>

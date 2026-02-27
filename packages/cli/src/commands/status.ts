@@ -69,9 +69,11 @@ export const statusCommand = new Command('status')
 
     console.log(
       table([
-        ['Milestone tracking', config.milestone_tracking ? chalk.green('on') : chalk.red('off')],
-        ['Auto sync', config.auto_sync ? chalk.green('on') : chalk.red('off')],
-        ['Sync interval', `${config.sync_interval_hours}h`],
+        ['Milestone tracking', config.capture.milestones ? chalk.green('on') : chalk.red('off')],
+        ['Prompt capture', config.capture.prompt ? chalk.green('on') : chalk.red('off')],
+        ['Eval reasons', config.capture.evaluation_reasons],
+        ['Cloud sync', config.sync.enabled ? chalk.green('on') : chalk.red('off')],
+        ['Sync interval', `${config.sync.interval_hours}h`],
         ['Last sync', config.last_sync_at ?? chalk.dim('never')],
         ['Logged in', config.auth ? chalk.green(config.auth.user.email) : chalk.dim('no')],
       ]),
@@ -79,10 +81,10 @@ export const statusCommand = new Command('status')
 
     console.log(header('Privacy'));
     console.log(
-      info('useai NEVER captures code, file contents, prompts, or responses.'),
+      info('Prompts are stored locally only. Cloud sync strips private data by default.'),
     );
     console.log(
-      info('Only durations, tool names, languages, and task types are recorded.'),
+      info('Configure sync.include to control what leaves your machine.'),
     );
 
     console.log('');

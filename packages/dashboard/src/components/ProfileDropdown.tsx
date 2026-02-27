@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import type { LocalConfig } from '../lib/api';
 import { postSendOtp, postVerifyOtp, postSync, postLogout, checkUsername, updateUsername } from '../lib/api';
 import { RefreshCw, User, Mail, LogOut, Link, Pencil, Loader2, Check, X, ChevronDown } from 'lucide-react';
@@ -185,12 +185,16 @@ function UsernameRow({ config, onRefresh }: { config: LocalConfig; onRefresh: ()
   );
 }
 
+export interface ProfileDropdownHandle {
+  open: () => void;
+}
+
 interface ProfileDropdownProps {
   config: LocalConfig | null;
   onRefresh: () => void;
 }
 
-export function ProfileDropdown({ config, onRefresh }: ProfileDropdownProps) {
+export const ProfileDropdown = forwardRef<ProfileDropdownHandle, ProfileDropdownProps>(function ProfileDropdown({ config, onRefresh }, ref) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -198,6 +202,10 @@ export function ProfileDropdown({ config, onRefresh }: ProfileDropdownProps) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    open: () => setOpen(true),
+  }));
 
   // Click-outside to close
   useEffect(() => {
@@ -299,7 +307,7 @@ export function ProfileDropdown({ config, onRefresh }: ProfileDropdownProps) {
       ) : (
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent hover:bg-accent-bright text-bg-base text-xs font-bold tracking-wide transition-colors cursor-pointer"
         >
           <User className="w-3 h-3" />
           Sign in
@@ -420,4 +428,4 @@ export function ProfileDropdown({ config, onRefresh }: ProfileDropdownProps) {
       )}
     </div>
   );
-}
+});

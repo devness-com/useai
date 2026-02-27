@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    exclude: ['dist/**', 'node_modules/**'],
     server: {
       deps: {
         // Inline @devness/mcp-setup so vi.mock('node:fs'), vi.mock('node:os'), etc.

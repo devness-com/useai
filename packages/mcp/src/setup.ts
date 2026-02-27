@@ -21,13 +21,7 @@ import {
   detectPlatform,
   installClaudeCodeHooks,
   removeClaudeCodeHooks,
-  CONFIG_FILE,
-  readJson,
-  writeJson,
-  getFramework,
-  getFrameworkIds,
 } from '@useai/shared';
-import type { LocalConfig } from '@useai/shared';
 import { AI_TOOLS, USEAI_INSTRUCTIONS_TEXT, resolveTools, type AiTool } from './tools.js';
 
 // Lazy-load @devness/mcp-setup (it imports @inquirer/prompts which needs Node 20+)
@@ -79,76 +73,6 @@ async function multiSelect(
       rl.close();
     }
   }
-}
-
-/**
- * Single-select with @inquirer/prompts, falling back to readline on Node < 20.
- */
-async function singleSelect(
-  message: string,
-  choices: { name: string; value: string; description?: string }[],
-): Promise<string> {
-  try {
-    const { select } = await import('@inquirer/prompts');
-    return await select({ message, choices });
-  } catch {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    try {
-      console.log(`  ${message}\n`);
-      choices.forEach((c, i) => {
-        const desc = c.description ? chalk.dim(` — ${c.description}`) : '';
-        console.log(`  ${i + 1}. ${c.name}${desc}`);
-      });
-      console.log();
-      const answer = await rl.question('  Enter number: ');
-      const idx = parseInt(answer.trim(), 10) - 1;
-      return choices[idx]?.value ?? choices[0]!.value;
-    } finally {
-      rl.close();
-    }
-  }
-}
-
-/**
- * Prompt for evaluation framework selection and persist to config.
- * Returns the chosen framework ID.
- */
-async function selectFramework(autoYes: boolean): Promise<string> {
-  const config = readJson<LocalConfig>(CONFIG_FILE, {
-    milestone_tracking: true,
-    auto_sync: true,
-    evaluation_framework: 'space',
-  });
-  const currentId = config.evaluation_framework ?? 'space';
-
-  if (autoYes) {
-    return currentId;
-  }
-
-  const frameworkIds = getFrameworkIds();
-  const choices = frameworkIds.map((id) => {
-    const fw = getFramework(id);
-    const current = id === currentId ? ' (current)' : '';
-    const recommended = id === 'space' ? ' (Recommended)' : '';
-    return { name: `${fw.name}${recommended}${current}`, value: id, description: fw.description };
-  });
-
-  console.log(chalk.dim('\n  Evaluation Framework'));
-  console.log(chalk.dim('  Controls how AI models score your sessions.'));
-  console.log(chalk.dim('  SPACE is based on the developer productivity framework by GitHub/Microsoft Research.'));
-  console.log(chalk.dim('  Learn more: https://queue.acm.org/detail.cfm?id=3454124\n'));
-
-  const chosen = await singleSelect('Choose evaluation framework:', choices);
-
-  if (chosen !== currentId) {
-    writeJson(CONFIG_FILE, { ...config, evaluation_framework: chosen });
-    const fw = getFramework(chosen);
-    console.log(chalk.green(`  ✓ Framework set to ${chalk.bold(fw.name)}`));
-  } else {
-    console.log(chalk.dim(`  Keeping ${getFramework(currentId).name} framework.`));
-  }
-
-  return chosen;
 }
 
 // ── Manual Hints (for tools that need manual instruction placement) ───────
@@ -297,10 +221,7 @@ async function daemonInstallFlow(tools: AiTool[], autoYes: boolean, explicit: bo
     return;
   }
 
-  // 6. Framework selection
-  await selectFramework(autoYes);
-
-  // 7. Configure selected tools
+  // 6. Configure selected tools
   console.log(`\n  Configuring ${toInstall.length} tool${toInstall.length === 1 ? '' : 's'}...\n`);
 
   let configuredCount = 0;

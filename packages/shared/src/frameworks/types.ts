@@ -1,6 +1,11 @@
 import type { SessionEvaluation } from '../types/chain.js';
+import type { EvaluationReasonsLevel } from '../types/config.js';
 
 export type EvaluationFrameworkId = 'raw' | 'space';
+
+export interface InstructionTextOpts {
+  evaluationReasons?: EvaluationReasonsLevel;
+}
 
 export interface DimensionRubric {
   dimension: string;
@@ -17,5 +22,5 @@ export interface EvaluationFramework {
   version: string;
   rubrics: DimensionRubric[];
   computeSessionScore(evaluation: SessionEvaluation): number;
-  getInstructionText(): string;
+  getInstructionText(opts?: InstructionTextOpts): string;
 }

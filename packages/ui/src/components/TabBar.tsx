@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Settings } from 'lucide-react';
 import type { ActiveTab } from '../types';
 
 export interface ExternalNavLink {
@@ -38,6 +38,20 @@ export function TabBar({ activeTab, onTabChange, externalLinks }: TabBarProps) {
           </button>
         );
       })}
+      <div className="w-px h-4 bg-border/60 mx-1" />
+      <button
+        onClick={() => onTabChange('settings')}
+        className={`
+          flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150
+          ${activeTab === 'settings'
+            ? 'bg-bg-surface-2 text-text-primary shadow-sm'
+            : 'text-text-muted hover:text-text-primary'
+          }
+        `}
+      >
+        <Settings className="w-3 h-3" />
+        Settings
+      </button>
       {externalLinks && externalLinks.length > 0 && (
         <>
           <div className="w-px h-4 bg-border/60 mx-1" />

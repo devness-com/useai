@@ -30,7 +30,8 @@ import {
   fetchLatestVersion,
   formatDuration,
 } from '@useai/shared';
-import type { SessionSeal, SessionEvaluation, ChainRecord, Keystore, Milestone, LocalConfig } from '@useai/shared';
+import type { SessionSeal, SessionEvaluation, ChainRecord, Keystore, Milestone } from '@useai/shared';
+import { migrateConfig as migrateConfigFn } from '@useai/shared';
 import { SessionState } from './session-state.js';
 import { registerTools } from './register-tools.js';
 import { readMcpMap, writeMcpMapping } from './mcp-map.js';
@@ -40,6 +41,8 @@ import {
   handleLocalSessions,
   handleLocalMilestones,
   handleLocalConfig,
+  handleLocalConfigFull,
+  handleLocalConfigUpdate,
   handleLocalSync,
   handleLocalSendOtp,
   handleLocalVerifyOtp,
@@ -52,6 +55,8 @@ import {
   handleDeleteSession,
   handleDeleteConversation,
   handleDeleteMilestone,
+  performSync,
+  setOnConfigUpdated,
 } from './dashboard/local-api.js';
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const SEAL_GRACE_MS = 30 * 60 * 1000; // Don't auto-seal sessions in-progress for less than 30 min
@@ -765,8 +770,8 @@ function recoverEndSession(
   if (isAlreadySealed) {
     let milestoneCount = 0;
     if (milestonesInput && milestonesInput.length > 0) {
-      const config = readJson<LocalConfig>(CONFIG_FILE, { milestone_tracking: true, auto_sync: true });
-      if (config.milestone_tracking) {
+      const config = migrateConfigFn(readJson<Record<string, unknown>>(CONFIG_FILE, {}));
+      if (config.capture.milestones) {
         const durationMinutes = Math.round(duration / 60);
         const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
         for (const m of milestonesInput) {
@@ -849,8 +854,8 @@ function recoverEndSession(
   // Process milestones
   let milestoneCount = 0;
   if (milestonesInput && milestonesInput.length > 0) {
-    const config = readJson<LocalConfig>(CONFIG_FILE, { milestone_tracking: true, auto_sync: true });
-    if (config.milestone_tracking) {
+    const config = migrateConfigFn(readJson<Record<string, unknown>>(CONFIG_FILE, {}));
+    if (config.capture.milestones) {
       const durationMinutes = Math.round(duration / 60);
       const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
       for (const m of milestonesInput) {
@@ -1039,6 +1044,55 @@ async function listenWithRetry(
   }
 }
 
+// ── Auto-Sync Timer ─────────────────────────────────────────────────────────
+
+let autoSyncTimer: ReturnType<typeof setTimeout> | null = null;
+const AUTO_SYNC_MIN_DELAY_MS = 60 * 1000; // 1 minute minimum
+
+function scheduleAutoSync(): void {
+  // Clear any existing timer
+  if (autoSyncTimer) {
+    clearTimeout(autoSyncTimer);
+    autoSyncTimer = null;
+  }
+
+  try {
+    const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+    const config = migrateConfigFn(raw) as import('@useai/shared').UseaiConfig;
+
+    if (!config.sync.enabled || !config.auth?.token) return;
+
+    const intervalMs = (config.sync.interval_hours ?? 6) * 60 * 60 * 1000;
+    let delayMs: number;
+
+    if (config.last_sync_at) {
+      const elapsed = Date.now() - new Date(config.last_sync_at).getTime();
+      delayMs = Math.max(intervalMs - elapsed, AUTO_SYNC_MIN_DELAY_MS);
+    } else {
+      // Never synced — trigger after 1 minute
+      delayMs = AUTO_SYNC_MIN_DELAY_MS;
+    }
+
+    autoSyncTimer = setTimeout(async () => {
+      try {
+        const result = await performSync();
+        if (result.success) {
+          console.error(`[useai] Auto-sync completed at ${result.last_sync_at}`);
+        } else {
+          console.error(`[useai] Auto-sync failed: ${result.error}`);
+        }
+      } catch (err) {
+        console.error(`[useai] Auto-sync error: ${(err as Error).message}`);
+      }
+      // Reschedule for the next interval
+      scheduleAutoSync();
+    }, delayMs);
+    autoSyncTimer.unref();
+  } catch {
+    // Config unreadable — skip auto-sync scheduling
+  }
+}
+
 // ── Daemon entry point ─────────────────────────────────────────────────────────
 
 export async function startDaemon(port?: number): Promise<void> {
@@ -1069,6 +1123,10 @@ export async function startDaemon(port?: number): Promise<void> {
   const sweepInterval = setInterval(sealOrphanedSessions, ORPHAN_SWEEP_INTERVAL_MS);
   sweepInterval.unref();
 
+  // Auto-sync timer: reschedule whenever config changes
+  setOnConfigUpdated(scheduleAutoSync);
+  scheduleAutoSync();
+
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
@@ -1091,6 +1149,7 @@ export async function startDaemon(port?: number): Promise<void> {
       if (url.pathname === '/api/local/sessions') { handleLocalSessions(req, res); return; }
       if (url.pathname === '/api/local/milestones') { handleLocalMilestones(req, res); return; }
       if (url.pathname === '/api/local/config') { handleLocalConfig(req, res); return; }
+      if (url.pathname === '/api/local/config/full') { handleLocalConfigFull(req, res); return; }
       if (url.pathname === '/api/local/update-check') { await handleUpdateCheck(res); return; }
 
       const usernameMatch = url.pathname.match(/^\/api\/local\/users\/check-username\/(.+)$/);
@@ -1126,6 +1185,10 @@ export async function startDaemon(port?: number): Promise<void> {
     }
 
     // Local API — PATCH
+    if (url.pathname === '/api/local/config' && req.method === 'PATCH') {
+      await handleLocalConfigUpdate(req, res);
+      return;
+    }
     if (url.pathname === '/api/local/users/me' && req.method === 'PATCH') {
       await handleLocalUpdateUser(req, res);
       return;

@@ -65,7 +65,6 @@ Self-assessed scores recorded at session end:
 | `conversation_id` | Opaque ID linking records to the same conversation | Yes |
 | `conversation_index` | Sequence number within a conversation | Yes |
 | `prompt_word_count` | Approximate word count of the user's initial prompt | Yes |
-| `tool_overhead` | Estimated token usage for UseAI's own MCP calls (start + end input/output tokens) | Yes |
 
 ### Milestone Fields
 
@@ -158,7 +157,6 @@ When you run `useai sync`, two HTTP requests are made:
       "prompt_word_count": 42,
       "model": "claude-sonnet-4-6",
       "evaluation": { "..." },
-      "tool_overhead": { "..." },
       "started_at": "2026-01-15T10:00:00Z",
       "ended_at": "2026-01-15T10:30:00Z",
       "duration_seconds": 1800,

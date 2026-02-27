@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useDashboardStore } from '@/store/dashboard-store';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, LogOut, Search } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Search, Sparkles } from 'lucide-react';
 import { UseAILogo, TabBar, SearchOverlay } from '@useai/ui';
+import type { ExternalNavLink } from '@useai/ui';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -16,6 +17,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { sessions, milestones, activeTab, setActiveTab } = useDashboardStore();
   const isDashboardRoot = pathname === '/dashboard';
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const webLinks = useMemo<ExternalNavLink[] | undefined>(() => {
+    if (!user?.username) return undefined;
+    return [
+      { label: 'Leaderboard', href: '/leaderboard' },
+      { label: 'Profile', href: `/${user.username}` },
+    ];
+  }, [user?.username]);
+
+  const showClaimHint = !user?.username;
 
   useEffect(() => {
     hydrate();
@@ -61,11 +72,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {isDashboardRoot && (
             <div className="absolute left-1/2 -translate-x-1/2">
-              <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+              <TabBar activeTab={activeTab} onTabChange={setActiveTab} externalLinks={webLinks} />
             </div>
           )}
 
           <div className="flex items-center gap-4">
+            {showClaimHint && (
+              <Link
+                href="/dashboard/settings"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/25 text-[11px] font-medium text-accent hover:bg-accent/15 transition-colors"
+              >
+                <Sparkles className="w-3 h-3" />
+                Claim your username
+              </Link>
+            )}
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"

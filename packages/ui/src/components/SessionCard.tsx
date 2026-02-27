@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { ChevronDown, Clock, Lock, Shield, Eye, EyeOff, Flag, MessageSquare, FileText, Target, Compass, RefreshCw, Wrench, FolderKanban, Cpu, Activity } from 'lucide-react';
+import { ChevronDown, Clock, Lock, Shield, Eye, EyeOff, Flag, MessageSquare, FileText, Target, Compass, RefreshCw, Wrench, FolderKanban, Cpu, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal, Milestone, SessionEvaluation } from '@useai/shared/types';
 import { TOOL_COLORS, TOOL_INITIALS, TOOL_ICONS, CATEGORY_COLORS, TOOL_DISPLAY_NAMES, resolveClient } from '../constants';
@@ -73,24 +73,15 @@ function ScoreNum({ score, decimal }: { score: number; decimal?: boolean }) {
   );
 }
 
-function SessionMetaRow({ model, toolOverhead }: { model?: string; toolOverhead?: SessionSeal['tool_overhead'] }) {
-  if (!model && !toolOverhead) return null;
+function SessionMetaRow({ model }: { model?: string }) {
+  if (!model) return null;
   return (
     <div className="flex flex-wrap items-center gap-4">
-      {model && (
-        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
-          <Cpu className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
-          <span className="text-text-secondary">Model</span>
-          <span className="text-text-secondary font-mono font-bold ml-0.5">{model}</span>
-        </div>
-      )}
-      {toolOverhead && (
-        <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
-          <Activity className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
-          <span className="text-text-secondary">Tracking overhead</span>
-          <span className="text-text-secondary font-mono font-bold ml-0.5">~{toolOverhead.total_tokens_est} tokens</span>
-        </div>
-      )}
+      <div className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
+        <Cpu className="w-3 h-3 text-text-muted/50 flex-shrink-0" />
+        <span className="text-text-secondary">Model</span>
+        <span className="text-text-secondary font-mono font-bold ml-0.5">{model}</span>
+      </div>
     </div>
   );
 }
@@ -99,14 +90,12 @@ function EvaluationDetail({
   evaluation,
   showPublic = false,
   model,
-  toolOverhead,
 }: {
   evaluation: SessionEvaluation;
   showPublic?: boolean;
   model?: string;
-  toolOverhead?: SessionSeal['tool_overhead'];
 }) {
-  const hasMeta = !!model || !!toolOverhead;
+  const hasMeta = !!model;
   const metrics = [
     { label: 'Prompt', value: evaluation.prompt_quality, reason: evaluation.prompt_quality_reason, Icon: MessageSquare },
     { label: 'Context', value: evaluation.context_provided, reason: evaluation.context_provided_reason, Icon: FileText },
@@ -129,7 +118,7 @@ function EvaluationDetail({
         {hasMeta && (
           <>
             <div className="hidden md:block h-3.5 w-px bg-border/30" />
-            <SessionMetaRow model={model} toolOverhead={toolOverhead} />
+            <SessionMetaRow model={model} />
           </>
         )}
         <div className="hidden md:block h-3.5 w-px bg-border/30" />
@@ -168,6 +157,49 @@ function EvaluationDetail({
   );
 }
 
+function PromptDisplay({ prompt, imageCount, images }: { prompt: string; imageCount?: number; images?: Array<{ type: 'image'; description: string }> }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = prompt.length > 300;
+  const displayText = isLong && !expanded ? prompt.slice(0, 300) + '…' : prompt;
+  const effectiveCount = imageCount ?? images?.length ?? 0;
+
+  return (
+    <div className="px-2.5 py-2 bg-bg-surface-2/20 rounded-md mb-2 border border-border/10">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <MessageSquare className="w-3 h-3 text-text-muted/50" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Prompt</span>
+        {effectiveCount > 0 && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted bg-bg-surface-2 px-1.5 py-0.5 rounded-full border border-border/20">
+            <Image className="w-2.5 h-2.5" />
+            {effectiveCount}
+          </span>
+        )}
+      </div>
+      <p className="text-[11px] text-text-secondary leading-relaxed whitespace-pre-wrap break-words">
+        {displayText}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-[10px] text-accent hover:text-accent/80 mt-1 font-medium"
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
+      {images && images.length > 0 && (
+        <div className="mt-2 pt-1.5 border-t border-border/10 space-y-1">
+          {images.map((img, i) => (
+            <div key={i} className="flex items-start gap-1.5">
+              <Image className="w-3 h-3 text-text-muted/50 flex-shrink-0 mt-0.5" />
+              <span className="text-[10px] text-text-secondary leading-relaxed">{img.description}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface SessionCardProps {
   session: SessionSeal;
   milestones: Milestone[];
@@ -197,7 +229,7 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
   const initials = TOOL_INITIALS[client] ?? client.slice(0, 2).toUpperCase();
   const iconPath = TOOL_ICONS[client];
   const hasMilestones = milestones.length > 0;
-  const hasDetails = hasMilestones || !!session.evaluation || !!session.model || !!session.tool_overhead;
+  const hasDetails = hasMilestones || !!session.evaluation || !!session.model || !!session.prompt;
 
   // Determine titles
   const UNTITLED_PROJECTS = ['untitled', 'mcp', 'unknown', 'default', 'none', 'null', 'undefined'];
@@ -373,15 +405,18 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
             <div className="px-3.5 pb-3.5 pt-1.5 space-y-2">
               <div className="h-px bg-border/20 mb-2 mx-1" />
 
+              {!showPublic && session.prompt && (
+                <PromptDisplay prompt={session.prompt} imageCount={session.prompt_image_count} images={session.prompt_images} />
+              )}
+
               {session.evaluation && (
                 <EvaluationDetail
                   evaluation={session.evaluation}
                   showPublic={showPublic}
                   model={session.model}
-                  toolOverhead={session.tool_overhead}
                 />
               )}
-              {!session.evaluation && <SessionMetaRow model={session.model} toolOverhead={session.tool_overhead} />}
+              {!session.evaluation && <SessionMetaRow model={session.model} />}
 
               {milestones.length > 0 && <div className="space-y-0.5">
                 {milestones.map((m) => {

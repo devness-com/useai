@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDashboardStore } from './store';
 import { Header } from './components/Header';
 import { DashboardBody, SearchOverlay } from '@useai/ui';
+import { SettingsPage } from './components/SettingsPage';
 
 export function App() {
   const {
@@ -64,25 +65,31 @@ export function App() {
     <div className="min-h-screen bg-bg-base selection:bg-accent/30 selection:text-text-primary">
       <Header health={health} updateInfo={updateInfo} onSearchOpen={() => setSearchOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} config={config} onRefresh={loadAll} />
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 pb-6">
-        <SearchOverlay
-          open={searchOpen}
-          onClose={() => setSearchOpen(false)}
-          sessions={sessions}
-          milestones={milestones}
-          onDeleteSession={deleteSession}
-          onDeleteConversation={deleteConversation}
-          onDeleteMilestone={deleteMilestone}
-        />
+        {activeTab === 'settings' ? (
+          <SettingsPage />
+        ) : (
+          <>
+            <SearchOverlay
+              open={searchOpen}
+              onClose={() => setSearchOpen(false)}
+              sessions={sessions}
+              milestones={milestones}
+              onDeleteSession={deleteSession}
+              onDeleteConversation={deleteConversation}
+              onDeleteMilestone={deleteMilestone}
+            />
 
-        <DashboardBody
-          sessions={sessions}
-          milestones={milestones}
-          onDeleteSession={deleteSession}
-          onDeleteConversation={deleteConversation}
-          onDeleteMilestone={deleteMilestone}
-          activeTab={activeTab}
-          onActiveTabChange={setActiveTab}
-        />
+            <DashboardBody
+              sessions={sessions}
+              milestones={milestones}
+              onDeleteSession={deleteSession}
+              onDeleteConversation={deleteConversation}
+              onDeleteMilestone={deleteMilestone}
+              activeTab={activeTab}
+              onActiveTabChange={setActiveTab}
+            />
+          </>
+        )}
       </div>
     </div>
   );

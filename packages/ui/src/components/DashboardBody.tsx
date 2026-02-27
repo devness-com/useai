@@ -17,8 +17,8 @@ import { DailyRecap } from './DailyRecap';
 import { EvaluationSummary } from './EvaluationSummary';
 import { SkillRadar } from './SkillRadar';
 import { ComplexityDistribution } from './ComplexityDistribution';
-import { ImprovementTips } from './ImprovementTips';
 import { TaskTypeBreakdown } from './TaskTypeBreakdown';
+import { ProjectAllocation } from './ProjectAllocation';
 import { ActivityStrip } from './ActivityStrip';
 import { RecentMilestones } from './RecentMilestones';
 import { SummaryChips } from './SummaryChips';
@@ -170,26 +170,6 @@ export function DashboardBody({
     return new Date(effectiveTime).toISOString().slice(0, 10);
   }, [isLive, effectiveTime]);
 
-  const evalAverages = useMemo(() => {
-    const evaluated = filteredSessions.filter((s) => s.evaluation != null);
-    if (evaluated.length === 0) return null;
-
-    let pq = 0, cp = 0, sq = 0, il = 0;
-    for (const s of evaluated) {
-      const ev = s.evaluation!;
-      pq += ev.prompt_quality;
-      cp += ev.context_provided;
-      sq += ev.scope_quality;
-      il += ev.independence_level;
-    }
-    const n = evaluated.length;
-    return {
-      prompt_quality: Math.round((pq / n) * 10) / 10,
-      context_provided: Math.round((cp / n) * 10) / 10,
-      scope_quality: Math.round((sq / n) * 10) / 10,
-      independence_level: Math.round((il / n) * 10) / 10,
-    };
-  }, [filteredSessions]);
 
   const complexityData = useMemo(() => {
     let simple = 0, medium = 0, complex = 0;
@@ -351,7 +331,7 @@ export function DashboardBody({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ComplexityDistribution data={complexityData} />
-            {evalAverages && <ImprovementTips evaluation={evalAverages} />}
+            <ProjectAllocation sessions={filteredSessions} byProject={stats.byProject} />
           </div>
 
           <TaskTypeBreakdown byTaskType={stats.byTaskType} />

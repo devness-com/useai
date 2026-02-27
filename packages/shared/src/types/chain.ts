@@ -26,12 +26,6 @@ export interface SessionEvaluation {
   evaluation_framework?: string;    // which framework computed the score
 }
 
-export interface ToolOverhead {
-  start: { input_tokens_est: number; output_tokens_est: number };
-  end: { input_tokens_est: number; output_tokens_est: number };
-  total_tokens_est: number;
-}
-
 export interface SessionSeal {
   session_id: string;
   /** Parent session ID when this is a child (subagent) session. */
@@ -47,12 +41,12 @@ export interface SessionSeal {
   private_title?: string;
   prompt?: string;              // Full verbatim prompt (local-only by default)
   prompt_image_count?: number;  // Number of images attached to prompt
+  prompt_images?: Array<{ type: 'image'; description: string }>;  // Image descriptions from prompt
   prompt_word_count?: number;
   model?: string;
   evaluation?: SessionEvaluation;
   session_score?: number;           // 0-100
   evaluation_framework?: string;    // 'raw' | 'space' | ...
-  tool_overhead?: ToolOverhead;
   started_at: string;
   ended_at: string;
   duration_seconds: number;

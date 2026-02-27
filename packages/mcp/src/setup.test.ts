@@ -26,12 +26,7 @@ vi.mock('@useai/shared', () => ({
   installClaudeCodeHooks: vi.fn(),
   removeClaudeCodeHooks: vi.fn(),
   DAEMON_MCP_URL: 'http://localhost:9999/mcp',
-  CONFIG_FILE: '/tmp/useai-test-config.json',
-  readJson: () => ({ milestone_tracking: true, auto_sync: true, evaluation_framework: 'raw' }),
-  writeJson: vi.fn(),
   buildInstructionsText: () => '## UseAI Session Tracking\n- test instructions',
-  getFramework: () => ({ id: 'raw', name: 'Raw', description: 'Equal-weight average' }),
-  getFrameworkIds: () => ['raw', 'space'],
 }));
 
 const { mockToolA, mockToolB, allMockTools } = vi.hoisted(() => {

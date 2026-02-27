@@ -8,8 +8,11 @@ import {
   MILESTONES_FILE,
   CONFIG_FILE,
   SEALED_DIR,
+  migrateConfig,
+  sanitizeSealForSync,
 } from '@useai/shared';
 import type { SessionSeal, Milestone, UseaiConfig } from '@useai/shared';
+import { reInjectAllInstructions } from '../tools.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────
 
@@ -141,103 +144,175 @@ export function handleLocalMilestones(_req: IncomingMessage, res: ServerResponse
 
 export function handleLocalConfig(_req: IncomingMessage, res: ServerResponse): void {
   try {
-    const config = readJson<UseaiConfig>(CONFIG_FILE, {
-      milestone_tracking: true,
-      auto_sync: false,
-      sync_interval_hours: 24,
-    } as UseaiConfig);
+    const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+    const config = migrateConfig(raw) as UseaiConfig;
 
     json(res, 200, {
       authenticated: !!config.auth?.token,
       email: config.auth?.user?.email ?? null,
       username: config.auth?.user?.username ?? null,
       last_sync_at: config.last_sync_at ?? null,
-      auto_sync: config.auto_sync,
+      auto_sync: config.sync.enabled,
     });
   } catch (err) {
     json(res, 500, { error: (err as Error).message });
   }
 }
 
+export function handleLocalConfigFull(_req: IncomingMessage, res: ServerResponse): void {
+  try {
+    const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+    const config = migrateConfig(raw) as UseaiConfig;
+
+    json(res, 200, {
+      capture: config.capture,
+      sync: config.sync,
+      evaluation_framework: config.evaluation_framework ?? 'space',
+      authenticated: !!config.auth?.token,
+      email: config.auth?.user?.email ?? null,
+    });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+export async function handleLocalConfigUpdate(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    const body = JSON.parse(await readBody(req)) as Record<string, unknown>;
+    const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+    const config = migrateConfig(raw) as UseaiConfig;
+
+    // Apply known top-level keys
+    if (body.evaluation_framework !== undefined) {
+      config.evaluation_framework = body.evaluation_framework as string;
+    }
+
+    // Deep-merge capture
+    if (body.capture && typeof body.capture === 'object') {
+      config.capture = { ...config.capture, ...(body.capture as Partial<UseaiConfig['capture']>) };
+    }
+
+    // Deep-merge sync (with nested include)
+    if (body.sync && typeof body.sync === 'object') {
+      const syncUpdate = body.sync as Record<string, unknown>;
+      if (syncUpdate.enabled !== undefined) config.sync.enabled = syncUpdate.enabled as boolean;
+      if (syncUpdate.interval_hours !== undefined) config.sync.interval_hours = syncUpdate.interval_hours as number;
+      if (syncUpdate.include && typeof syncUpdate.include === 'object') {
+        config.sync.include = { ...config.sync.include, ...(syncUpdate.include as Partial<UseaiConfig['sync']['include']>) };
+      }
+    }
+
+    writeJson(CONFIG_FILE, config);
+
+    // Re-inject instructions into all installed AI tools
+    const { updated } = reInjectAllInstructions();
+
+    // Notify daemon to reschedule auto-sync (picks up sync.enabled / interval_hours changes)
+    if (_onConfigUpdated) _onConfigUpdated();
+
+    json(res, 200, {
+      capture: config.capture,
+      sync: config.sync,
+      evaluation_framework: config.evaluation_framework ?? 'space',
+      authenticated: !!config.auth?.token,
+      email: config.auth?.user?.email ?? null,
+      instructions_updated: updated,
+    });
+  } catch (err) {
+    json(res, 500, { error: (err as Error).message });
+  }
+}
+
+// ── Config update callback (avoids circular import with daemon.ts) ───────────
+
+let _onConfigUpdated: (() => void) | null = null;
+
+/** Register a callback to be invoked after config is written (used by daemon for auto-sync rescheduling). */
+export function setOnConfigUpdated(cb: () => void): void {
+  _onConfigUpdated = cb;
+}
+
 // ── Sync ────────────────────────────────────────────────────────────────────────
 
-export async function handleLocalSync(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  try {
-    // Consume body (even if empty) to prevent connection issues
-    await readBody(req);
+/** Core sync logic — reusable from both the HTTP handler and the auto-sync timer. */
+export async function performSync(): Promise<{ success: boolean; last_sync_at?: string; error?: string }> {
+  const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+  const config = migrateConfig(raw) as UseaiConfig;
+  const syncInclude = config.sync.include;
 
-    const config = readJson<UseaiConfig>(CONFIG_FILE, {
-      milestone_tracking: true,
-      auto_sync: false,
-      sync_interval_hours: 24,
-    } as UseaiConfig);
+  if (!config.auth?.token) {
+    return { success: false, error: 'Not authenticated. Login at useai.dev first.' };
+  }
 
-    if (!config.auth?.token) {
-      json(res, 401, { success: false, error: 'Not authenticated. Login at useai.dev first.' });
-      return;
+  const token = config.auth.token;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+
+  // Group sessions by date and build per-day sync payloads
+  const sessions = deduplicateSessions(readJson<SessionSeal[]>(SESSIONS_FILE, []));
+  const byDate = new Map<string, SessionSeal[]>();
+
+  for (const s of sessions) {
+    const date = s.started_at.slice(0, 10);
+    const arr = byDate.get(date);
+    if (arr) arr.push(s);
+    else byDate.set(date, [s]);
+  }
+
+  for (const [date, daySessions] of byDate) {
+    let totalSeconds = 0;
+    const clients: Record<string, number> = {};
+    const taskTypes: Record<string, number> = {};
+    const languages: Record<string, number> = {};
+
+    for (const s of daySessions) {
+      totalSeconds += s.duration_seconds;
+      clients[s.client] = (clients[s.client] ?? 0) + s.duration_seconds;
+      taskTypes[s.task_type] = (taskTypes[s.task_type] ?? 0) + s.duration_seconds;
+      for (const lang of s.languages) {
+        languages[lang] = (languages[lang] ?? 0) + s.duration_seconds;
+      }
     }
 
-    const token = config.auth.token;
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+    const payload = {
+      date,
+      total_seconds: totalSeconds,
+      clients,
+      task_types: taskTypes,
+      languages,
+      sessions: daySessions.map(s => sanitizeSealForSync(s, syncInclude, config.capture.evaluation_reasons)),
+      sync_signature: '',
     };
 
-    // Group sessions by date and build per-day sync payloads
-    const sessions = deduplicateSessions(readJson<SessionSeal[]>(SESSIONS_FILE, []));
-    const byDate = new Map<string, SessionSeal[]>();
+    const sessionsRes = await fetch(`${USEAI_API}/api/sync`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
 
-    for (const s of sessions) {
-      const date = s.started_at.slice(0, 10);
-      const arr = byDate.get(date);
-      if (arr) arr.push(s);
-      else byDate.set(date, [s]);
+    if (!sessionsRes.ok) {
+      const errBody = await sessionsRes.text();
+      return { success: false, error: `Sessions sync failed (${date}): ${sessionsRes.status} ${errBody}` };
     }
+  }
 
-    for (const [date, daySessions] of byDate) {
-      let totalSeconds = 0;
-      const clients: Record<string, number> = {};
-      const taskTypes: Record<string, number> = {};
-      const languages: Record<string, number> = {};
-
-      for (const s of daySessions) {
-        totalSeconds += s.duration_seconds;
-        clients[s.client] = (clients[s.client] ?? 0) + s.duration_seconds;
-        taskTypes[s.task_type] = (taskTypes[s.task_type] ?? 0) + s.duration_seconds;
-        for (const lang of s.languages) {
-          languages[lang] = (languages[lang] ?? 0) + s.duration_seconds;
-        }
-      }
-
-      const payload = {
-        date,
-        total_seconds: totalSeconds,
-        clients,
-        task_types: taskTypes,
-        languages,
-        sessions: daySessions,
-        sync_signature: '',
-      };
-
-      const sessionsRes = await fetch(`${USEAI_API}/api/sync`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!sessionsRes.ok) {
-        const errBody = await sessionsRes.text();
-        json(res, 502, { success: false, error: `Sessions sync failed (${date}): ${sessionsRes.status} ${errBody}` });
-        return;
-      }
-    }
-
-    // Publish milestones
+  // Publish milestones (skip if milestones sync disabled)
+  if (syncInclude.milestones) {
     const MILESTONE_CHUNK = 50;
     const milestones = readJson<Milestone[]>(MILESTONES_FILE, []);
 
-    for (let i = 0; i < milestones.length; i += MILESTONE_CHUNK) {
-      const chunk = milestones.slice(i, i + MILESTONE_CHUNK);
+    // Strip private_titles from milestones if not included
+    const sanitizedMilestones = syncInclude.private_titles
+      ? milestones
+      : milestones.map(m => {
+          const { private_title: _, ...rest } = m;
+          return rest as Milestone;
+        });
+
+    for (let i = 0; i < sanitizedMilestones.length; i += MILESTONE_CHUNK) {
+      const chunk = sanitizedMilestones.slice(i, i + MILESTONE_CHUNK);
       const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
         method: 'POST',
         headers,
@@ -246,17 +321,33 @@ export async function handleLocalSync(req: IncomingMessage, res: ServerResponse)
 
       if (!milestonesRes.ok) {
         const errBody = await milestonesRes.text();
-        json(res, 502, { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` });
-        return;
+        return { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` };
       }
     }
+  }
 
-    // Update last_sync_at
-    const now = new Date().toISOString();
-    config.last_sync_at = now;
-    writeJson(CONFIG_FILE, config);
+  // Update last_sync_at
+  const now = new Date().toISOString();
+  config.last_sync_at = now;
+  writeJson(CONFIG_FILE, config);
 
-    json(res, 200, { success: true, last_sync_at: now });
+  return { success: true, last_sync_at: now };
+}
+
+export async function handleLocalSync(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    // Consume body (even if empty) to prevent connection issues
+    await readBody(req);
+
+    const result = await performSync();
+
+    if (!result.success) {
+      const status = result.error?.includes('Not authenticated') ? 401 : 502;
+      json(res, status, result);
+      return;
+    }
+
+    json(res, 200, result);
   } catch (err) {
     json(res, 500, { success: false, error: (err as Error).message });
   }
@@ -310,11 +401,7 @@ export async function handleLocalVerifyOtp(req: IncomingMessage, res: ServerResp
 
     // Save auth to config
     if (data.token && data.user) {
-      const config = readJson<UseaiConfig>(CONFIG_FILE, {
-        milestone_tracking: true,
-        auto_sync: true,
-        sync_interval_hours: 24,
-      } as UseaiConfig);
+      const config = migrateConfig(readJson<Record<string, unknown>>(CONFIG_FILE, {})) as UseaiConfig;
 
       config.auth = {
         token: data.token,
@@ -346,11 +433,7 @@ export async function handleLocalSaveAuth(req: IncomingMessage, res: ServerRespo
       return;
     }
 
-    const config = readJson<UseaiConfig>(CONFIG_FILE, {
-      milestone_tracking: true,
-      auto_sync: true,
-      sync_interval_hours: 24,
-    } as UseaiConfig);
+    const config = migrateConfig(readJson<Record<string, unknown>>(CONFIG_FILE, {})) as UseaiConfig;
 
     config.auth = {
       token: body.token,
@@ -399,11 +482,7 @@ export async function handleLocalLogout(req: IncomingMessage, res: ServerRespons
   try {
     await readBody(req);
 
-    const config = readJson<UseaiConfig>(CONFIG_FILE, {
-      milestone_tracking: true,
-      auto_sync: false,
-      sync_interval_hours: 24,
-    } as UseaiConfig);
+    const config = migrateConfig(readJson<Record<string, unknown>>(CONFIG_FILE, {})) as UseaiConfig;
 
     delete config.auth;
     writeJson(CONFIG_FILE, config);

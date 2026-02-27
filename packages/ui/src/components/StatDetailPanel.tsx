@@ -103,7 +103,7 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [type, visibleCount]);
 
   useEffect(() => {
     setVisibleCount(MILESTONE_BATCH_SIZE);

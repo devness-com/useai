@@ -82,7 +82,6 @@ function createMockSession() {
     sessionPromptWordCount: null as number | null,
     project: null as string | null,
     modelId: null as string | null,
-    startCallTokensEst: null as { input: number; output: number } | null,
     inProgress: false,
     inProgressSince: null as number | null,
     autoSealedSessionId: null as string | null,
@@ -157,14 +156,16 @@ describe('registerTools', () => {
     mockExistsSync.mockReturnValue(false);
   });
 
-  it('registers exactly three tools on the server', () => {
+  it('registers exactly five tools on the server', () => {
     registerTools(server as never, session as never);
 
-    expect(server.tool).toHaveBeenCalledTimes(3);
+    expect(server.tool).toHaveBeenCalledTimes(5);
     expect(server._tools.map((t) => t.name)).toEqual([
       'useai_start',
       'useai_heartbeat',
       'useai_end',
+      'useai_backup',
+      'useai_restore',
     ]);
   });
 
@@ -293,13 +294,6 @@ describe('registerTools', () => {
       expect(chainCall![1]).not.toHaveProperty('model');
     });
 
-    it('computes startCallTokensEst after responding', async () => {
-      await handler({ task_type: 'coding', model: 'claude-opus-4-6' });
-
-      expect(session.startCallTokensEst).not.toBeNull();
-      expect(session.startCallTokensEst!.input).toBeGreaterThan(0);
-      expect(session.startCallTokensEst!.output).toBeGreaterThan(0);
-    });
   });
 
   // ── heartbeat ──────────────────────────────────────────────────────────────
@@ -645,8 +639,6 @@ describe('registerTools', () => {
       expect(result.content[0]!.text).not.toContain('using');
     });
 
-    // ── Model and tool_overhead ────────────────────────────────────────────
-
     it('includes model in session_end chain record and seal when set', async () => {
       session.modelId = 'claude-opus-4-6';
       mockReadJson.mockImplementation((path: string, fallback: unknown) => {
@@ -676,59 +668,6 @@ describe('registerTools', () => {
           expect.objectContaining({ model: 'claude-opus-4-6' }),
         ]),
       );
-    });
-
-    it('includes tool_overhead in sessions.json with correct total', async () => {
-      session.startCallTokensEst = { input: 25, output: 10 };
-      mockReadJson.mockImplementation((path: string, fallback: unknown) => {
-        if (path === '/tmp/useai/sessions.json') return [];
-        return fallback;
-      });
-
-      await handler({ task_type: 'coding' });
-
-      expect(mockWriteJson).toHaveBeenCalledWith(
-        '/tmp/useai/sessions.json',
-        expect.arrayContaining([
-          expect.objectContaining({
-            tool_overhead: expect.objectContaining({
-              start: { input_tokens_est: 25, output_tokens_est: 10 },
-              end: expect.objectContaining({
-                input_tokens_est: expect.any(Number),
-                output_tokens_est: expect.any(Number),
-              }),
-              total_tokens_est: expect.any(Number),
-            }),
-          }),
-        ]),
-      );
-
-      // Verify total = sum of all 4 estimates
-      const sessionsCall = mockWriteJson.mock.calls.find(
-        (entry) => entry[0] === '/tmp/useai/sessions.json',
-      );
-      const seal = sessionsCall![1].find((s: { tool_overhead?: unknown }) => s.tool_overhead);
-      const oh = seal.tool_overhead;
-      expect(oh.total_tokens_est).toBe(
-        oh.start.input_tokens_est + oh.start.output_tokens_est +
-        oh.end.input_tokens_est + oh.end.output_tokens_est,
-      );
-    });
-
-    it('uses zero estimates for start when startCallTokensEst is null', async () => {
-      session.startCallTokensEst = null;
-      mockReadJson.mockImplementation((path: string, fallback: unknown) => {
-        if (path === '/tmp/useai/sessions.json') return [];
-        return fallback;
-      });
-
-      await handler({ task_type: 'coding' });
-
-      const sessionsCall = mockWriteJson.mock.calls.find(
-        (entry) => entry[0] === '/tmp/useai/sessions.json',
-      );
-      const seal = sessionsCall![1].find((s: { tool_overhead?: unknown }) => s.tool_overhead);
-      expect(seal.tool_overhead.start).toEqual({ input_tokens_est: 0, output_tokens_est: 0 });
     });
 
     // ── Milestone processing ───────────────────────────────────────────────

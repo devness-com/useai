@@ -22,8 +22,9 @@ import {
   complexitySchema,
   generateSessionId,
 } from '@useai/shared';
-import type { SessionSeal, SessionEvaluation, ToolOverhead, Milestone, LocalConfig } from '@useai/shared';
-import { getFramework } from '@useai/shared';
+import type { SessionSeal, SessionEvaluation, Milestone, LocalConfig } from '@useai/shared';
+import { getFramework, migrateConfig } from '@useai/shared';
+import { filterEvaluationReasons } from '@useai/shared';
 import type { SessionState } from './session-state.js';
 import { writeMcpMapping } from './mcp-map.js';
 
@@ -44,10 +45,8 @@ function coerceJsonString<T extends z.ZodTypeAny>(schema: T): z.ZodType<z.infer<
 }
 
 function getConfig(): LocalConfig {
-  return readJson<LocalConfig>(CONFIG_FILE, {
-    milestone_tracking: true,
-    auto_sync: true,
-  });
+  const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
+  return migrateConfig(raw);
 }
 
 function getSessions(): SessionSeal[] {
@@ -157,7 +156,7 @@ function enrichAutoSealedSession(
   let milestoneCount = 0;
   if (args.milestones && args.milestones.length > 0) {
     const config = getConfig();
-    if (config.milestone_tracking) {
+    if (config.capture.milestones) {
       const durationMinutes = Math.round(duration / 60);
       const allMilestones = getMilestones();
       for (const m of args.milestones) {
@@ -281,6 +280,14 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         .string()
         .optional()
         .describe('Project name for this session. Typically the root directory name of the codebase being worked on. Example: "goodpass", "useai"'),
+      prompt: z
+        .string()
+        .optional()
+        .describe('The user\'s full verbatim prompt text. Stored locally for self-review. Only synced if explicitly enabled in config.'),
+      prompt_images: coerceJsonString(z.array(z.object({
+        type: z.literal('image'),
+        description: z.string().describe('AI-generated description of the image'),
+      }))).optional().describe('Metadata for images attached to the prompt (description only, no binary data).'),
       model: z
         .string()
         .optional()
@@ -290,7 +297,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         .optional()
         .describe('Pass the conversation_id value from the previous useai_start response to group multiple prompts in the same conversation. The value is returned as "conversation_id=<uuid>" in the response. Omit for a new conversation.'),
     },
-    async ({ task_type, title, private_title, project, model, conversation_id }) => {
+    async ({ task_type, title, private_title, prompt, prompt_images, project, model, conversation_id }) => {
       // Save previous conversation ID before reset (reset preserves it + increments index)
       const prevConvId = session.conversationId;
 
@@ -348,6 +355,17 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       session.setTitle(title ?? null);
       session.setPrivateTitle(private_title ?? null);
 
+      // Prompt capture (controlled by config)
+      const config = getConfig();
+      if (config.capture.prompt && prompt) {
+        session.setPrompt(prompt);
+        session.setPromptWordCount(prompt.split(/\s+/).filter(Boolean).length);
+      }
+      if (config.capture.prompt_images && prompt_images && prompt_images.length > 0) {
+        session.setPromptImageCount(prompt_images.length);
+        session.setPromptImages(prompt_images);
+      }
+
       const chainData: Record<string, unknown> = {
         client: session.clientName,
         task_type: session.sessionTaskType,
@@ -361,6 +379,9 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       if (private_title) chainData.private_title = private_title;
       if (model) chainData.model = model;
       if (parentSessionId) chainData.parent_session_id = parentSessionId;
+      if (session.sessionPrompt) chainData.prompt = session.sessionPrompt;
+      if (session.sessionPromptImageCount > 0) chainData.prompt_image_count = session.sessionPromptImageCount;
+      if (session.sessionPromptImages) chainData.prompt_images = session.sessionPromptImages;
 
       const record = session.appendToChain('session_start', chainData);
 
@@ -373,13 +394,6 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
 
       const childSuffix = parentSessionId ? ` · child of ${parentSessionId.slice(0, 8)}` : '';
       const responseText = `useai session started — ${session.sessionTaskType} on ${session.clientName} · ${session.sessionId.slice(0, 8)} · conv ${session.conversationId.slice(0, 8)}#${session.conversationIndex}${childSuffix} · ${session.signingAvailable ? 'signed' : 'unsigned'}`;
-
-      // Estimate token overhead for this tool call
-      const paramsJson = JSON.stringify({ task_type, title, private_title, project, model });
-      session.startCallTokensEst = {
-        output: Math.ceil(paramsJson.length / 4),
-        input: Math.ceil(responseText.length / 4),
-      };
 
       return {
         content: [
@@ -587,11 +601,13 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       const finalTaskType = task_type ?? session.sessionTaskType;
       const chainStartHash = session.chainTipHash === 'GENESIS' ? 'GENESIS' : session.chainTipHash;
 
+      // Read config for milestones, evaluation, and capture settings
+      const endConfig = getConfig();
+
       // Process milestones BEFORE sealing (must be in chain before file is moved to sealed/)
       let milestoneCount = 0;
       if (milestonesInput && milestonesInput.length > 0) {
-        const config = getConfig();
-        if (config.milestone_tracking) {
+        if (endConfig.capture.milestones) {
           const durationMinutes = Math.round(duration / 60);
           const allMilestones = getMilestones();
 
@@ -634,15 +650,16 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       let sessionScore: number | undefined;
       let frameworkId: string | undefined;
       if (evaluation) {
-        const config = getConfig();
-        const framework = getFramework(config.evaluation_framework);
+        const framework = getFramework(endConfig.evaluation_framework);
         sessionScore = Math.round(framework.computeSessionScore(evaluation));
         frameworkId = framework.id;
-      }
 
-      // Estimate token overhead for useai_end call
-      const endParamsJson = JSON.stringify({ task_type, languages, files_touched_count, milestones: milestonesInput, evaluation });
-      const endOutputTokensEst = Math.ceil(endParamsJson.length / 4);
+        // Apply capture-level reason filtering
+        const captureReasons = endConfig.capture.evaluation_reasons;
+        if (captureReasons !== 'all') {
+          filterEvaluationReasons(evaluation, captureReasons);
+        }
+      }
 
       // Write session_end to chain
       const endRecord = session.appendToChain('session_end', {
@@ -656,10 +673,6 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         ...(frameworkId ? { evaluation_framework: frameworkId } : {}),
         ...(session.modelId ? { model: session.modelId } : {}),
       });
-
-      // Build tool_overhead from start + end estimates
-      // End input estimate will be computed after building response text (below)
-      const startEst = session.startCallTokensEst ?? { input: 0, output: 0 };
 
       // Track parent relationship for child sessions
       const parentId = session.parentState?.sessionId;
@@ -677,6 +690,9 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         project: session.project,
         title: session.sessionTitle ?? undefined,
         private_title: session.sessionPrivateTitle ?? undefined,
+        prompt: session.sessionPrompt ?? undefined,
+        prompt_image_count: session.sessionPromptImageCount || undefined,
+        prompt_images: session.sessionPromptImages ?? undefined,
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
@@ -712,21 +728,13 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         // If rename fails (cross-device, permissions), file stays in active/
       }
 
-      // Build response text (needed for end-call input token estimate)
+      // Build response text
       const durationStr = formatDuration(duration);
       const langStr = languages && languages.length > 0 ? ` using ${languages.join(', ')}` : '';
       const milestoneStr = milestoneCount > 0 ? ` · ${milestoneCount} milestone${milestoneCount > 1 ? 's' : ''} recorded` : '';
       const evalStr = evaluation ? ` · eval: ${evaluation.task_outcome} (prompt: ${evaluation.prompt_quality}/5)` : '';
       const scoreStr = sessionScore !== undefined ? ` · score: ${sessionScore}/100 (${frameworkId})` : '';
       const responseText = `Session ended: ${durationStr} ${finalTaskType}${langStr}${milestoneStr}${evalStr}${scoreStr}`;
-
-      // Finalize tool_overhead
-      const endInputTokensEst = Math.ceil(responseText.length / 4);
-      const toolOverhead: ToolOverhead = {
-        start: { input_tokens_est: startEst.input, output_tokens_est: startEst.output },
-        end: { input_tokens_est: endInputTokensEst, output_tokens_est: endOutputTokensEst },
-        total_tokens_est: startEst.input + startEst.output + endInputTokensEst + endOutputTokensEst,
-      };
 
       // Append seal to sessions index
       const seal: SessionSeal = {
@@ -741,12 +749,14 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         project: session.project ?? undefined,
         title: session.sessionTitle ?? undefined,
         private_title: session.sessionPrivateTitle ?? undefined,
+        prompt: session.sessionPrompt ?? undefined,
+        prompt_image_count: session.sessionPromptImageCount || undefined,
+        prompt_images: session.sessionPromptImages ?? undefined,
         prompt_word_count: session.sessionPromptWordCount ?? undefined,
         model: session.modelId ?? undefined,
         evaluation: evaluation ?? undefined,
         session_score: sessionScore,
         evaluation_framework: frameworkId,
-        tool_overhead: toolOverhead,
         started_at: new Date(session.sessionStartTime).toISOString(),
         ended_at: now,
         duration_seconds: duration,

@@ -51,7 +51,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   activeTab: (() => {
     try {
       const saved = localStorage.getItem('useai-active-tab');
-      if (saved === 'sessions' || saved === 'insights') return saved;
+      if (saved === 'sessions' || saved === 'insights' || saved === 'settings') return saved;
     } catch { /* ignore */ }
     return 'sessions' as ActiveTab;
   })(),

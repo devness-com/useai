@@ -131,7 +131,6 @@ vi.mock('./session-state.js', () => ({
     mockSessionObj.conversationIndex = 0;
     mockSessionObj.mcpSessionId = null;
     mockSessionObj.modelId = null;
-    mockSessionObj.startCallTokensEst = null;
     mockSessionObj.sessionTitle = null;
     mockSessionObj.sessionPrivateTitle = null;
     mockSessionObj.sessionPromptWordCount = null;
@@ -176,7 +175,6 @@ vi.mock('./session-state.js', () => ({
         sessionPromptWordCount: mockSessionObj.sessionPromptWordCount,
         project: mockSessionObj.project,
         modelId: mockSessionObj.modelId,
-        startCallTokensEst: mockSessionObj.startCallTokensEst,
         inProgress: mockSessionObj.inProgress,
         inProgressSince: mockSessionObj.inProgressSince,
       };
@@ -198,7 +196,6 @@ vi.mock('./session-state.js', () => ({
       mockSessionObj.sessionPromptWordCount = p.sessionPromptWordCount;
       mockSessionObj.project = p.project;
       mockSessionObj.modelId = p.modelId;
-      mockSessionObj.startCallTokensEst = p.startCallTokensEst;
       mockSessionObj.inProgress = p.inProgress;
       mockSessionObj.inProgressSince = p.inProgressSince;
       mockSessionObj.parentState = null;
@@ -338,7 +335,6 @@ beforeEach(() => {
   mockSessionObj.conversationIndex = 0;
   mockSessionObj.mcpSessionId = null;
   mockSessionObj.modelId = null;
-  mockSessionObj.startCallTokensEst = null;
   mockSessionObj.sessionTitle = null;
   mockSessionObj.sessionPrivateTitle = null;
   mockSessionObj.sessionPromptWordCount = null;
@@ -1017,10 +1013,10 @@ describe('getConfig helper', () => {
       milestones: [{ title: 'Test', category: 'test' }],
     });
 
-    // Verify readJson was called with config file path
+    // Verify readJson was called with config file path (migrateConfig wraps the raw result)
     expect(mockReadJson).toHaveBeenCalledWith(
       expect.stringContaining('config.json'),
-      expect.objectContaining({ milestone_tracking: true, auto_sync: true })
+      {}
     );
   });
 

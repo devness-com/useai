@@ -68,12 +68,6 @@ export interface SessionEvaluation {
   tools_leveraged: number;
 }
 
-export interface ToolOverhead {
-  start: { input_tokens_est: number; output_tokens_est: number };
-  end: { input_tokens_est: number; output_tokens_est: number };
-  total_tokens_est: number;
-}
-
 export interface SessionSeal {
   session_id: string;
   conversation_id?: string;
@@ -85,10 +79,12 @@ export interface SessionSeal {
   project?: string;
   title?: string;
   private_title?: string;
+  prompt?: string;
+  prompt_image_count?: number;
+  prompt_images?: Array<{ type: 'image'; description: string }>;
   prompt_word_count?: number;
   model?: string;
   evaluation?: SessionEvaluation;
-  tool_overhead?: ToolOverhead;
   started_at: string;
   ended_at: string;
   duration_seconds: number;
@@ -305,4 +301,41 @@ export function deleteConversation(conversationId: string): Promise<{ deleted: b
 
 export function deleteMilestone(milestoneId: string): Promise<{ deleted: boolean; milestone_id: string }> {
   return del(`/api/local/milestones/${encodeURIComponent(milestoneId)}`);
+}
+
+// ── Config (full) ─────────────────────────────────────────────────────────────
+
+export interface FullConfig {
+  capture: {
+    prompt: boolean;
+    prompt_images: boolean;
+    evaluation: boolean;
+    evaluation_reasons: 'all' | 'below_perfect' | 'none';
+    milestones: boolean;
+  };
+  sync: {
+    enabled: boolean;
+    interval_hours: number;
+    include: {
+      sessions: boolean;
+      evaluations: boolean;
+      milestones: boolean;
+      prompts: boolean;
+      private_titles: boolean;
+      projects: boolean;
+      model: boolean;
+      languages: boolean;
+    };
+  };
+  evaluation_framework: string;
+  authenticated: boolean;
+  email: string | null;
+}
+
+export function fetchFullConfig(): Promise<FullConfig> {
+  return get('/api/local/config/full');
+}
+
+export function patchConfig(updates: Record<string, unknown>): Promise<FullConfig & { instructions_updated?: string[] }> {
+  return patch('/api/local/config', updates);
 }

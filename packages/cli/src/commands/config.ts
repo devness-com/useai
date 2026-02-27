@@ -16,21 +16,29 @@ export const configCommand = new Command('config')
     let changed = false;
 
     if (process.argv.includes('--no-sync')) {
-      updateConfig({ auto_sync: false });
-      console.log(success('Auto-sync disabled.'));
+      const cfg = getConfig();
+      cfg.sync.enabled = false;
+      updateConfig(cfg);
+      console.log(success('Cloud sync disabled.'));
       changed = true;
     } else if (process.argv.includes('--sync')) {
-      updateConfig({ auto_sync: true });
-      console.log(success('Auto-sync enabled.'));
+      const cfg = getConfig();
+      cfg.sync.enabled = true;
+      updateConfig(cfg);
+      console.log(success('Cloud sync enabled.'));
       changed = true;
     }
 
     if (process.argv.includes('--no-milestones')) {
-      updateConfig({ milestone_tracking: false });
+      const cfg = getConfig();
+      cfg.capture.milestones = false;
+      updateConfig(cfg);
       console.log(success('Milestone tracking disabled.'));
       changed = true;
     } else if (process.argv.includes('--milestones')) {
-      updateConfig({ milestone_tracking: true });
+      const cfg = getConfig();
+      cfg.capture.milestones = true;
+      updateConfig(cfg);
       console.log(success('Milestone tracking enabled.'));
       changed = true;
     }
@@ -60,10 +68,12 @@ export const configCommand = new Command('config')
       console.log(header('Current Settings'));
       console.log(
         table([
-          ['Milestone tracking', config.milestone_tracking ? chalk.green('on') : chalk.red('off')],
-          ['Auto sync', config.auto_sync ? chalk.green('on') : chalk.red('off')],
-          ['Eval framework', chalk.cyan(config.evaluation_framework ?? 'raw')],
-          ['Sync interval', `${config.sync_interval_hours}h`],
+          ['Milestone tracking', config.capture.milestones ? chalk.green('on') : chalk.red('off')],
+          ['Prompt capture', config.capture.prompt ? chalk.green('on') : chalk.red('off')],
+          ['Eval reasons', config.capture.evaluation_reasons],
+          ['Cloud sync', config.sync.enabled ? chalk.green('on') : chalk.red('off')],
+          ['Eval framework', chalk.cyan(config.evaluation_framework ?? 'space')],
+          ['Sync interval', `${config.sync.interval_hours}h`],
           ['Last sync', config.last_sync_at ?? chalk.dim('never')],
           ['Logged in', config.auth ? chalk.green(config.auth.user.email) : chalk.dim('no')],
         ]),

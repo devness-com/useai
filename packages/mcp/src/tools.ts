@@ -13,8 +13,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { AiTool as BaseAiTool, InstructionsConfig, InstructionPlacement } from '@devness/mcp-setup';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { DAEMON_MCP_URL, CONFIG_FILE, readJson, buildInstructionsText } from '@useai/shared';
-import type { LocalConfig } from '@useai/shared';
+import { DAEMON_MCP_URL, CONFIG_FILE, readJson, buildInstructionsText, migrateConfig } from '@useai/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,12 +26,11 @@ export interface AiTool extends BaseAiTool {
 
 /** Generate instructions text using the configured evaluation framework. */
 export function getInstructionsText(): string {
-  const config = readJson<LocalConfig>(CONFIG_FILE, {
-    milestone_tracking: true,
-    auto_sync: true,
-    evaluation_framework: 'raw',
+  const config = migrateConfig(readJson<Record<string, unknown>>(CONFIG_FILE, {}));
+  return buildInstructionsText(config.evaluation_framework, {
+    evaluationReasons: config.capture.evaluation_reasons,
+    capturePrompt: config.capture.prompt,
   });
-  return buildInstructionsText(config.evaluation_framework);
 }
 
 /** Static instructions text for backward compatibility (uses raw default). */
@@ -65,6 +63,30 @@ export function getInstructions(): InstructionsConfig {
     startMarker: '<!-- useai:start -->',
     endMarker: '<!-- useai:end -->',
   };
+}
+
+/** Re-inject instructions into all installed tools' instruction files. */
+export function reInjectAllInstructions(): { updated: string[] } {
+  const instructions = getInstructions();
+  const updated: string[] = [];
+
+  for (const tool of AI_TOOLS) {
+    try {
+      if (!tool.isConfigured()) continue;
+    } catch {
+      continue;
+    }
+
+    const placement = toolInstructions[tool.id];
+    if (placement) {
+      try {
+        injectInstructions(instructions, placement);
+        updated.push(tool.id);
+      } catch { /* skip if file doesn't exist */ }
+    }
+  }
+
+  return { updated };
 }
 
 // ── Shared registry ──────────────────────────────────────────────────────────

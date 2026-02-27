@@ -11,7 +11,6 @@ export const DEFAULT_CAPTURE_CONFIG: CaptureConfig = {
 export const DEFAULT_SYNC_INCLUDE_CONFIG: SyncIncludeConfig = {
   sessions: true,
   evaluations: true,
-  evaluation_reasons: 'all',
   milestones: true,
   prompts: false,
   private_titles: false,

@@ -39,9 +39,9 @@ export interface SavedParentState {
   sessionPromptWordCount: number | null;
   sessionPrompt: string | null;
   sessionPromptImageCount: number;
+  sessionPromptImages: Array<{ type: 'image'; description: string }> | null;
   project: string | null;
   modelId: string | null;
-  startCallTokensEst: { input: number; output: number } | null;
   inProgress: boolean;
   inProgressSince: number | null;
 }
@@ -63,6 +63,7 @@ export class SessionState {
   sessionPromptWordCount: number | null;
   sessionPrompt: string | null;
   sessionPromptImageCount: number;
+  sessionPromptImages: Array<{ type: 'image'; description: string }> | null;
   project: string | null;
   chainTipHash: string;
   signingKey: KeyObject | null;
@@ -75,8 +76,6 @@ export class SessionState {
   mcpSessionId: string | null;
   /** Self-reported model ID from useai_start (e.g. "claude-opus-4-6"). */
   modelId: string | null;
-  /** Token estimates for the useai_start tool call. */
-  startCallTokensEst: { input: number; output: number } | null;
   /** Whether a UseAI session is actively in-progress (between useai_start and useai_end). */
   inProgress: boolean;
   /** Timestamp when the current session was marked in-progress. */
@@ -96,7 +95,6 @@ export class SessionState {
     this.conversationIndex = 0;
     this.mcpSessionId = null;
     this.modelId = null;
-    this.startCallTokensEst = null;
     this.inProgress = false;
     this.inProgressSince = null;
     this.autoSealedSessionId = null;
@@ -111,6 +109,9 @@ export class SessionState {
     this.sessionTitle = null;
     this.sessionPrivateTitle = null;
     this.sessionPromptWordCount = null;
+    this.sessionPrompt = null;
+    this.sessionPromptImageCount = 0;
+    this.sessionPromptImages = null;
     this.project = null;
     this.chainTipHash = GENESIS_HASH;
     this.signingKey = null;
@@ -131,8 +132,10 @@ export class SessionState {
     this.sessionTitle = null;
     this.sessionPrivateTitle = null;
     this.sessionPromptWordCount = null;
+    this.sessionPrompt = null;
+    this.sessionPromptImageCount = 0;
+    this.sessionPromptImages = null;
     this.modelId = null;
-    this.startCallTokensEst = null;
     this.inProgress = false;
     this.inProgressSince = null;
     // Preserve autoSealedSessionId — cleared explicitly by useai_start
@@ -165,6 +168,18 @@ export class SessionState {
 
   setPromptWordCount(count: number | null): void {
     this.sessionPromptWordCount = count;
+  }
+
+  setPrompt(text: string | null): void {
+    this.sessionPrompt = text;
+  }
+
+  setPromptImageCount(count: number): void {
+    this.sessionPromptImageCount = count;
+  }
+
+  setPromptImages(images: Array<{ type: 'image'; description: string }> | null): void {
+    this.sessionPromptImages = images;
   }
 
   setModel(id: string): void {
@@ -213,9 +228,11 @@ export class SessionState {
       sessionTitle: this.sessionTitle,
       sessionPrivateTitle: this.sessionPrivateTitle,
       sessionPromptWordCount: this.sessionPromptWordCount,
+      sessionPrompt: this.sessionPrompt,
+      sessionPromptImageCount: this.sessionPromptImageCount,
+      sessionPromptImages: this.sessionPromptImages,
       project: this.project,
       modelId: this.modelId,
-      startCallTokensEst: this.startCallTokensEst,
       inProgress: this.inProgress,
       inProgressSince: this.inProgressSince,
     };
@@ -242,9 +259,11 @@ export class SessionState {
     this.sessionTitle = p.sessionTitle;
     this.sessionPrivateTitle = p.sessionPrivateTitle;
     this.sessionPromptWordCount = p.sessionPromptWordCount;
+    this.sessionPrompt = p.sessionPrompt;
+    this.sessionPromptImageCount = p.sessionPromptImageCount;
+    this.sessionPromptImages = p.sessionPromptImages;
     this.project = p.project;
     this.modelId = p.modelId;
-    this.startCallTokensEst = p.startCallTokensEst;
     this.inProgress = p.inProgress;
     this.inProgressSince = p.inProgressSince;
     this.parentState = null;

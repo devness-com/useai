@@ -39,6 +39,12 @@ vi.mock('@useai/shared', () => ({
   CONFIG_FILE: '/tmp/useai-test-config.json',
   readJson: () => ({ milestone_tracking: true, auto_sync: true, evaluation_framework: 'raw' }),
   buildInstructionsText: () => '## UseAI Session Tracking\n- test instructions',
+  migrateConfig: (raw: Record<string, unknown>) => ({
+    capture: { prompt: true, prompt_images: true, evaluation: true, evaluation_reasons: 'all', milestones: true },
+    sync: { enabled: false, interval_hours: 24, include: { sessions: true, evaluations: true, milestones: true, prompts: false, private_titles: false, projects: false, model: true, languages: true } },
+    evaluation_framework: 'raw',
+    ...raw,
+  }),
 }));
 
 function readJson(path: string): Record<string, unknown> {

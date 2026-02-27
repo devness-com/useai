@@ -1,4 +1,5 @@
-import type { EvaluationFramework, EvaluationFrameworkId } from './types.js';
+import type { EvaluationFramework, EvaluationFrameworkId, InstructionTextOpts } from './types.js';
+import type { EvaluationReasonsLevel } from '../types/config.js';
 import { rawFramework } from './raw.js';
 import { spaceFramework } from './space.js';
 
@@ -18,15 +19,26 @@ export function getFrameworkIds(): EvaluationFrameworkId[] {
   return Object.keys(frameworks) as EvaluationFrameworkId[];
 }
 
+export interface BuildInstructionsOpts {
+  evaluationReasons?: EvaluationReasonsLevel;
+  capturePrompt?: boolean;
+}
+
 /** Build full UseAI instructions text for injection into AI tool configs. */
-export function buildInstructionsText(frameworkId?: string): string {
+export function buildInstructionsText(frameworkId?: string, opts?: BuildInstructionsOpts): string {
   const framework = getFramework(frameworkId);
+  const frameworkOpts: InstructionTextOpts = {
+    evaluationReasons: opts?.evaluationReasons,
+  };
+  const promptInstruction = opts?.capturePrompt !== false
+    ? ', `prompt` (the user\'s full verbatim prompt text)'
+    : '';
   return [
     '## UseAI Session Tracking',
-    '- At the START of every response to a **user message**, call `useai_start` with the appropriate task_type. Also generate a short session `title` (generic, no project names) and `private_title` (detailed, can include specifics) from the user\'s prompt.',
+    `- At the START of every response to a **user message**, call \`useai_start\` with the appropriate task_type${promptInstruction}. Also generate a short session \`title\` (generic, no project names) and \`private_title\` (detailed, can include specifics) from the user's prompt.`,
     '  - **task_type values**: coding, debugging, testing, planning, reviewing, documenting, learning, deployment, devops, research, migration, design, data, security, configuration, code_review, investigation, infrastructure, analysis, ops, setup, refactoring, other',
     '- To group multiple prompts in the same conversation, pass the `conversation_id` from the previous `useai_start` response (returned as `conversation_id=<value>`). Omit it for the first message or a new conversation.',
     '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
-    framework.getInstructionText(),
+    framework.getInstructionText(frameworkOpts),
   ].join('\n');
 }
