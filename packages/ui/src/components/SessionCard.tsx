@@ -54,14 +54,20 @@ function computeAvgScore(ev: SessionEvaluation): number {
   return (ev.prompt_quality + ev.context_provided + ev.scope_quality + ev.independence_level) / 4;
 }
 
+function scoreColorClass(score: number): string {
+  if (score >= 5) return 'text-text-secondary';
+  if (score >= 4) return 'text-amber-500';
+  if (score >= 3) return 'text-orange-500';
+  return 'text-error';
+}
+
 function ScoreNum({ score, decimal }: { score: number; decimal?: boolean }) {
   const isPerfect = score >= 5;
-  const colorClass = isPerfect ? 'text-text-secondary' : score >= 4 ? 'text-amber-500' : score >= 3 ? 'text-orange-500' : 'text-error';
   const raw = decimal ? score.toFixed(1) : String(Math.round(score));
   const display = raw.endsWith('.0') ? raw.slice(0, -2) : raw;
   return (
     <span className={`text-[10px] font-mono ${isPerfect ? '' : 'font-bold'}`} title={`${score.toFixed(1)}/5`}>
-      <span className={colorClass}>{display}</span>
+      <span className={scoreColorClass(score)}>{display}</span>
       <span className="text-text-muted/50">/5</span>
     </span>
   );
@@ -142,18 +148,19 @@ function EvaluationDetail({
       {!showPublic && hasReasons && (
         <div className="mt-2 pt-2 border-t border-border/15">
           <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[10px]">
-            {evaluation.task_outcome_reason && (
-              <>
-                <span className="text-error font-bold text-right">Outcome:</span>
-                <span className="text-text-secondary leading-relaxed">{evaluation.task_outcome_reason}</span>
-              </>
-            )}
-            {metrics.filter(m => m.reason).map(({ label, reason }) => (
+            {metrics.filter(m => m.reason).map(({ label, value, reason }) => (
               <div key={label} className="contents">
-                <span className="text-accent font-bold text-right">{label}:</span>
+                <span className={`${scoreColorClass(value)} font-bold text-right`}>{label}:</span>
                 <span className="text-text-secondary leading-relaxed">{reason}</span>
               </div>
             ))}
+            {evaluation.task_outcome_reason && (
+              <>
+                <div className="col-span-2 border-t border-border/15 mt-0.5 mb-0.5" />
+                <span className="text-text-secondary font-bold text-right">Outcome:</span>
+                <span className="text-text-secondary leading-relaxed">{evaluation.task_outcome_reason}</span>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -85,7 +85,7 @@ export const spaceFramework: EvaluationFramework = {
       '  - **independence_level** (Efficiency, weight 0.25): 1=constant guidance needed, 3=some back-and-forth, 5=clear spec with autonomous execution',
       '  - **scope_quality** (Performance, weight 0.20): 1=vague/impossibly broad, 3=reasonable with ambiguity, 5=precise and well-decomposed',
       '- Also include: task_outcome (completed/partial/abandoned/blocked), iteration_count, tools_leveraged count.',
-      '- For any scored metric < 5 or non-completed outcome, you MUST provide a *_reason field with a concrete tip to improve.',
+      '- For EVERY scored metric, you MUST provide a *_reason field explaining the score. For < 5: what was lacking + tip to improve. For 5: what the user did well. Always provide task_outcome_reason.',
     ].join('\n');
   },
 };

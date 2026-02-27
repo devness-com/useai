@@ -341,12 +341,14 @@ export function groupIntoConversations(
   const result: ConversationGroup[] = [];
 
   for (const [convId, sessions] of convMap) {
-    sessions.sort((a, b) => (a.session.conversation_index ?? 0) - (b.session.conversation_index ?? 0));
+    // Sort sessions within conversation: latest first (descending by start time)
+    sessions.sort((a, b) => parseTimestamp(b.session.started_at) - parseTimestamp(a.session.started_at));
 
     const totalDuration = sessions.reduce((sum, s) => sum + s.session.duration_seconds, 0);
     const totalMilestones = sessions.reduce((sum, s) => sum + s.milestones.length, 0);
-    const startedAt = sessions[0]!.session.started_at;
-    const endedAt = sessions[sessions.length - 1]!.session.ended_at;
+    // First element is now the latest session (descending order)
+    const startedAt = sessions[sessions.length - 1]!.session.started_at;
+    const endedAt = sessions[0]!.session.ended_at;
 
     result.push({
       conversationId: convId,

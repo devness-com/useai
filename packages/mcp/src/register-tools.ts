@@ -439,8 +439,9 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       'Also provide an `evaluation` object assessing the session: prompt_quality (1-5), context_provided (1-5), ' +
       'task_outcome (completed/partial/abandoned/blocked), iteration_count, independence_level (1-5), ' +
       'scope_quality (1-5), and tools_leveraged count. Score honestly based on the actual interaction. ' +
-      'For any scored metric < 5 or non-completed outcome, you MUST provide a *_reason field explaining ' +
-      'what was lacking and a concrete tip for the user to improve next time. Only skip *_reason for a perfect 5.',
+      'For EVERY scored metric, you MUST provide a *_reason field explaining the score. ' +
+      'For scores < 5, explain what was lacking and give a concrete tip to improve. ' +
+      'For a perfect 5, explain what the user did well. Same for task_outcome: always provide task_outcome_reason.',
     {
       session_id: z
         .string()
@@ -465,16 +466,16 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       }))).optional().describe('Array of milestone objects. Each MUST have "title" (generic, no project names) and "category". Optional: "private_title" (detailed, can include project names). Example: [{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}]'),
       evaluation: coerceJsonString(z.object({
         prompt_quality: z.number().min(1).max(5).describe('How clear, specific, and complete was the initial prompt? 1=vague/ambiguous, 5=crystal clear with acceptance criteria'),
-        prompt_quality_reason: z.string().optional().describe('Required if prompt_quality < 5. Explain what was vague/missing and how the user could phrase it better next time.'),
+        prompt_quality_reason: z.string().optional().describe('Always provide. Explain the score: what was clear/vague and how the user could phrase it better.'),
         context_provided: z.number().min(1).max(5).describe('Did the user provide relevant context (files, errors, constraints)? 1=no context, 5=comprehensive context'),
-        context_provided_reason: z.string().optional().describe('Required if context_provided < 5. What context was missing (files, error logs, constraints) that would have helped?'),
+        context_provided_reason: z.string().optional().describe('Always provide. Explain what context was given or missing (files, error logs, constraints).'),
         task_outcome: z.enum(['completed', 'partial', 'abandoned', 'blocked']).describe('Was the primary task achieved?'),
-        task_outcome_reason: z.string().optional().describe('Required if task_outcome is not "completed". Explain why the task was not fully completed and what blocked progress.'),
+        task_outcome_reason: z.string().optional().describe('Always provide. Explain the outcome: what was accomplished, or what blocked progress if not completed.'),
         iteration_count: z.number().min(1).describe('Number of user-to-AI turns in this session'),
         independence_level: z.number().min(1).max(5).describe('How self-directed was the user? 1=needed constant guidance, 5=gave clear spec and let AI execute'),
-        independence_level_reason: z.string().optional().describe('Required if independence_level < 5. What decisions needed constant back-and-forth that could have been specified upfront?'),
+        independence_level_reason: z.string().optional().describe('Always provide. Explain the level of autonomy: what the user specified well or what needed back-and-forth.'),
         scope_quality: z.number().min(1).max(5).describe('Was the task well-scoped? 1=vague or impossibly broad, 5=precise and achievable'),
-        scope_quality_reason: z.string().optional().describe('Required if scope_quality < 5. How was the scope too broad/vague and how could it be better defined?'),
+        scope_quality_reason: z.string().optional().describe('Always provide. Explain the scope: what was well-defined or what was too broad/vague.'),
         tools_leveraged: z.number().min(0).describe('Count of distinct AI capabilities used (code gen, debugging, refactoring, testing, docs, etc.)'),
       })).optional().describe('AI-assessed evaluation of this session. Score honestly based on the actual interaction.'),
     },

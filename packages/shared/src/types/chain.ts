@@ -11,11 +11,11 @@ export interface ChainRecord {
 
 export interface SessionEvaluation {
   prompt_quality: number;       // 1-5: clarity and specificity of the initial request
-  prompt_quality_reason?: string; // why this score was given + tip to improve
+  prompt_quality_reason?: string; // always provide: why this score was given
   context_provided: number;     // 1-5: did user provide files, errors, constraints?
   context_provided_reason?: string;
   task_outcome: 'completed' | 'partial' | 'abandoned' | 'blocked';
-  task_outcome_reason?: string; // why the task wasn't completed (for non-completed outcomes)
+  task_outcome_reason?: string; // always provide: what was accomplished or what blocked progress
   iteration_count: number;      // user↔AI turns in this session
   independence_level: number;   // 1-5: how self-directed was the user?
   independence_level_reason?: string;

@@ -409,12 +409,15 @@ function resetIdleTimer(sessionId: string): void {
   if (!active) return;
 
   clearTimeout(active.idleTimer);
-  active.idleTimer = setTimeout(async () => {
-    autoSealSession(active);
-    try {
-      await active.transport.close();
-    } catch { /* ignore */ }
-    sessions.delete(sessionId);
+  active.idleTimer = setTimeout(() => {
+    // Seal the session data but keep the transport alive.
+    // The client may still call useai_end after a long gap between prompts
+    // (e.g. Gemini CLI where shell commands don't reset the MCP idle timer).
+    // sealSessionData preserves the transport and sets autoSealedSessionId so
+    // a subsequent useai_end can enrich the seal with milestones/evaluation.
+    if (active.session.sessionRecordCount > 0 && !isSessionAlreadySealed(active.session)) {
+      sealSessionData(active);
+    }
   }, IDLE_TIMEOUT_MS);
 }
 

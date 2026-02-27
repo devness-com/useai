@@ -47,6 +47,8 @@ function createMockSessionState(overrides: Record<string, unknown> = {}) {
       type: _type,
       data: _data,
     })),
+    autoSealedSessionId: null as string | null,
+    reset: vi.fn(),
     initializeKeystore: vi.fn(),
     ...overrides,
   };
@@ -197,14 +199,12 @@ function resetIdleTimer(
   if (!active) return;
 
   clearTimeout(active.idleTimer);
-  active.idleTimer = setTimeout(async () => {
-    autoSealSession(active);
-    try {
-      await active.transport.close();
-    } catch {
-      /* ignore */
+  active.idleTimer = setTimeout(() => {
+    if (active.session.sessionRecordCount > 0) {
+      // Seal the session data but keep the transport alive
+      autoSealSession(active);
+      active.session.reset();
     }
-    sessions.delete(sessionId);
   }, IDLE_TIMEOUT_MS);
 }
 
@@ -715,9 +715,9 @@ describe('daemon helpers', () => {
       expect(() => resetIdleTimer(sessions, 'nonexistent')).not.toThrow();
     });
 
-    it('triggers session cleanup after 30 minutes of idle', async () => {
+    it('seals session data after 30 minutes of idle but keeps transport alive', async () => {
       const sessions = new Map<string, MockActiveSession>();
-      const active = createMockActive({ sessionRecordCount: 0 });
+      const active = createMockActive({ sessionRecordCount: 3 });
       sessions.set('sess-idle', active);
 
       resetIdleTimer(sessions, 'sess-idle');
@@ -726,48 +726,60 @@ describe('daemon helpers', () => {
 
       await vi.advanceTimersByTimeAsync(IDLE_TIMEOUT_MS + 100);
 
-      expect(sessions.has('sess-idle')).toBe(false);
-      expect(active.transport.close).toHaveBeenCalledOnce();
+      // Session stays in the map (transport kept alive)
+      expect(sessions.has('sess-idle')).toBe(true);
+      // Transport should NOT be closed — client may still call useai_end
+      expect(active.transport.close).not.toHaveBeenCalled();
+      // Session data should have been sealed
+      expect(active.session.appendToChain).toHaveBeenCalledWith(
+        'session_end',
+        expect.objectContaining({ auto_sealed: true }),
+      );
+      // Session should be reset for a new session
+      expect(active.session.reset).toHaveBeenCalled();
+    });
+
+    it('skips seal when session has no records', async () => {
+      const sessions = new Map<string, MockActiveSession>();
+      const active = createMockActive({ sessionRecordCount: 0 });
+      sessions.set('sess-empty', active);
+
+      resetIdleTimer(sessions, 'sess-empty');
+
+      await vi.advanceTimersByTimeAsync(IDLE_TIMEOUT_MS + 100);
+
+      // No seal activity when there are no records
+      expect(active.session.appendToChain).not.toHaveBeenCalled();
+      expect(active.session.reset).not.toHaveBeenCalled();
+      // Transport stays alive
+      expect(sessions.has('sess-empty')).toBe(true);
+      expect(active.transport.close).not.toHaveBeenCalled();
     });
 
     it('resets the 30-minute countdown when called again', async () => {
       const sessions = new Map<string, MockActiveSession>();
-      const active = createMockActive({ sessionRecordCount: 0 });
+      const active = createMockActive({ sessionRecordCount: 3 });
       sessions.set('sess-reset', active);
 
       resetIdleTimer(sessions, 'sess-reset');
 
       // Advance 20 minutes
       await vi.advanceTimersByTimeAsync(20 * 60 * 1000);
-      expect(sessions.has('sess-reset')).toBe(true);
+      expect(active.session.appendToChain).not.toHaveBeenCalled();
 
       // Reset timer (restarts 30-min countdown)
       resetIdleTimer(sessions, 'sess-reset');
 
       // 20 more minutes (only 20 since reset, not 30)
       await vi.advanceTimersByTimeAsync(20 * 60 * 1000);
-      expect(sessions.has('sess-reset')).toBe(true);
+      expect(active.session.appendToChain).not.toHaveBeenCalled();
 
-      // 11 more minutes (total 31 since last reset)
+      // 11 more minutes (total 31 since last reset) — seal fires
       await vi.advanceTimersByTimeAsync(11 * 60 * 1000);
-      expect(sessions.has('sess-reset')).toBe(false);
-    });
-
-    it('calls autoSealSession before closing transport on timeout', async () => {
-      const sessions = new Map<string, MockActiveSession>();
-      const active = createMockActive({ sessionRecordCount: 3 });
-      sessions.set('sess-seal', active);
-
-      resetIdleTimer(sessions, 'sess-seal');
-
-      await vi.advanceTimersByTimeAsync(IDLE_TIMEOUT_MS + 100);
-
-      // autoSealSession should have called appendToChain
       expect(active.session.appendToChain).toHaveBeenCalledWith(
         'session_end',
         expect.objectContaining({ auto_sealed: true }),
       );
-      expect(active.transport.close).toHaveBeenCalled();
     });
   });
 
