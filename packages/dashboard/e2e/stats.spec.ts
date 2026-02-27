@@ -15,7 +15,7 @@ test.describe('Stats Bar', () => {
   test('renders all stat card labels', async ({ page }) => {
     await gotoWithMocks(page, { sessions, milestones });
     // Check labels are visible
-    for (const label of ['Spent Time', 'Gained Time', 'Boost', 'Milestones', 'Features', 'Bugs Fixed', 'Complex', 'Streak']) {
+    for (const label of ['User Time', 'AI Time', 'Multiplier', 'Milestones', 'Features', 'Bugs Fixed', 'Complex', 'Streak']) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
   });

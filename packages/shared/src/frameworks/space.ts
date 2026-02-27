@@ -75,7 +75,10 @@ export const spaceFramework: EvaluationFramework = {
 
   getInstructionText(): string {
     return [
-      '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones (generic descriptions only \u2014 no project names, file paths, or company names), and an `evaluation` object.',
+      '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones, and an `evaluation` object.',
+      '  - **milestones**: Array of objects, each with required `title` (string, generic — no project/file names), `category` (string), and optional `private_title` (string, detailed — can include project names and specifics). Example: `[{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}]`',
+      '  - **milestone category values**: feature, bugfix, refactor, test, docs, setup, deployment, fix, analysis, research, investigation, performance, cleanup, chore, security, migration, design, devops, config, other',
+      '  - **task_type values**: coding, debugging, testing, planning, reviewing, documenting, learning, deployment, devops, research, migration, design, data, security, configuration, code_review, investigation, infrastructure, analysis, ops, setup, refactoring, other',
       '- **Evaluation rubric (SPACE framework):** Score each metric 1-5 using these criteria:',
       '  - **prompt_quality** (Communication, weight 0.30): 1=vague/no goal, 3=clear goal but missing edge cases, 5=crystal clear with acceptance criteria',
       '  - **context_provided** (Communication, weight 0.25): 1=no context, 3=some files/errors but incomplete, 5=comprehensive with constraints',

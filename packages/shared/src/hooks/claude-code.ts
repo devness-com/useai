@@ -26,7 +26,7 @@ process.stdin.on('end', () => {
     if (ends >= starts) process.exit(0);
     process.stdout.write(JSON.stringify({
       decision: 'block',
-      reason: 'Before ending, call useai_end with milestones (generic descriptions of accomplishments), languages used, and files_touched_count.'
+      reason: 'Before ending, call useai_end with milestones (each with generic title, private_title for details, and category), languages used, and files_touched_count.'
     }));
   } catch { process.exit(0); }
 });

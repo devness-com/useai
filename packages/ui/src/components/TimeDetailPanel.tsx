@@ -25,17 +25,17 @@ const PANEL_CONFIG: Record<TimeCardType, {
   accentColor: string;
 }> = {
   activeTime: {
-    title: 'Spent Time',
+    title: 'User Time',
     icon: Clock,
     accentColor: '#60a5fa',
   },
   aiTime: {
-    title: 'Gained Time',
+    title: 'AI Time',
     icon: Timer,
     accentColor: '#4ade80',
   },
   parallel: {
-    title: 'Boost',
+    title: 'Multiplier',
     icon: Layers,
     accentColor: '#a78bfa',
   },
@@ -213,8 +213,8 @@ function ActiveTimeContent({ stats, sessions }: { stats: TimeStats; sessions: Se
       </ExplanationBlock>
 
       <div className="rounded-lg border border-border/50 bg-bg-surface-1 divide-y divide-border/30">
-        <CalcRow label="Spent time" value={formatHours(stats.coveredHours)} />
-        <CalcRow label="Gained time" value={formatHours(stats.totalHours)} />
+        <CalcRow label="User time" value={formatHours(stats.coveredHours)} />
+        <CalcRow label="AI time" value={formatHours(stats.totalHours)} />
         <CalcRow label="Active periods" value={String(periods.length)} />
         <CalcRow label="Sessions" value={String(sessions.length)} />
       </div>
@@ -259,13 +259,13 @@ function AITimeContent({ stats, sessions, showPublic }: { stats: TimeStats; sess
     <>
       <ExplanationBlock>
         Total accumulated AI session duration. When multiple sessions run in parallel,
-        their durations add up &mdash; so Gained Time can exceed Spent Time.
+        their durations add up &mdash; so AI Time can exceed User Time.
       </ExplanationBlock>
 
       <div className="rounded-lg border border-border/50 bg-bg-surface-1 divide-y divide-border/30">
-        <CalcRow label="Gained time" value={formatHours(stats.totalHours)} />
-        <CalcRow label="Spent time" value={formatHours(stats.coveredHours)} />
-        <CalcRow label="Boost" value={`${stats.aiMultiplier.toFixed(1)}x`} />
+        <CalcRow label="AI time" value={formatHours(stats.totalHours)} />
+        <CalcRow label="User time" value={formatHours(stats.coveredHours)} />
+        <CalcRow label="Multiplier" value={`${stats.aiMultiplier.toFixed(1)}x`} />
         <CalcRow label="Sessions" value={String(sessions.length)} />
       </div>
 
@@ -278,12 +278,12 @@ function ParallelContent({ stats, sessions, showPublic }: { stats: TimeStats; se
   return (
     <>
       <ExplanationBlock>
-        Your AI multiplier &mdash; Gained Time divided by Spent Time.
+        Your AI multiplier &mdash; AI Time divided by User Time.
         Higher means more parallelization. You&apos;re running more AI sessions simultaneously.
       </ExplanationBlock>
 
       <div className="rounded-lg border border-border/50 bg-bg-surface-1 divide-y divide-border/30">
-        <CalcRow label="Boost" value={`${stats.aiMultiplier.toFixed(1)}x`} />
+        <CalcRow label="Multiplier" value={`${stats.aiMultiplier.toFixed(1)}x`} />
         <CalcRow label="Peak concurrent" value={String(stats.peakConcurrency)} />
         <CalcRow
           label="Calculation"
@@ -375,15 +375,15 @@ function StreakContent({ allSessions, currentStreak }: { allSessions: SessionSea
                   <span className={`text-xs font-mono flex-1 min-w-0 ${inStreak ? 'text-text-primary' : 'text-text-secondary'}`}>
                     {day.label}
                   </span>
-                  <span className="text-[10px] text-text-muted font-mono whitespace-nowrap" title="Spent time">
+                  <span className="text-[10px] text-text-muted font-mono whitespace-nowrap" title="User time">
                     {formatDuration(day.spentSeconds)}
                   </span>
                   <span className="text-[10px] text-text-muted">/</span>
-                  <span className="text-[10px] font-mono font-bold text-text-primary whitespace-nowrap" title="Gained time">
+                  <span className="text-[10px] font-mono font-bold text-text-primary whitespace-nowrap" title="AI time">
                     {formatDuration(day.gainedSeconds)}
                   </span>
                   {day.boost > 0 && (
-                    <span className="text-[10px] font-mono font-bold whitespace-nowrap" style={{ color: '#a78bfa' }} title="Boost">
+                    <span className="text-[10px] font-mono font-bold whitespace-nowrap" style={{ color: '#a78bfa' }} title="Multiplier">
                       {day.boost.toFixed(1)}x
                     </span>
                   )}

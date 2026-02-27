@@ -28,7 +28,7 @@ export const USEAI_INSTRUCTIONS_TEXT = [
   '## UseAI Session Tracking',
   '- At the START of every response, call `useai_session_start` with the appropriate task_type.',
   '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',
-  '- At the END of every response, call `useai_session_end` with languages used, files_touched_count, and milestones (generic descriptions only — no project names, file paths, or company names).',
+  '- At the END of every response, call `useai_session_end` with languages used, files_touched_count, and milestones (each with generic `title`, optional detailed `private_title`, and `category`).',
 ].join('\n');
 
 const MCP_ENTRY = {

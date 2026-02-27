@@ -138,7 +138,7 @@ export function StatsBar({
     <div className="flex gap-2 mb-4">
       <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 flex-1">
         <StatCard
-          label="Spent Time"
+          label="User Time"
           value={coveredHours < 1 / 60 ? 0 : coveredHours < 1 ? Math.round(coveredHours * 60) : coveredHours}
           suffix={coveredHours < 1 ? 'min' : 'hrs'}
           decimals={coveredHours >= 1 ? 1 : 0}
@@ -149,7 +149,7 @@ export function StatsBar({
           onClick={() => handleClick('activeTime')}
         />
         <StatCard
-          label="Gained Time"
+          label="AI Time"
           value={totalHours < 1 ? Math.round(totalHours * 60) : totalHours}
           suffix={totalHours < 1 ? 'min' : 'hrs'}
           decimals={totalHours < 1 ? 0 : 1}
@@ -160,7 +160,7 @@ export function StatsBar({
           onClick={() => handleClick('aiTime')}
         />
         <StatCard
-          label="Boost"
+          label="Multiplier"
           value={aiMultiplier}
           suffix="x"
           decimals={1}

@@ -261,7 +261,10 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
     'useai_start',
     'Start tracking an AI coding session. Call this at the beginning of every response. ' +
       'Generate a session title from the user\'s prompt: a generic public "title" (no project/file names) ' +
-      'and a detailed "private_title" (can include specifics).',
+      'and a detailed "private_title" (can include specifics). ' +
+      'task_type must be one of: coding, debugging, testing, planning, reviewing, documenting, learning, ' +
+      'deployment, devops, research, migration, design, data, security, configuration, code_review, ' +
+      'code-review, investigation, infrastructure, analysis, ops, setup, refactoring, other.',
     {
       task_type: taskTypeSchema
         .optional()
@@ -424,9 +427,15 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
   server.tool(
     'useai_end',
     'End the current AI coding session and record milestones. ' +
-      'Each milestone is an object with required fields: "title" (generic, no project names), "category" ' +
-      '(e.g. "feature", "bugfix", "investigation", "analysis", "refactor", "test", "docs"), and optional ' +
-      '"private_title" and "complexity". Example: [{"title": "Implemented auth flow", "category": "feature"}]. ' +
+      'Each milestone is an object with required "title" (generic, no project/file names) and "category", ' +
+      'plus optional "private_title" (detailed, can include project names and specifics) and "complexity" (simple/medium/complex). ' +
+      'milestone category must be one of: feature, bugfix, refactor, test, docs, setup, deployment, fix, bug_fix, ' +
+      'testing, documentation, config, configuration, analysis, research, investigation, performance, cleanup, ' +
+      'chore, security, migration, design, devops, other. ' +
+      'task_type must be one of: coding, debugging, testing, planning, reviewing, documenting, learning, ' +
+      'deployment, devops, research, migration, design, data, security, configuration, code_review, ' +
+      'code-review, investigation, infrastructure, analysis, ops, setup, refactoring, other. ' +
+      'Example milestones: [{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}, {"title": "Fixed race condition", "category": "bugfix"}]. ' +
       'Also provide an `evaluation` object assessing the session: prompt_quality (1-5), context_provided (1-5), ' +
       'task_outcome (completed/partial/abandoned/blocked), iteration_count, independence_level (1-5), ' +
       'scope_quality (1-5), and tools_leveraged count. Score honestly based on the actual interaction. ' +
@@ -453,7 +462,7 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
         private_title: z.string().optional().describe("Detailed description for the user's private records. CAN include project names and specifics."),
         category: milestoneCategorySchema.describe('Required. Type of work: feature, bugfix, refactor, test, docs, investigation, analysis, research, setup, deployment, performance, cleanup, chore, security, migration, design, devops, config, other'),
         complexity: complexitySchema.optional().describe('Optional. simple, medium, or complex. Defaults to medium.'),
-      }))).optional().describe('Array of milestone objects. Each MUST have "title" (string) and "category" (string). Example: [{"title": "Implemented auth flow", "category": "feature"}, {"title": "Fixed race condition", "category": "bugfix"}]'),
+      }))).optional().describe('Array of milestone objects. Each MUST have "title" (generic, no project names) and "category". Optional: "private_title" (detailed, can include project names). Example: [{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}]'),
       evaluation: coerceJsonString(z.object({
         prompt_quality: z.number().min(1).max(5).describe('How clear, specific, and complete was the initial prompt? 1=vague/ambiguous, 5=crystal clear with acceptance criteria'),
         prompt_quality_reason: z.string().optional().describe('Required if prompt_quality < 5. Explain what was vague/missing and how the user could phrase it better next time.'),

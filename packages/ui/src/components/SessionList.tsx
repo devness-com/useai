@@ -23,13 +23,19 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 5) * 100;
-  const colorClass = score >= 4 ? 'bg-success' : score >= 3 ? 'bg-accent' : 'bg-error';
-  const trackClass = score >= 4 ? 'bg-success/15' : score >= 3 ? 'bg-accent/15' : 'bg-error/15';
+function scoreColor(score: number): string {
+  if (score >= 4) return 'text-success';
+  if (score >= 3) return 'text-accent';
+  if (score >= 2) return 'text-orange-400';
+  return 'text-error';
+}
+
+function ScoreNum({ score, decimal }: { score: number; decimal?: boolean }) {
+  const display = decimal ? score.toFixed(1) : String(Math.round(score));
   return (
-    <span className={`w-7 h-[4px] rounded-full ${trackClass} flex-shrink-0 overflow-hidden`} title={`Quality: ${score.toFixed(1)}/5`}>
-      <span className={`block h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+    <span className="text-[10px] font-mono font-bold" title={`${score.toFixed(1)}/5`}>
+      <span className={scoreColor(score)}>{display}</span>
+      <span className="text-text-muted/50">/5</span>
     </span>
   );
 }
@@ -172,7 +178,7 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
                 </span>
               )}
 
-              {agg && <ScoreBar score={avgScore} />}
+              {agg && <ScoreNum score={avgScore} decimal />}
             </div>
           </div>
         </button>

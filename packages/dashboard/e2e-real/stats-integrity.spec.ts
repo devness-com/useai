@@ -104,18 +104,18 @@ test.describe('Stats Integrity — Real Daemon Data', () => {
     await expect(page.getByText(String(COMPLEX_COUNT)).first()).toBeVisible();
   });
 
-  test('Gained Time stat card is visible in stats bar', async ({ page }) => {
+  test('AI Time stat card is visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
     await selectScale(page, 'month');
 
-    await expect(page.getByText('Gained Time', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('AI Time', { exact: true }).first()).toBeVisible();
   });
 
-  test('Boost stat card is visible in stats bar', async ({ page }) => {
+  test('Multiplier stat card is visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
     await selectScale(page, 'month');
 
-    await expect(page.getByText('Boost', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Multiplier', { exact: true }).first()).toBeVisible();
   });
 
   // ── 8. Streak ────────────────────────────────────────────────────────────
@@ -129,10 +129,10 @@ test.describe('Stats Integrity — Real Daemon Data', () => {
 
   // ── 9. Time metric labels ───────────────────────────────────────────────
 
-  test('Spent Time and Gained Time labels are visible in stats bar', async ({ page }) => {
+  test('User Time and AI Time labels are visible in stats bar', async ({ page }) => {
     await gotoDashboard(page);
-    await expect(page.getByText('Spent Time', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('Gained Time', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('User Time', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('AI Time', { exact: true }).first()).toBeVisible();
   });
 
   // ── 10. Click Features → filtered panel shows 4 milestones ───────────────

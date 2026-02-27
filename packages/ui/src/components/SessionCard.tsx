@@ -54,14 +54,19 @@ function computeAvgScore(ev: SessionEvaluation): number {
   return (ev.prompt_quality + ev.context_provided + ev.scope_quality + ev.independence_level) / 4;
 }
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 5) * 100;
-  const colorClass = score >= 4 ? 'bg-success' : score >= 3 ? 'bg-accent' : 'bg-error';
-  const trackClass = score >= 4 ? 'bg-success/15' : score >= 3 ? 'bg-accent/15' : 'bg-error/15';
+function scoreColor(score: number): string {
+  if (score >= 4) return 'text-success';
+  if (score >= 3) return 'text-accent';
+  if (score >= 2) return 'text-orange-400';
+  return 'text-error';
+}
 
+function ScoreNum({ score, decimal }: { score: number; decimal?: boolean }) {
+  const display = decimal ? score.toFixed(1) : String(Math.round(score));
   return (
-    <span className={`w-7 h-[4px] rounded-full ${trackClass} flex-shrink-0 overflow-hidden`} title={`Quality: ${score.toFixed(1)}/5`}>
-      <span className={`block h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+    <span className="text-[10px] font-mono font-bold" title={`${score.toFixed(1)}/5`}>
+      <span className={scoreColor(score)}>{display}</span>
+      <span className="text-text-muted/50">/5</span>
     </span>
   );
 }
@@ -116,7 +121,7 @@ function EvaluationDetail({
           <div key={label} className="flex items-center gap-1.5 text-[10px] whitespace-nowrap">
             <Icon className="w-3 h-3 text-text-muted/60 flex-shrink-0" />
             <span className="text-text-secondary whitespace-nowrap">{label}</span>
-            <ScoreBar score={value} />
+            <ScoreNum score={value} />
           </div>
         ))}
         {hasMeta && (
@@ -307,7 +312,7 @@ export const SessionCard = memo(function SessionCard({ session, milestones, defa
               )}
 
               {session.evaluation && (
-                <ScoreBar score={computeAvgScore(session.evaluation)} />
+                <ScoreNum score={computeAvgScore(session.evaluation)} decimal />
               )}
             </div>
           </div>
