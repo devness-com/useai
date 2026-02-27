@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useDashboardStore } from '@/store/dashboard-store';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, LogOut, Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import { UseAILogo, TabBar, SearchOverlay } from '@useai/ui';
 import type { ExternalNavLink } from '@useai/ui';
+import { ProfileDropdown } from '@/components/ProfileDropdown';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -88,34 +89,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
             >
               <Search className="w-3 h-3" />
               <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1 py-0.5 rounded border border-border bg-bg-surface-2 text-[10px] font-mono text-text-muted">
+              <kbd className="hidden sm:inline-flex items-center px-1 py-0.5 rounded border border-border bg-bg-base text-[9px] font-mono leading-none">
                 ⌘K
               </kbd>
             </button>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
-            >
-              <LayoutDashboard className="w-3 h-3" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </Link>
-            <Link
-              href="/dashboard/settings"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-text-primary hover:border-text-muted/50 transition-colors text-xs"
-            >
-              <Settings className="w-3 h-3" />
-              <span className="hidden sm:inline">Settings</span>
-            </Link>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/50 bg-bg-surface-1 text-text-muted hover:text-error hover:border-error/30 transition-colors text-xs"
-            >
-              <LogOut className="w-3 h-3" />
-            </button>
+            <ProfileDropdown
+              email={user?.email}
+              username={user?.username}
+              onLogout={logout}
+            />
           </div>
         </div>
       </header>
