@@ -1,8 +1,34 @@
-import type { LocalConfig } from '../types/config.js';
+import type { CaptureConfig, SyncIncludeConfig, SyncConfig, LocalConfig } from '../types/config.js';
+
+export const DEFAULT_CAPTURE_CONFIG: CaptureConfig = {
+  prompt: true,
+  prompt_images: true,
+  evaluation: true,
+  evaluation_reasons: 'all',
+  milestones: true,
+};
+
+export const DEFAULT_SYNC_INCLUDE_CONFIG: SyncIncludeConfig = {
+  sessions: true,
+  evaluations: true,
+  evaluation_reasons: 'all',
+  milestones: true,
+  prompts: false,
+  private_titles: false,
+  projects: false,
+  model: true,
+  languages: true,
+};
+
+export const DEFAULT_SYNC_CONFIG: SyncConfig = {
+  enabled: false,
+  interval_hours: 24,
+  include: { ...DEFAULT_SYNC_INCLUDE_CONFIG },
+};
 
 export const DEFAULT_CONFIG: LocalConfig = {
-  milestone_tracking: true,
-  auto_sync: true,
+  capture: { ...DEFAULT_CAPTURE_CONFIG },
+  sync: { ...DEFAULT_SYNC_CONFIG },
   evaluation_framework: 'space',
 };
 

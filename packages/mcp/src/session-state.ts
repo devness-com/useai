@@ -37,6 +37,8 @@ export interface SavedParentState {
   sessionTitle: string | null;
   sessionPrivateTitle: string | null;
   sessionPromptWordCount: number | null;
+  sessionPrompt: string | null;
+  sessionPromptImageCount: number;
   project: string | null;
   modelId: string | null;
   startCallTokensEst: { input: number; output: number } | null;
@@ -59,6 +61,8 @@ export class SessionState {
   sessionTitle: string | null;
   sessionPrivateTitle: string | null;
   sessionPromptWordCount: number | null;
+  sessionPrompt: string | null;
+  sessionPromptImageCount: number;
   project: string | null;
   chainTipHash: string;
   signingKey: KeyObject | null;

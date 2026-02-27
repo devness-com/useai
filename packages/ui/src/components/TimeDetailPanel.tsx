@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Clock, Timer, Layers, Zap, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { SessionSeal } from '@useai/shared/types';
@@ -397,8 +397,35 @@ function StreakContent({ allSessions, currentStreak }: { allSessions: SessionSea
   );
 }
 
+const SESSION_BATCH_SIZE = 25;
+
 function SessionList({ sessions, showPublic }: { sessions: SessionSeal[]; showPublic: boolean }) {
+  const [visibleCount, setVisibleCount] = useState(SESSION_BATCH_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisibleCount((prev) => prev + SESSION_BATCH_SIZE);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(SESSION_BATCH_SIZE);
+  }, [sessions.length]);
+
   if (sessions.length === 0) return null;
+
+  const visible = sessions.slice(0, visibleCount);
+  const hasMore = visibleCount < sessions.length;
 
   return (
     <>
@@ -406,7 +433,7 @@ function SessionList({ sessions, showPublic }: { sessions: SessionSeal[]; showPu
         Sessions
       </div>
       <div className="space-y-1">
-        {sessions.map((s, i) => {
+        {visible.map((s, i) => {
           const client = resolveClient(s.client);
           const initials = TOOL_INITIALS[client] ?? client.slice(0, 2).toUpperCase();
           const toolColor = TOOL_COLORS[client] ?? '#91919a';
@@ -468,6 +495,13 @@ function SessionList({ sessions, showPublic }: { sessions: SessionSeal[]; showPu
             </motion.div>
           );
         })}
+        {hasMore && (
+          <div ref={sentinelRef} className="py-2 text-center">
+            <span className="text-[10px] text-text-muted font-mono">
+              Showing {visible.length} of {sessions.length}...
+            </span>
+          </div>
+        )}
       </div>
     </>
   );

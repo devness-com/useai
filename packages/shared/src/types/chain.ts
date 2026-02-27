@@ -45,6 +45,8 @@ export interface SessionSeal {
   project?: string;
   title?: string;
   private_title?: string;
+  prompt?: string;              // Full verbatim prompt (local-only by default)
+  prompt_image_count?: number;  // Number of images attached to prompt
   prompt_word_count?: number;
   model?: string;
   evaluation?: SessionEvaluation;

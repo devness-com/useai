@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { HealthInfo, UpdateInfo, LocalConfig } from '../lib/api';
 import { ArrowUpCircle, Copy, Check, Search } from 'lucide-react';
 import { UseAILogo, TabBar, StatusBadge } from '@useai/ui';
-import type { ActiveTab } from '@useai/ui';
+import type { ActiveTab, ExternalNavLink } from '@useai/ui';
 import { ProfileDropdown } from './ProfileDropdown';
 
 const UPDATE_COMMAND = 'npx -y @devness/useai update';
+
+const STATIC_WEB_LINKS: ExternalNavLink[] = [
+  { label: 'Leaderboard', href: 'https://useai.dev/leaderboard' },
+];
 
 function UpdateBanner({ updateInfo }: { updateInfo: UpdateInfo }) {
   const [showPopover, setShowPopover] = useState(false);
@@ -63,6 +67,14 @@ interface HeaderProps {
 }
 
 export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChange, config, onRefresh }: HeaderProps) {
+  const webLinks = useMemo(() => {
+    const links = [...STATIC_WEB_LINKS];
+    if (config?.username) {
+      links.push({ label: 'Profile', href: `https://useai.dev/${config.username}` });
+    }
+    return links;
+  }, [config?.username]);
+
   return (
     <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border mb-6">
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between relative">
@@ -78,7 +90,7 @@ export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChang
         </div>
 
         <div className="absolute left-1/2 -translate-x-1/2">
-          <TabBar activeTab={activeTab} onTabChange={onTabChange} />
+          <TabBar activeTab={activeTab} onTabChange={onTabChange} externalLinks={webLinks} />
         </div>
 
         <div className="flex items-center gap-4">

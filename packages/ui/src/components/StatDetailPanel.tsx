@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Brain, Rocket, Bug, Sparkles, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Milestone } from '@useai/shared/types';
@@ -45,6 +45,8 @@ const PANEL_CONFIG: Record<MilestoneCardType, {
   },
 };
 
+const MILESTONE_BATCH_SIZE = 25;
+
 const BADGE_CLASSES: Record<string, string> = {
   feature: 'bg-success/10 text-success border-success/20',
   bugfix: 'bg-error/10 text-error border-error/20',
@@ -85,6 +87,28 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
     return () => { document.body.style.overflow = ''; };
   }, [type]);
 
+  const [visibleCount, setVisibleCount] = useState(MILESTONE_BATCH_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisibleCount((prev) => prev + MILESTONE_BATCH_SIZE);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(MILESTONE_BATCH_SIZE);
+  }, [type]);
+
   const isMilestoneType = type === 'features' || type === 'bugs' || type === 'complex' || type === 'milestones';
   if (!type || !isMilestoneType) return null;
 
@@ -94,9 +118,12 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
     .filter(config.filter)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  // Group by date
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+
+  // Group visible items by date
   const groups = new Map<string, Milestone[]>();
-  for (const m of filtered) {
+  for (const m of visible) {
     const dateKey = new Date(m.created_at).toLocaleDateString([], {
       weekday: 'short',
       month: 'short',
@@ -249,6 +276,13 @@ export function StatDetailPanel({ type, milestones, showPublic = false, onClose 
                       </div>
                     </div>
                   ))}
+                  {hasMore && (
+                    <div ref={sentinelRef} className="py-2 text-center">
+                      <span className="text-[10px] text-text-muted font-mono">
+                        Showing {visible.length} of {filtered.length}...
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
