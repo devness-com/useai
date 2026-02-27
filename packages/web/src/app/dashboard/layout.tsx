@@ -1,23 +1,26 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useDashboardStore } from '@/store/dashboard-store';
+import { apiFetch } from '@/lib/api-client';
 import Link from 'next/link';
 import { Search, Sparkles } from 'lucide-react';
 import { UseAILogo, TabBar, SearchOverlay } from '@useai/ui';
 import type { ExternalNavLink } from '@useai/ui';
 import { ProfileDropdown } from '@/components/ProfileDropdown';
+import type { ProfileDropdownHandle } from '@/components/ProfileDropdown';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, user, hydrate, logout } = useAuthStore();
+  const { token, user, hydrate, setAuth, logout } = useAuthStore();
   const { sessions, milestones, activeTab, setActiveTab } = useDashboardStore();
   const isDashboardRoot = pathname === '/dashboard';
   const [searchOpen, setSearchOpen] = useState(false);
+  const profileRef = useRef<ProfileDropdownHandle>(null);
 
   const webLinks = useMemo<ExternalNavLink[] | undefined>(() => {
     if (!user?.username) return undefined;
@@ -32,6 +35,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Re-fetch user profile to get fresh data (username may have been set elsewhere)
+  useEffect(() => {
+    if (!token) return;
+    apiFetch<any>('/api/users/me')
+      .then((freshUser) => {
+        setAuth(token, freshUser);
+      })
+      .catch(() => { /* ignore — stale data is acceptable fallback */ });
+  }, [token, setAuth]);
 
   useEffect(() => {
     // Wait for hydration, then check auth
@@ -73,19 +86,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {isDashboardRoot && (
             <div className="absolute left-1/2 -translate-x-1/2">
-              <TabBar activeTab={activeTab} onTabChange={setActiveTab} externalLinks={webLinks} />
+              <TabBar activeTab={activeTab} onTabChange={setActiveTab} externalLinks={webLinks} showSettings={false} />
             </div>
           )}
 
           <div className="flex items-center gap-4">
             {showClaimHint && (
-              <Link
-                href="/dashboard/settings"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/25 text-[11px] font-medium text-accent hover:bg-accent/15 transition-colors"
+              <button
+                onClick={() => profileRef.current?.open()}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/25 text-[11px] font-medium text-accent hover:bg-accent/15 transition-colors cursor-pointer"
               >
                 <Sparkles className="w-3 h-3" />
                 Claim your username
-              </Link>
+              </button>
             )}
             <button
               onClick={() => setSearchOpen(true)}
@@ -98,6 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </kbd>
             </button>
             <ProfileDropdown
+              ref={profileRef}
               email={user?.email}
               username={user?.username}
               onLogout={logout}

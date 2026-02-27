@@ -35,7 +35,8 @@ export function buildInstructionsText(frameworkId?: string, opts?: BuildInstruct
     : '';
   return [
     '## UseAI Session Tracking',
-    `- At the START of every response to a **user message**, call \`useai_start\` with the appropriate task_type${promptInstruction}. Also generate a short session \`title\` (generic, no project names) and \`private_title\` (detailed, can include specifics) from the user's prompt.`,
+    `- At the START of every response to a **real user message**, call \`useai_start\` with the appropriate task_type${promptInstruction}. Also generate a short session \`title\` (generic, no project names) and \`private_title\` (detailed, can include specifics) from the user's prompt.`,
+    '  - **"Real user message"** = the turn contains actual user-authored text (typed or spoken). Do NOT call `useai_start` on turns that only contain system reminders, hook feedback, plan approval clicks, or other automated/system-generated content with no user-authored text.',
     '  - **task_type values**: coding, debugging, testing, planning, reviewing, documenting, learning, deployment, devops, research, migration, design, data, security, configuration, code_review, investigation, infrastructure, analysis, ops, setup, refactoring, other',
     '- To group multiple prompts in the same conversation, pass the `conversation_id` from the previous `useai_start` response (returned as `conversation_id=<value>`). Omit it for the first message or a new conversation.',
     '- For LONG sessions (15+ min), call `useai_heartbeat` periodically.',

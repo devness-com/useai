@@ -258,7 +258,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
 
   server.tool(
     'useai_start',
-    'Start tracking an AI coding session. Call this at the beginning of every response. ' +
+    'Start tracking an AI coding session. Call this at the beginning of every response to a real user message. ' +
+      'Do NOT call this on turns that only contain system reminders, hook feedback, plan approval clicks, or other automated/system-generated content with no user-authored text. ' +
       'Generate a session title from the user\'s prompt: a generic public "title" (no project/file names) ' +
       'and a detailed "private_title" (can include specifics). ' +
       'task_type must be one of: coding, debugging, testing, planning, reviewing, documenting, learning, ' +

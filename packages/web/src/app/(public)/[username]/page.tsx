@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Clock, Zap, Code2, Trophy, Calendar, Timer, Shield, Flame, CheckCircle2 } from 'lucide-react';
+import { Clock, Zap, Code2, Cpu, Layers, Calendar, Shield, Flame, CheckCircle2 } from 'lucide-react';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { Badge } from '@/components/Badge';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -21,12 +21,34 @@ interface Profile {
   task_types: { name: string; hours: number }[];
   verification_rate: number;
   member_since: string;
-  milestones: { title: string; category: string; complexity: string; createdAt: string }[];
   total_milestones: number;
   active_days: number;
   avg_session_minutes: number;
   badges: { badge: string; category: string; awarded_at: string }[];
   activity: { date: string; hours: number }[];
+  covered_hours: number;
+  ai_multiplier: number;
+  proficiency: {
+    prompt_quality: number;
+    context: number;
+    independence: number;
+    scope: number;
+    completion_rate: number;
+    evaluated_sessions: number;
+    avg_iterations: number;
+  } | null;
+  complexity_distribution: {
+    simple: number;
+    medium: number;
+    complex: number;
+  };
+  skill_radar: {
+    output: number;
+    efficiency: number;
+    prompts: number | null;
+    consistency: number;
+    breadth: number;
+  };
 }
 
 async function getProfile(username: string): Promise<Profile | null> {
@@ -62,33 +84,25 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
 export const revalidate = 3600;
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  feature: { bg: 'bg-accent/10', text: 'text-accent', label: 'Feature' },
-  bugfix: { bg: 'bg-error/10', text: 'text-error', label: 'Bugfix' },
-  bug_fix: { bg: 'bg-error/10', text: 'text-error', label: 'Bugfix' },
-  fix: { bg: 'bg-error/10', text: 'text-error', label: 'Fix' },
-  test: { bg: 'bg-blue/10', text: 'text-blue', label: 'Test' },
-  testing: { bg: 'bg-blue/10', text: 'text-blue', label: 'Test' },
-  refactor: { bg: 'bg-purple/10', text: 'text-purple', label: 'Refactor' },
-  docs: { bg: 'bg-emerald/10', text: 'text-emerald', label: 'Docs' },
-  documentation: { bg: 'bg-emerald/10', text: 'text-emerald', label: 'Docs' },
-  setup: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted', label: 'Setup' },
-  deployment: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted', label: 'Deploy' },
-  chore: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted', label: 'Chore' },
-};
+/* ── Pentagon helpers for Skill Radar ── */
 
-const COMPLEXITY_COLORS: Record<string, { bg: string; text: string }> = {
-  simple: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted' },
-  trivial: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted' },
-  easy: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted' },
-  low: { bg: 'bg-bg-surface-3/50', text: 'text-text-muted' },
-  medium: { bg: 'bg-streak-bg', text: 'text-streak' },
-  moderate: { bg: 'bg-streak-bg', text: 'text-streak' },
-  complex: { bg: 'bg-error/10', text: 'text-error' },
-  hard: { bg: 'bg-error/10', text: 'text-error' },
-  difficult: { bg: 'bg-error/10', text: 'text-error' },
-  high: { bg: 'bg-error/10', text: 'text-error' },
-};
+function pentagonPoint(axisIndex: number, radius: number, cx: number, cy: number, r: number): [number, number] {
+  const angle = (Math.PI * 2 * axisIndex) / 5 - Math.PI / 2;
+  return [cx + r * radius * Math.cos(angle), cy + r * radius * Math.sin(angle)];
+}
+
+function pentagonPath(scale: number, cx: number, cy: number, r: number): string {
+  return Array.from({ length: 5 }, (_, i) => {
+    const [x, y] = pentagonPoint(i, scale, cx, cy, r);
+    return `${x},${y}`;
+  }).join(' ');
+}
+
+function proficiencyBarColor(score: number): string {
+  if (score >= 4.0) return 'bg-emerald-500';
+  if (score >= 3.0) return 'bg-amber-500';
+  return 'bg-red-400';
+}
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
@@ -100,10 +114,37 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const topClients = profile.top_clients ?? [];
   const topLanguages = profile.top_languages ?? [];
   const taskTypes = profile.task_types ?? [];
-  const milestones = profile.milestones ?? [];
   const badges = profile.badges ?? [];
   const activity = profile.activity ?? [];
   const isVerified = (profile.verification_rate ?? 0) > 0.8;
+
+  /* Skill radar data */
+  const radar = profile.skill_radar;
+  const radarValues = [
+    radar.output,
+    radar.efficiency,
+    radar.prompts ?? 0,
+    radar.consistency,
+    radar.breadth,
+  ];
+  const radarLabels = ['Output', 'Efficiency', 'Prompts', 'Consistency', 'Breadth'];
+  const cx = 100;
+  const cy = 100;
+  const r = 70;
+
+  /* Label positions for the pentagon (manually offset for readability) */
+  const labelPositions: { x: number; y: number; anchor: 'middle' | 'start' | 'end' }[] = [
+    { x: cx, y: cy - r - 12, anchor: 'middle' },         // 0: Output (top)
+    { x: cx + r + 10, y: cy - r * 0.3, anchor: 'start' },  // 1: Efficiency (upper-right)
+    { x: cx + r * 0.62 + 10, y: cy + r * 0.8 + 4, anchor: 'start' },  // 2: Prompts (lower-right)
+    { x: cx - r * 0.62 - 10, y: cy + r * 0.8 + 4, anchor: 'end' },    // 3: Consistency (lower-left)
+    { x: cx - r - 10, y: cy - r * 0.3, anchor: 'end' },    // 4: Breadth (upper-left)
+  ];
+
+  /* Complexity distribution */
+  const complexity = profile.complexity_distribution ?? { simple: 0, medium: 0, complex: 0 };
+  const complexityMax = Math.max(complexity.simple, complexity.medium, complexity.complex, 1);
+  const complexityTotal = complexity.simple + complexity.medium + complexity.complex;
 
   return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 pb-16">
@@ -154,15 +195,40 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
           {/* ── Stat Cards ── */}
           <section className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+            {/* User Time */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
               <Clock className="w-5 h-5 text-accent mb-3" />
+              <div className="text-3xl font-black text-text-primary leading-none mb-1">
+                {(profile.covered_hours ?? 0).toFixed(1)}
+              </div>
+              <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
+                User Time
+              </div>
+            </div>
+
+            {/* AI Time */}
+            <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
+              <Cpu className="w-5 h-5 text-blue mb-3" />
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {(profile.total_hours ?? 0).toFixed(1)}
               </div>
               <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
-                Total Hours
+                AI Time
               </div>
             </div>
+
+            {/* Multiplier (hero card) */}
+            <div className="rounded-xl p-5 bg-accent/10 border border-accent/20">
+              <Layers className="w-5 h-5 text-accent mb-3" />
+              <div className="text-3xl font-black text-accent leading-none mb-1">
+                {(profile.ai_multiplier ?? 0).toFixed(1)}x
+              </div>
+              <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
+                Multiplier
+              </div>
+            </div>
+
+            {/* Sessions */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
               <Code2 className="w-5 h-5 text-blue mb-3" />
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
@@ -172,6 +238,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                 Sessions
               </div>
             </div>
+
+            {/* Streak */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
               <Zap className="w-5 h-5 text-streak mb-3" />
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
@@ -184,32 +252,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                 Streak / Longest
               </div>
             </div>
+
+            {/* Completion */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Calendar className="w-5 h-5 text-emerald mb-3" />
+              <CheckCircle2 className="w-5 h-5 text-emerald mb-3" />
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
-                {profile.active_days ?? 0}
+                {(profile.proficiency?.completion_rate ?? 0).toFixed(0)}
+                <span className="text-base font-medium text-text-muted ml-0.5">%</span>
               </div>
               <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
-                Active Days
-              </div>
-            </div>
-            <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Timer className="w-5 h-5 text-purple mb-3" />
-              <div className="text-3xl font-black text-text-primary leading-none mb-1">
-                {(profile.avg_session_minutes ?? 0).toFixed(0)}
-                <span className="text-base font-medium text-text-muted ml-1">min</span>
-              </div>
-              <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
-                Avg Session
-              </div>
-            </div>
-            <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Trophy className="w-5 h-5 text-streak mb-3" />
-              <div className="text-3xl font-black text-text-primary leading-none mb-1">
-                {profile.total_milestones ?? 0}
-              </div>
-              <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
-                Milestones
+                Completion
               </div>
             </div>
           </section>
@@ -222,7 +274,200 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             <ActivityHeatmap data={activity} />
           </section>
 
-          {/* ── Languages + AI Tools + Task Types ── */}
+          {/* ── AI Proficiency + Skill Radar ── */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            {/* Left: AI Proficiency */}
+            <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
+              <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
+                AI_PROFICIENCY
+              </div>
+
+              {profile.proficiency ? (
+                <>
+                  <div className="space-y-4">
+                    {([
+                      { label: 'Prompt Quality', value: profile.proficiency.prompt_quality },
+                      { label: 'Context', value: profile.proficiency.context },
+                      { label: 'Independence', value: profile.proficiency.independence },
+                      { label: 'Scope', value: profile.proficiency.scope },
+                    ] as const).map((metric) => (
+                      <div key={metric.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-text-secondary">{metric.label}</span>
+                          <span className="text-xs font-mono text-text-muted">{metric.value.toFixed(1)} / 5</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${proficiencyBarColor(metric.value)}`}
+                            style={{ width: `${(metric.value / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <span className="text-xs font-mono text-text-muted">
+                      {profile.proficiency.evaluated_sessions} evaluated · {profile.proficiency.completion_rate.toFixed(0)}% completed · {profile.proficiency.avg_iterations.toFixed(1)} avg iterations
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <span className="text-sm text-text-muted">No evaluation data yet</span>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Skill Radar */}
+            <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
+              <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
+                SKILL_RADAR
+              </div>
+
+              <svg viewBox="0 0 200 200" className="w-full max-w-[280px] mx-auto">
+                {/* Grid rings */}
+                {[0.33, 0.66, 1.0].map((scale) => (
+                  <polygon
+                    key={scale}
+                    points={pentagonPath(scale, cx, cy, r)}
+                    fill="none"
+                    stroke="var(--color-border)"
+                    strokeWidth={0.5}
+                    opacity={0.4}
+                  />
+                ))}
+
+                {/* Axis lines */}
+                {Array.from({ length: 5 }, (_, i) => {
+                  const [x, y] = pentagonPoint(i, 1, cx, cy, r);
+                  return (
+                    <line
+                      key={i}
+                      x1={cx}
+                      y1={cy}
+                      x2={x}
+                      y2={y}
+                      stroke="var(--color-border)"
+                      strokeWidth={0.5}
+                      opacity={0.3}
+                    />
+                  );
+                })}
+
+                {/* Data polygon */}
+                <polygon
+                  points={radarValues
+                    .map((v, i) => {
+                      const [x, y] = pentagonPoint(i, Math.max(v, 0.02), cx, cy, r);
+                      return `${x},${y}`;
+                    })
+                    .join(' ')}
+                  fill="var(--color-accent)"
+                  fillOpacity={0.15}
+                  stroke="var(--color-accent)"
+                  strokeWidth={1.5}
+                />
+
+                {/* Data points */}
+                {radarValues.map((v, i) => {
+                  const [x, y] = pentagonPoint(i, Math.max(v, 0.02), cx, cy, r);
+                  const isPromptsNull = i === 2 && radar.prompts === null;
+                  return (
+                    <circle
+                      key={i}
+                      cx={x}
+                      cy={y}
+                      r={2.5}
+                      fill={isPromptsNull ? 'var(--color-text-muted)' : 'var(--color-accent)'}
+                      opacity={isPromptsNull ? 0.4 : 1}
+                    />
+                  );
+                })}
+
+                {/* Labels */}
+                {radarLabels.map((label, i) => {
+                  const pos = labelPositions[i];
+                  const isPromptsNull = i === 2 && radar.prompts === null;
+                  return (
+                    <text
+                      key={label}
+                      x={pos.x}
+                      y={pos.y}
+                      textAnchor={pos.anchor}
+                      fontSize={9}
+                      fill={isPromptsNull ? 'var(--color-text-muted)' : 'var(--color-text-secondary)'}
+                      opacity={isPromptsNull ? 0.5 : 1}
+                    >
+                      {label}
+                    </text>
+                  );
+                })}
+              </svg>
+
+              {/* Score summary row */}
+              <div className="flex justify-center gap-4 mt-4">
+                {radarLabels.map((label, i) => (
+                  <div key={label} className="text-center">
+                    <div className="text-[10px] font-mono text-text-muted">
+                      {i === 2 && radar.prompts === null
+                        ? '—'
+                        : `${(radarValues[i] * 100).toFixed(0)}%`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Complexity Distribution ── */}
+          <section className="hud-border rounded-xl p-6 bg-bg-surface-1 mb-10">
+            <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
+              COMPLEXITY_DISTRIBUTION
+            </div>
+
+            <div className="space-y-3">
+              {([
+                { label: 'Simple', count: complexity.simple, color: 'bg-emerald-500' },
+                { label: 'Medium', count: complexity.medium, color: 'bg-amber-500' },
+                { label: 'Complex', count: complexity.complex, color: 'bg-red-400' },
+              ] as const).map((item) => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-text-secondary">
+                      {item.label} · {item.count}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${item.color}`}
+                      style={{ width: `${(item.count / complexityMax) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Stacked summary bar */}
+            {complexityTotal > 0 && (
+              <div className="mt-4 w-full h-2 rounded-full bg-bg-surface-3/50 overflow-hidden flex">
+                <div
+                  className="h-full bg-emerald-500"
+                  style={{ width: `${(complexity.simple / complexityTotal) * 100}%` }}
+                />
+                <div
+                  className="h-full bg-amber-500"
+                  style={{ width: `${(complexity.medium / complexityTotal) * 100}%` }}
+                />
+                <div
+                  className="h-full bg-red-400"
+                  style={{ width: `${(complexity.complex / complexityTotal) * 100}%` }}
+                />
+              </div>
+            )}
+          </section>
+
+          {/* ── Languages + AI Tools + Task Types (bar charts) ── */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
             {/* Languages */}
             {topLanguages.length > 0 && (
@@ -230,16 +475,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                 <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
                   LANGUAGES
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {topLanguages.map((l) => (
-                    <span
-                      key={l.name}
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-border bg-bg-surface-2 text-text-secondary"
-                    >
-                      {l.name}
-                      <span className="ml-1.5 text-text-muted font-mono font-normal">{l.hours}h</span>
-                    </span>
-                  ))}
+                <div className="space-y-2.5">
+                  {(() => {
+                    const maxHours = Math.max(...topLanguages.map((l) => l.hours), 1);
+                    return topLanguages.map((l) => (
+                      <div key={l.name} className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
+                          {l.name}
+                        </span>
+                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-accent"
+                            style={{ width: `${(l.hours / maxHours) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
+                          {l.hours}h
+                        </span>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
             )}
@@ -250,16 +505,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                 <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
                   AI_TOOLS
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {topClients.map((t) => (
-                    <span
-                      key={t.name}
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-accent/20 bg-accent/5 text-accent"
-                    >
-                      {t.name}
-                      <span className="ml-1.5 font-mono font-normal opacity-70">{t.hours}h</span>
-                    </span>
-                  ))}
+                <div className="space-y-2.5">
+                  {(() => {
+                    const maxHours = Math.max(...topClients.map((t) => t.hours), 1);
+                    return topClients.map((t) => (
+                      <div key={t.name} className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
+                          {t.name}
+                        </span>
+                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-blue"
+                            style={{ width: `${(t.hours / maxHours) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
+                          {t.hours}h
+                        </span>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
             )}
@@ -270,16 +535,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                 <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
                   TASK_TYPES
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {taskTypes.map((t) => (
-                    <span
-                      key={t.name}
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-border/50 bg-bg-surface-2/50 text-text-muted"
-                    >
-                      {t.name}
-                      <span className="ml-1.5 font-mono font-normal">{t.hours}h</span>
-                    </span>
-                  ))}
+                <div className="space-y-2.5">
+                  {(() => {
+                    const maxHours = Math.max(...taskTypes.map((t) => t.hours), 1);
+                    return taskTypes.map((t) => (
+                      <div key={t.name} className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-text-secondary w-20 shrink-0 truncate">
+                          {t.name}
+                        </span>
+                        <div className="flex-1 h-2 rounded-full bg-bg-surface-3/50 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-text-muted/50"
+                            style={{ width: `${(t.hours / maxHours) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono text-text-muted w-12 text-right shrink-0">
+                          {t.hours}h
+                        </span>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
             )}
@@ -305,68 +580,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
                     })}
                   />
                 ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Recent Milestones ── */}
-          {milestones.length > 0 && (
-            <section className="hud-border rounded-xl p-6 bg-bg-surface-1">
-              <div className="flex items-center justify-between mb-6">
-                <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
-                  RECENT_MILESTONES
-                </div>
-                <span className="text-xs font-mono text-text-muted">
-                  {milestones.length} entries
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {milestones.map((m, i) => {
-                  const cat = CATEGORY_COLORS[m.category] ?? {
-                    bg: 'bg-bg-surface-3/50',
-                    text: 'text-text-muted',
-                    label: m.category,
-                  };
-                  const comp = COMPLEXITY_COLORS[m.complexity] ?? {
-                    bg: 'bg-bg-surface-3/50',
-                    text: 'text-text-muted',
-                  };
-
-                  return (
-                    <div
-                      key={i}
-                      className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-bg-surface-2/50 border border-border/30 hover:border-border transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
-                        <span className="text-sm font-medium text-text-primary truncate">
-                          {m.title}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap shrink-0">
-                        <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${cat.bg} ${cat.text}`}
-                        >
-                          {cat.label}
-                        </span>
-                        {m.complexity && (
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${comp.bg} ${comp.text}`}
-                          >
-                            {m.complexity}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono text-text-muted">
-                          {new Date(m.createdAt).toLocaleDateString('en', {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </section>
           )}

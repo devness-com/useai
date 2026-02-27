@@ -10,6 +10,7 @@ interface TabBarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   externalLinks?: ExternalNavLink[];
+  showSettings?: boolean;
 }
 
 const tabs: { id: ActiveTab; label: string }[] = [
@@ -17,7 +18,7 @@ const tabs: { id: ActiveTab; label: string }[] = [
   { id: 'insights', label: 'Insights' },
 ];
 
-export function TabBar({ activeTab, onTabChange, externalLinks }: TabBarProps) {
+export function TabBar({ activeTab, onTabChange, externalLinks, showSettings = true }: TabBarProps) {
   return (
     <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-bg-surface-1 border border-border/40">
       {tabs.map(({ id, label }) => {
@@ -38,20 +39,24 @@ export function TabBar({ activeTab, onTabChange, externalLinks }: TabBarProps) {
           </button>
         );
       })}
-      <div className="w-px h-4 bg-border/60 mx-1" />
-      <button
-        onClick={() => onTabChange('settings')}
-        className={`
-          flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150
-          ${activeTab === 'settings'
-            ? 'bg-bg-surface-2 text-text-primary shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-          }
-        `}
-      >
-        <Settings className="w-3 h-3" />
-        Settings
-      </button>
+      {showSettings && (
+        <>
+          <div className="w-px h-4 bg-border/60 mx-1" />
+          <button
+            onClick={() => onTabChange('settings')}
+            className={`
+              flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150
+              ${activeTab === 'settings'
+                ? 'bg-bg-surface-2 text-text-primary shadow-sm'
+                : 'text-text-muted hover:text-text-primary'
+              }
+            `}
+          >
+            <Settings className="w-3 h-3" />
+            Settings
+          </button>
+        </>
+      )}
       {externalLinks && externalLinks.length > 0 && (
         <>
           <div className="w-px h-4 bg-border/60 mx-1" />

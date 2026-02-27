@@ -76,7 +76,7 @@ export const spaceFramework: EvaluationFramework = {
   getInstructionText(opts?: InstructionTextOpts): string {
     const reasonsLevel = opts?.evaluationReasons ?? 'all';
     const lines = [
-      '- At the END of every response, call `useai_end` with languages used, files_touched_count, milestones, and an `evaluation` object.',
+      '- At the END of every response where `useai_start` was called, call `useai_end` with languages used, files_touched_count, milestones, and an `evaluation` object. Do NOT call `useai_end` if `useai_start` was not called in this turn.',
       '  - **milestones**: Array of objects, each with required `title` (string, generic — no project/file names), `category` (string), and optional `private_title` (string, detailed — can include project names and specifics). Example: `[{"title": "Implemented auth flow", "private_title": "Added OAuth2 to UserService in acme-api", "category": "feature"}]`',
       '  - **milestone category values**: feature, bugfix, refactor, test, docs, setup, deployment, fix, analysis, research, investigation, performance, cleanup, chore, security, migration, design, devops, config, other',
       '  - **task_type values**: coding, debugging, testing, planning, reviewing, documenting, learning, deployment, devops, research, migration, design, data, security, configuration, code_review, investigation, infrastructure, analysis, ops, setup, refactoring, other',
