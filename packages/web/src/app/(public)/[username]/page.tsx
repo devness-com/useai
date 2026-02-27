@@ -4,6 +4,7 @@ import { Clock, Zap, Code2, Cpu, Layers, Calendar, Shield, Flame, CheckCircle2 }
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { Badge } from '@/components/Badge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { InfoTip } from '@/components/InfoTip';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -197,9 +198,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           <section className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
             {/* User Time */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Clock className="w-5 h-5 text-accent mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <Clock className="w-5 h-5 text-accent" />
+                <InfoTip text="Wall-clock hours you spent with at least one AI session active." />
+              </div>
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {(profile.covered_hours ?? 0).toFixed(1)}
+                <span className="text-base font-medium text-text-muted ml-1">hrs</span>
               </div>
               <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
                 User Time
@@ -208,9 +213,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* AI Time */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Cpu className="w-5 h-5 text-blue mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <Cpu className="w-5 h-5 text-blue" />
+                <InfoTip text="Total cumulative hours across all AI sessions, including overlapping ones." />
+              </div>
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {(profile.total_hours ?? 0).toFixed(1)}
+                <span className="text-base font-medium text-text-muted ml-1">hrs</span>
               </div>
               <div className="text-xs text-text-muted font-mono tracking-wider uppercase">
                 AI Time
@@ -219,7 +228,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* Multiplier (hero card) */}
             <div className="rounded-xl p-5 bg-accent/10 border border-accent/20">
-              <Layers className="w-5 h-5 text-accent mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <Layers className="w-5 h-5 text-accent" />
+                <InfoTip text="AI Time ÷ User Time — how much parallel AI work happens per hour." />
+              </div>
               <div className="text-3xl font-black text-accent leading-none mb-1">
                 {(profile.ai_multiplier ?? 0).toFixed(1)}x
               </div>
@@ -230,7 +242,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* Sessions */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Code2 className="w-5 h-5 text-blue mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <Code2 className="w-5 h-5 text-blue" />
+                <InfoTip text="Total number of AI-assisted coding sessions tracked." />
+              </div>
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {profile.total_sessions ?? 0}
               </div>
@@ -241,7 +256,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* Streak */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <Zap className="w-5 h-5 text-streak mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <Zap className="w-5 h-5 text-streak" />
+                <InfoTip text="Current consecutive days with AI activity, and the longest streak achieved." />
+              </div>
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {profile.current_streak ?? 0}
                 <span className="text-base font-medium text-text-muted ml-1">
@@ -255,7 +273,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* Completion */}
             <div className="hud-border rounded-xl p-5 bg-bg-surface-1">
-              <CheckCircle2 className="w-5 h-5 text-emerald mb-3" />
+              <div className="flex justify-between items-start mb-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald" />
+                <InfoTip text="Percentage of evaluated sessions where the task was fully completed." />
+              </div>
               <div className="text-3xl font-black text-text-primary leading-none mb-1">
                 {(profile.proficiency?.completion_rate ?? 0).toFixed(0)}
                 <span className="text-base font-medium text-text-muted ml-0.5">%</span>
@@ -268,8 +289,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
           {/* ── Activity Heatmap ── */}
           <section className="hud-border rounded-xl p-4 sm:p-6 bg-bg-surface-1 mb-10">
-            <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-              ACTIVITY_HEATMAP
+            <div className="flex items-center gap-2 mb-4">
+              <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                ACTIVITY_HEATMAP
+              </div>
+              <InfoTip text="Daily AI coding activity over the past year. Darker cells mean more hours." />
             </div>
             <ActivityHeatmap data={activity} />
           </section>
@@ -278,8 +302,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
             {/* Left: AI Proficiency */}
             <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-              <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                AI_PROFICIENCY
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                  AI_PROFICIENCY
+                </div>
+                <InfoTip text="Average scores across evaluated sessions. Each metric is rated 1–5 by the AI after each session." />
               </div>
 
               {profile.proficiency ? (
@@ -321,8 +348,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
             {/* Right: Skill Radar */}
             <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-              <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                SKILL_RADAR
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                  SKILL_RADAR
+                </div>
+                <InfoTip text="Five-axis profile based on output volume, coding efficiency, prompt quality, streak consistency, and language breadth." />
               </div>
 
               <svg viewBox="0 0 200 200" className="w-full max-w-[280px] mx-auto">
@@ -422,8 +452,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
           {/* ── Complexity Distribution ── */}
           <section className="hud-border rounded-xl p-6 bg-bg-surface-1 mb-10">
-            <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-              COMPLEXITY_DISTRIBUTION
+            <div className="flex items-center gap-2 mb-4">
+              <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                COMPLEXITY_DISTRIBUTION
+              </div>
+              <InfoTip text="Breakdown of milestones by difficulty level — from simple fixes to complex features." />
             </div>
 
             <div className="space-y-3">
@@ -472,8 +505,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             {/* Languages */}
             {topLanguages.length > 0 && (
               <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                  LANGUAGES
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                    LANGUAGES
+                  </div>
+                  <InfoTip text="Programming languages used during AI sessions, ranked by total hours." />
                 </div>
                 <div className="space-y-2.5">
                   {(() => {
@@ -502,8 +538,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             {/* AI Tools */}
             {topClients.length > 0 && (
               <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                  AI_TOOLS
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                    AI_TOOLS
+                  </div>
+                  <InfoTip text="AI coding tools used, ranked by total hours." />
                 </div>
                 <div className="space-y-2.5">
                   {(() => {
@@ -532,8 +571,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             {/* Task Types */}
             {taskTypes.length > 0 && (
               <div className="hud-border rounded-xl p-6 bg-bg-surface-1">
-                <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                  TASK_TYPES
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                    TASK_TYPES
+                  </div>
+                  <InfoTip text="Categories of work performed during AI sessions, ranked by total hours." />
                 </div>
                 <div className="space-y-2.5">
                   {(() => {
@@ -563,8 +605,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           {/* ── Badges ── */}
           {badges.length > 0 && (
             <section className="hud-border rounded-xl p-6 bg-bg-surface-1 mb-10">
-              <div className="text-[10px] font-mono text-text-muted tracking-widest mb-4 border-l-2 border-accent pl-2">
-                BADGES
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-[10px] font-mono text-text-muted tracking-widest border-l-2 border-accent pl-2">
+                  BADGES
+                </div>
+                <InfoTip text="Achievements earned based on milestones, streaks, and proficiency." />
               </div>
               <div className="flex flex-wrap gap-2">
                 {badges.map((b) => (
