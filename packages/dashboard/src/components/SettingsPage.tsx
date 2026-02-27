@@ -269,10 +269,12 @@ export function SettingsPage() {
                 description="How often to sync data"
                 value={String(draft.sync.interval_hours)}
                 options={[
+                  { value: '1', label: 'Every hour' },
+                  { value: '2', label: 'Every 2 hours' },
+                  { value: '3', label: 'Every 3 hours' },
                   { value: '6', label: 'Every 6 hours' },
                   { value: '12', label: 'Every 12 hours' },
                   { value: '24', label: 'Every 24 hours' },
-                  { value: '48', label: 'Every 48 hours' },
                 ]}
                 onChange={(v) => setSync({ interval_hours: Number(v) })}
               />

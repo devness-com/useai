@@ -21,7 +21,7 @@ export const DEFAULT_SYNC_INCLUDE_CONFIG: SyncIncludeConfig = {
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   enabled: false,
-  interval_hours: 24,
+  interval_hours: 3,
   include: { ...DEFAULT_SYNC_INCLUDE_CONFIG },
 };
 
@@ -31,6 +31,6 @@ export const DEFAULT_CONFIG: LocalConfig = {
   evaluation_framework: 'space',
 };
 
-export const DEFAULT_SYNC_INTERVAL_HOURS = 24;
+export const DEFAULT_SYNC_INTERVAL_HOURS = 3;
 
 export const GENESIS_HASH = 'GENESIS';

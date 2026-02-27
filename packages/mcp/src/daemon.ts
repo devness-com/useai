@@ -1071,7 +1071,7 @@ function scheduleAutoSync(): void {
 
     if (!config.sync.enabled || !config.auth?.token) return;
 
-    const intervalMs = (config.sync.interval_hours ?? 6) * 60 * 60 * 1000;
+    const intervalMs = (config.sync.interval_hours ?? 3) * 60 * 60 * 1000;
     let delayMs: number;
 
     if (config.last_sync_at) {
