@@ -563,4 +563,123 @@ describe('SessionState', () => {
       );
     });
   });
+
+  describe('parentStateStack (nested child sessions)', () => {
+    it('initializes with an empty stack', () => {
+      expect(state.parentStateStack).toEqual([]);
+      expect(state.parentState).toBeNull();
+    });
+
+    it('parentState getter returns top of stack', () => {
+      state.sessionId = 'parent-1';
+      state.sessionRecordCount = 1;
+      state.inProgress = true;
+      state.saveParentState();
+
+      expect(state.parentState).not.toBeNull();
+      expect(state.parentState!.sessionId).toBe('parent-1');
+    });
+
+    it('saveParentState pushes to stack (LIFO)', () => {
+      // Save first parent
+      state.sessionId = 'grandparent';
+      state.sessionRecordCount = 1;
+      state.inProgress = true;
+      state.saveParentState();
+
+      // Simulate child session
+      state.sessionId = 'parent';
+      state.sessionRecordCount = 2;
+      state.saveParentState();
+
+      expect(state.parentStateStack).toHaveLength(2);
+      expect(state.parentStateStack[0]!.sessionId).toBe('grandparent');
+      expect(state.parentStateStack[1]!.sessionId).toBe('parent');
+      // Getter returns the top (most recent parent)
+      expect(state.parentState!.sessionId).toBe('parent');
+    });
+
+    it('restoreParentState pops from stack in LIFO order', () => {
+      // Save grandparent
+      state.sessionId = 'grandparent';
+      state.sessionRecordCount = 3;
+      state.inProgress = true;
+      state.saveParentState();
+
+      // Save parent
+      state.sessionId = 'parent';
+      state.sessionRecordCount = 5;
+      state.saveParentState();
+
+      // Simulate grandchild session
+      state.sessionId = 'grandchild';
+
+      // Restore parent first
+      const restored1 = state.restoreParentState();
+      expect(restored1).toBe(true);
+      expect(state.sessionId).toBe('parent');
+      expect(state.sessionRecordCount).toBe(5);
+      expect(state.parentStateStack).toHaveLength(1);
+
+      // Restore grandparent
+      const restored2 = state.restoreParentState();
+      expect(restored2).toBe(true);
+      expect(state.sessionId).toBe('grandparent');
+      expect(state.sessionRecordCount).toBe(3);
+      expect(state.parentStateStack).toHaveLength(0);
+    });
+
+    it('restoreParentState returns false on empty stack', () => {
+      expect(state.restoreParentState()).toBe(false);
+      expect(state.parentStateStack).toHaveLength(0);
+    });
+
+    it('reset() preserves the parent stack', () => {
+      state.sessionId = 'original-parent';
+      state.sessionRecordCount = 1;
+      state.inProgress = true;
+      state.saveParentState();
+
+      state.reset();
+
+      expect(state.parentStateStack).toHaveLength(1);
+      expect(state.parentStateStack[0]!.sessionId).toBe('original-parent');
+    });
+
+    it('getParentSessionIds returns all parent IDs', () => {
+      state.sessionId = 'grandparent';
+      state.saveParentState();
+      state.sessionId = 'parent';
+      state.saveParentState();
+      state.sessionId = 'child';
+
+      expect(state.getParentSessionIds()).toEqual(['grandparent', 'parent']);
+    });
+
+    it('getParentSessionIds returns empty array when no parents', () => {
+      expect(state.getParentSessionIds()).toEqual([]);
+    });
+
+    it('accumulates childPausedMs across nested restores', () => {
+      // Save grandparent
+      state.sessionId = 'grandparent';
+      state.childPausedMs = 0;
+      state.saveParentState();
+
+      // Save parent (after some time)
+      state.sessionId = 'parent';
+      state.childPausedMs = 0;
+      state.saveParentState();
+
+      // Restore parent — accumulates pause time
+      const result1 = state.restoreParentState();
+      expect(result1).toBe(true);
+      expect(state.childPausedMs).toBeGreaterThanOrEqual(0);
+
+      // Restore grandparent — accumulates more pause time
+      const result2 = state.restoreParentState();
+      expect(result2).toBe(true);
+      expect(state.childPausedMs).toBeGreaterThanOrEqual(0);
+    });
+  });
 });

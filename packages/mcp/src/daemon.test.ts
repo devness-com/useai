@@ -48,6 +48,10 @@ function createMockSessionState(overrides: Record<string, unknown> = {}) {
       data: _data,
     })),
     autoSealedSessionId: null as string | null,
+    parentStateStack: [] as Array<{ sessionId: string; [key: string]: unknown }>,
+    getParentSessionIds(): string[] {
+      return this.parentStateStack.map((p: { sessionId: string }) => p.sessionId);
+    },
     reset: vi.fn(),
     initializeKeystore: vi.fn(),
     ...overrides,

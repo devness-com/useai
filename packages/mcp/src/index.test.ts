@@ -138,7 +138,7 @@ vi.mock('./session-state.js', () => ({
     mockSessionObj.inProgress = false;
     mockSessionObj.inProgressSince = null;
     mockSessionObj.autoSealedSessionId = null;
-    mockSessionObj.parentState = null;
+    mockSessionObj.parentStateStack = [];
 
     // Methods — plain functions so vi.clearAllMocks() doesn't affect them.
     // They delegate to vi.fn() mocks which ARE restored in restoreMockImplementations().
@@ -160,8 +160,17 @@ vi.mock('./session-state.js', () => ({
     mockSessionObj.appendToChain = (...args: any[]) => (mockAppendToChain as any)(...args);
     mockSessionObj.detectProject = () => {};
     mockSessionObj.sessionChainPath = () => '/home/testuser/.useai/active/mock-session.jsonl';
+    mockSessionObj.getParentSessionIds = () => mockSessionObj.parentStateStack.map((p: any) => p.sessionId);
+    Object.defineProperty(mockSessionObj, 'parentState', {
+      get() {
+        return mockSessionObj.parentStateStack.length > 0
+          ? mockSessionObj.parentStateStack[mockSessionObj.parentStateStack.length - 1]
+          : null;
+      },
+      configurable: true,
+    });
     mockSessionObj.saveParentState = () => {
-      mockSessionObj.parentState = {
+      mockSessionObj.parentStateStack.push({
         sessionId: mockSessionId,
         sessionStartTime: mockSessionStartTime,
         heartbeatCount: mockHeartbeatCount,
@@ -177,11 +186,11 @@ vi.mock('./session-state.js', () => ({
         modelId: mockSessionObj.modelId,
         inProgress: mockSessionObj.inProgress,
         inProgressSince: mockSessionObj.inProgressSince,
-      };
+      });
     };
     mockSessionObj.restoreParentState = () => {
-      if (!mockSessionObj.parentState) return false;
-      const p = mockSessionObj.parentState;
+      if (mockSessionObj.parentStateStack.length === 0) return false;
+      const p = mockSessionObj.parentStateStack.pop();
       // Restore mock variables that getters reference
       mockSessionId = p.sessionId;
       mockSessionStartTime = p.sessionStartTime;
@@ -198,7 +207,6 @@ vi.mock('./session-state.js', () => ({
       mockSessionObj.modelId = p.modelId;
       mockSessionObj.inProgress = p.inProgress;
       mockSessionObj.inProgressSince = p.inProgressSince;
-      mockSessionObj.parentState = null;
       return true;
     };
 
@@ -342,7 +350,7 @@ beforeEach(() => {
   mockSessionObj.inProgress = false;
   mockSessionObj.inProgressSince = null;
   mockSessionObj.autoSealedSessionId = null;
-  mockSessionObj.parentState = null;
+  mockSessionObj.parentStateStack = [];
 
   // Restore all mock implementations (vi.clearAllMocks clears them)
   restoreMockImplementations();

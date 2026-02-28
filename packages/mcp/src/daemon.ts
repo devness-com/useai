@@ -88,6 +88,11 @@ function getActiveUseaiSessionIds(): Set<string> {
   const ids = new Set<string>();
   for (const [, active] of sessions) {
     ids.add(active.session.sessionId);
+    // Include parent session IDs from the stack — prevents orphan sweep
+    // from sealing parent chain files that are still in use by nested sub-agents.
+    for (const parentId of active.session.getParentSessionIds()) {
+      ids.add(parentId);
+    }
   }
   return ids;
 }

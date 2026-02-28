@@ -86,8 +86,9 @@ export class SessionState {
   lastActivityTime: number;
   /** Accumulated ms this session was paused while child sessions were active. */
   childPausedMs: number;
-  /** Saved parent session state when a child (subagent) session is active. */
-  parentState: SavedParentState | null;
+  /** Stack of saved parent session states for nested child (subagent) sessions.
+   *  Supports arbitrary nesting: parent → child → grandchild → ... */
+  parentStateStack: SavedParentState[];
 
   constructor() {
     this.sessionId = generateSessionId();
@@ -98,7 +99,7 @@ export class SessionState {
     this.inProgress = false;
     this.inProgressSince = null;
     this.autoSealedSessionId = null;
-    this.parentState = null;
+    this.parentStateStack = [];
     this.sessionStartTime = Date.now();
     this.lastActivityTime = this.sessionStartTime;
     this.childPausedMs = 0;
@@ -208,12 +209,24 @@ export class SessionState {
     return Math.round((this.lastActivityTime - this.sessionStartTime - this.childPausedMs) / 1000);
   }
 
+  /** Backward-compatible getter: returns the top of the parent stack (most recent parent), or null. */
+  get parentState(): SavedParentState | null {
+    return this.parentStateStack.length > 0
+      ? this.parentStateStack[this.parentStateStack.length - 1]!
+      : null;
+  }
+
+  /** Returns session IDs of all saved parent sessions (for orphan sweep protection). */
+  getParentSessionIds(): string[] {
+    return this.parentStateStack.map(p => p.sessionId);
+  }
+
   /**
    * Save the current session state as the parent, so it can be restored
    * after a child (subagent) session finishes.
    */
   saveParentState(): void {
-    this.parentState = {
+    this.parentStateStack.push({
       sessionId: this.sessionId,
       sessionStartTime: this.sessionStartTime,
       lastActivityTime: this.lastActivityTime,
@@ -235,7 +248,7 @@ export class SessionState {
       modelId: this.modelId,
       inProgress: this.inProgress,
       inProgressSince: this.inProgressSince,
-    };
+    });
   }
 
   /**
@@ -243,8 +256,8 @@ export class SessionState {
    * Returns true if parent state was restored, false if no parent state was saved.
    */
   restoreParentState(): boolean {
-    if (!this.parentState) return false;
-    const p = this.parentState;
+    if (this.parentStateStack.length === 0) return false;
+    const p = this.parentStateStack.pop()!;
     this.sessionId = p.sessionId;
     this.sessionStartTime = p.sessionStartTime;
     this.lastActivityTime = p.lastActivityTime;
@@ -266,7 +279,6 @@ export class SessionState {
     this.modelId = p.modelId;
     this.inProgress = p.inProgress;
     this.inProgressSince = p.inProgressSince;
-    this.parentState = null;
     return true;
   }
 

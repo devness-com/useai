@@ -593,9 +593,22 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
           session.inProgressSince = null;
           return { content: [{ type: 'text' as const, text: enrichResult }] };
         }
-        return {
-          content: [{ type: 'text' as const, text: 'No active session to end (already sealed or never started).' }],
-        };
+        // Fallback: if parent sessions are on the stack (e.g., idle timer sealed
+        // the child, then more children ran and cleared autoSealedSessionId),
+        // restore the parent and fall through to the normal end path.
+        if (session.parentStateStack.length > 0) {
+          const restored = session.restoreParentState();
+          if (!restored || session.sessionRecordCount === 0) {
+            return {
+              content: [{ type: 'text' as const, text: 'No active session to end (already sealed or never started).' }],
+            };
+          }
+          // Parent restored successfully — fall through to normal end path below
+        } else {
+          return {
+            content: [{ type: 'text' as const, text: 'No active session to end (already sealed or never started).' }],
+          };
+        }
       }
 
       const duration = session.getSessionDuration();

@@ -93,7 +93,15 @@ function createMockSession() {
     inProgress: false,
     inProgressSince: null as number | null,
     autoSealedSessionId: null as string | null,
-    parentState: null as { sessionId: string; [key: string]: unknown } | null,
+    parentStateStack: [] as Array<{ sessionId: string; [key: string]: unknown }>,
+    get parentState(): { sessionId: string; [key: string]: unknown } | null {
+      return this.parentStateStack.length > 0
+        ? this.parentStateStack[this.parentStateStack.length - 1]!
+        : null;
+    },
+    getParentSessionIds(): string[] {
+      return this.parentStateStack.map((p: { sessionId: string }) => p.sessionId);
+    },
     mcpSessionId: null as string | null,
     reset: vi.fn(),
     setClient: vi.fn(),
