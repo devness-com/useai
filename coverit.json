@@ -1,11 +1,11 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T15:02:20.301Z",
+  "updatedAt": "2026-03-01T17:16:56.900Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
-    "language": "typescript",
+    "language": "javascript",
     "framework": "none",
     "testFramework": "vitest",
     "sourceFiles": 227,
@@ -441,7 +441,7 @@
           },
           "e2e": {
             "expected": 4,
-            "current": 224,
+            "current": 234,
             "files": [
               "packages/dashboard/e2e/app-init.spec.ts",
               "packages/dashboard/e2e/auth.spec.ts",
@@ -503,7 +503,7 @@
     {
       "path": "packages/web",
       "files": 31,
-      "lines": 6086,
+      "lines": 6096,
       "complexity": "medium",
       "functionality": {
         "tests": {
@@ -1078,11 +1078,31 @@
         "date": "2026-03-01T15:02:20.301Z",
         "score": 49.1,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T15:48:47.286Z",
+        "score": 49.1,
+        "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T16:46:42.147Z",
+        "score": 49.1,
+        "scope": "incremental"
+      },
+      {
+        "date": "2026-03-01T17:14:47.805Z",
+        "score": 49.1,
+        "scope": "incremental"
+      },
+      {
+        "date": "2026-03-01T17:16:56.900Z",
+        "score": 49.1,
+        "scope": "incremental"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T15:02:20.301Z",
-      "regression": "2026-03-01T15:02:20.301Z",
+      "functionality": "2026-03-01T17:16:56.900Z",
+      "regression": "2026-03-01T17:14:47.805Z",
       "stability": "2026-03-01T15:02:20.301Z",
       "conformance": "2026-03-01T15:02:20.301Z",
       "security": "2026-03-01T15:02:20.301Z"
