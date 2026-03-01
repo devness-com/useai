@@ -246,6 +246,8 @@ export interface ConversationGroup {
   totalMilestones: number;
   startedAt: string;
   endedAt: string;
+  /** Start time of the most recent session (for display, matches child row times) */
+  lastSessionAt: string;
 }
 
 export interface AggregateEvaluation {
@@ -349,6 +351,7 @@ export function groupIntoConversations(
     // First element is now the latest session (descending order)
     const startedAt = sessions[sessions.length - 1]!.session.started_at;
     const endedAt = sessions[0]!.session.ended_at;
+    const lastSessionAt = sessions[0]!.session.started_at;
 
     result.push({
       conversationId: convId,
@@ -358,6 +361,7 @@ export function groupIntoConversations(
       totalMilestones,
       startedAt,
       endedAt,
+      lastSessionAt,
     });
   }
 
@@ -370,10 +374,11 @@ export function groupIntoConversations(
       totalMilestones: sg.milestones.length,
       startedAt: sg.session.started_at,
       endedAt: sg.session.ended_at,
+      lastSessionAt: sg.session.started_at,
     });
   }
 
-  result.sort((a, b) => parseTimestamp(b.endedAt) - parseTimestamp(a.endedAt));
+  result.sort((a, b) => parseTimestamp(b.lastSessionAt) - parseTimestamp(a.lastSessionAt));
 
   return result;
 }

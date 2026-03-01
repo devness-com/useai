@@ -156,8 +156,8 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
               </span>
 
               <span className="text-text-secondary/80 font-mono tracking-tight">
-                {showFullDate && `${new Date(group.sessions.length > 1 && group.endedAt ? group.endedAt : group.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
-                {formatTime(group.sessions.length > 1 && group.endedAt ? group.endedAt : group.startedAt)}
+                {showFullDate && `${new Date(group.lastSessionAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
+                {formatTime(group.lastSessionAt)}
               </span>
 
               {!showPublic && hasProject && (

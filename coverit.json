@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T08:27:42.799Z",
+  "updatedAt": "2026-03-01T09:26:01.587Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
@@ -9,7 +9,7 @@
     "framework": "none",
     "testFramework": "unknown",
     "sourceFiles": 226,
-    "sourceLines": 27344
+    "sourceLines": 27341
   },
   "dimensions": {
     "functionality": {
@@ -81,7 +81,7 @@
         "tests": {
           "unit": {
             "expected": 12,
-            "current": 521,
+            "current": 514,
             "files": [
               "packages/mcp/src/session.test.ts",
               "packages/mcp/src/session-state.test.ts",
@@ -124,7 +124,7 @@
         "tests": {
           "unit": {
             "expected": 12,
-            "current": 307,
+            "current": 301,
             "files": [
               "packages/shared/src/crypto/chain.test.ts",
               "packages/shared/src/crypto/derive.test.ts",
@@ -170,7 +170,7 @@
         "tests": {
           "unit": {
             "expected": 6,
-            "current": 348,
+            "current": 347,
             "files": [
               "packages/cli/src/commands/config.test.ts",
               "packages/cli/src/commands/export.test.ts",
@@ -216,7 +216,7 @@
         "tests": {
           "unit": {
             "expected": 12,
-            "current": 245,
+            "current": 236,
             "files": [
               "packages/api/src/auth/auth.service.test.ts",
               "packages/api/src/admin/admin.guard.test.ts",
@@ -237,7 +237,7 @@
           },
           "api": {
             "expected": 8,
-            "current": 199,
+            "current": 171,
             "files": [
               "packages/api/src/controllers.test.ts",
               "packages/api/src/auth/auth.controller.test.ts",
@@ -291,7 +291,7 @@
           },
           "e2e": {
             "expected": 4,
-            "current": 147,
+            "current": 234,
             "files": [
               "packages/dashboard/e2e/app-init.spec.ts",
               "packages/dashboard/e2e/auth.spec.ts",
@@ -305,7 +305,13 @@
               "packages/dashboard/e2e/search.spec.ts",
               "packages/dashboard/e2e/sessions.spec.ts",
               "packages/dashboard/e2e/stats.spec.ts",
-              "packages/dashboard/e2e/time-navigation.spec.ts"
+              "packages/dashboard/e2e/time-navigation.spec.ts",
+              "packages/dashboard/e2e-real/health.spec.ts",
+              "packages/dashboard/e2e-real/data-loading.spec.ts",
+              "packages/dashboard/e2e-real/filter-data.spec.ts",
+              "packages/dashboard/e2e-real/stats-integrity.spec.ts",
+              "packages/dashboard/e2e-real/time-filter.spec.ts",
+              "packages/dashboard/e2e-real/z-delete.spec.ts"
             ]
           }
         }
@@ -365,7 +371,7 @@
     {
       "path": "packages/ui",
       "files": 30,
-      "lines": 6106,
+      "lines": 6103,
       "complexity": "medium",
       "functionality": {
         "tests": {
@@ -521,6 +527,19 @@
       ],
       "covered": false,
       "testFile": null
+    },
+    {
+      "id": "j6",
+      "name": "Dashboard real daemon data validation",
+      "steps": [
+        "Daemon starts with seeded session and milestone data",
+        "Dashboard loads and displays seeded sessions",
+        "User applies client and project filters",
+        "Stats integrity verified against seed expectations",
+        "User deletes sessions and verifies cleanup"
+      ],
+      "covered": true,
+      "testFile": "packages/dashboard/e2e-real/data-loading.spec.ts"
     }
   ],
   "contracts": [
@@ -702,7 +721,7 @@
     }
   ],
   "score": {
-    "overall": 30,
+    "overall": 45.6,
     "breakdown": {
       "functionality": 30,
       "security": 100,
@@ -737,10 +756,21 @@
         "date": "2026-03-01T08:27:42.799Z",
         "score": 30,
         "scope": "first-time"
+      },
+      {
+        "date": "2026-03-01T09:07:56.277Z",
+        "score": 30,
+        "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T09:26:01.587Z",
+        "score": 45.6,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T08:27:42.799Z"
+      "functionality": "2026-03-01T09:26:01.587Z",
+      "regression": "2026-03-01T09:26:01.587Z"
     }
   }
 }
