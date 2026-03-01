@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { registerTools } from './register-tools';
+import { registerTools, installGracefulToolHandler } from './register-tools';
 
 // ── Mock @useai/shared ─────────────────────────────────────────────────────────
 
@@ -1090,5 +1090,60 @@ describe('registerTools', () => {
 
       expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
+  });
+});
+
+// ── installGracefulToolHandler ────────────────────────────────────────────────
+
+describe('installGracefulToolHandler', () => {
+  it('wraps the tools/call handler to catch errors', async () => {
+    const throwingHandler = vi.fn().mockRejectedValue(new Error('Tool xyz not found'));
+    const requestHandlers = new Map<string, Function>();
+    requestHandlers.set('tools/call', throwingHandler);
+
+    const fakeMcpServer = {
+      server: { _requestHandlers: requestHandlers },
+    };
+
+    installGracefulToolHandler(fakeMcpServer as never);
+
+    const wrappedHandler = requestHandlers.get('tools/call')!;
+    expect(wrappedHandler).not.toBe(throwingHandler);
+
+    const result = await wrappedHandler({}, {});
+    expect(result).toEqual({
+      content: [{ type: 'text', text: 'Tool xyz not found' }],
+      isError: true,
+    });
+  });
+
+  it('passes through successful results unchanged', async () => {
+    const successResult = { content: [{ type: 'text', text: 'ok' }] };
+    const successHandler = vi.fn().mockResolvedValue(successResult);
+    const requestHandlers = new Map<string, Function>();
+    requestHandlers.set('tools/call', successHandler);
+
+    const fakeMcpServer = {
+      server: { _requestHandlers: requestHandlers },
+    };
+
+    installGracefulToolHandler(fakeMcpServer as never);
+
+    const wrappedHandler = requestHandlers.get('tools/call')!;
+    const result = await wrappedHandler({ params: { name: 'useai_start' } }, {});
+
+    expect(result).toBe(successResult);
+    expect(successHandler).toHaveBeenCalledWith({ params: { name: 'useai_start' } }, {});
+  });
+
+  it('does nothing when no tools/call handler exists', () => {
+    const requestHandlers = new Map<string, Function>();
+    const fakeMcpServer = {
+      server: { _requestHandlers: requestHandlers },
+    };
+
+    // Should not throw
+    installGracefulToolHandler(fakeMcpServer as never);
+    expect(requestHandlers.has('tools/call')).toBe(false);
   });
 });

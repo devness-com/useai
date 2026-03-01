@@ -923,3 +923,41 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
     },
   );
 }
+
+// ── Graceful Error Wrapper ─────────────────────────────────────────────────────
+
+/**
+ * Wraps the MCP SDK's `tools/call` request handler so that ANY error
+ * (unknown tool, Zod validation, Server-level validation, unhandled exception)
+ * is returned as a tool result with `isError: true` instead of a JSON-RPC
+ * protocol error.
+ *
+ * Without this, protocol-level errors show as `× MCP ERROR (UseAI)` in clients
+ * like Gemini CLI, which confuses users into thinking the server is broken.
+ * With this wrapper, the same errors show as a successful tool call with an
+ * error message in the content — much friendlier.
+ *
+ * Call this AFTER `registerTools()` so the SDK's handler is already installed.
+ */
+export function installGracefulToolHandler(mcpServer: McpServer): void {
+  // Access the Protocol base class's internal handler map.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestHandlers = (mcpServer.server as any)?._requestHandlers as Map<string, Function> | undefined;
+  if (!requestHandlers?.get) return; // Not a real MCP server (e.g. test mock)
+
+  const originalHandler = requestHandlers.get('tools/call');
+  if (!originalHandler) return; // No tools registered — nothing to wrap
+
+  requestHandlers.set('tools/call', async (request: unknown, extra: unknown) => {
+    try {
+      return await originalHandler(request, extra);
+    } catch (error) {
+      // Convert protocol error → tool result so clients show it gracefully
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        content: [{ type: 'text' as const, text: message }],
+        isError: true,
+      };
+    }
+  });
+}

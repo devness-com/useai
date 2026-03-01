@@ -158,7 +158,7 @@ const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
 const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 const { VERSION, ensureDir } = await import('@useai/shared');
 const { SessionState } = await import('./session-state.js');
-const { registerTools } = await import('./register-tools.js');
+const { registerTools, installGracefulToolHandler } = await import('./register-tools.js');
 
 const session = new SessionState();
 const server = new McpServer({
@@ -167,6 +167,7 @@ const server = new McpServer({
 });
 
 registerTools(server, session);
+installGracefulToolHandler(server);
 
 async function main() {
   ensureDir();

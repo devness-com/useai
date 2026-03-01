@@ -34,7 +34,7 @@ import {
 import type { SessionSeal, SessionEvaluation, ChainRecord, Keystore, Milestone } from '@useai/shared';
 import { migrateConfig as migrateConfigFn } from '@useai/shared';
 import { SessionState } from './session-state.js';
-import { registerTools } from './register-tools.js';
+import { registerTools, installGracefulToolHandler } from './register-tools.js';
 import { readMcpMap, writeMcpMapping } from './mcp-map.js';
 import { getDashboardHtml } from './dashboard/html.js';
 import {
@@ -1312,6 +1312,7 @@ export async function startDaemon(port?: number): Promise<void> {
               }
             },
           });
+          installGracefulToolHandler(mcpServer);
 
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
