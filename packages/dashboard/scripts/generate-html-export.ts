@@ -1,10 +1,36 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const distHtml = join(import.meta.dirname, '..', 'dist', 'index.html');
+const distDir = join(import.meta.dirname, '..', 'dist');
+const distHtml = join(distDir, 'index.html');
 const outFile = join(import.meta.dirname, '..', '..', 'mcp', 'src', 'dashboard', 'html.ts');
 
-const html = readFileSync(distHtml, 'utf-8');
+let html = readFileSync(distHtml, 'utf-8');
+
+// Inline favicon/icon assets as base64 data URIs so the single-file
+// dashboard works when served by the daemon (which has no static file handler)
+const mimeTypes: Record<string, string> = {
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
+
+html = html.replace(
+  /href="\.\/([^"]+\.(png|ico))"/g,
+  (_match, filename, ext) => {
+    const filePath = join(distDir, filename);
+    if (!existsSync(filePath)) {
+      console.warn(`  Warning: ${filename} not found in dist/, skipping inline`);
+      return _match;
+    }
+    const base64 = readFileSync(filePath).toString('base64');
+    const mime = mimeTypes[`.${ext}`];
+    console.log(`  Inlined ${filename} (${(base64.length / 1024).toFixed(1)} KB base64)`);
+    return `href="data:${mime};base64,${base64}"`;
+  },
+);
+
+// Remove the manifest link — can't meaningfully inline a webmanifest
+html = html.replace(/\s*<link rel="manifest"[^>]*\/>\s*/g, '\n');
 
 // Escape backticks and template literal expressions in the HTML
 const escaped = html
