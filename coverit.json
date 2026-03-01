@@ -1,0 +1,746 @@
+{
+  "version": 1,
+  "createdAt": "2026-03-01T08:27:42.799Z",
+  "updatedAt": "2026-03-01T08:27:42.799Z",
+  "project": {
+    "name": "useai",
+    "root": "/Users/apple/Code/devness/useai/useai-oss",
+    "language": "javascript",
+    "framework": "none",
+    "testFramework": "unknown",
+    "sourceFiles": 226,
+    "sourceLines": 27344
+  },
+  "dimensions": {
+    "functionality": {
+      "enabled": true,
+      "weight": 0.35,
+      "targets": {
+        "unit": {
+          "coverage": "critical-paths"
+        },
+        "integration": {
+          "coverage": "all-boundaries"
+        },
+        "api": {
+          "coverage": "all-endpoints"
+        },
+        "e2e": {
+          "coverage": "critical-journeys"
+        },
+        "contract": {
+          "coverage": "all-public-apis"
+        }
+      }
+    },
+    "security": {
+      "enabled": true,
+      "weight": 0.25,
+      "checks": [
+        "injection",
+        "auth-bypass",
+        "secrets-exposure",
+        "xss",
+        "insecure-config",
+        "data-exposure"
+      ]
+    },
+    "stability": {
+      "enabled": true,
+      "weight": 0.15,
+      "checks": [
+        "error-handling",
+        "edge-cases",
+        "resource-cleanup",
+        "graceful-degradation"
+      ]
+    },
+    "conformance": {
+      "enabled": true,
+      "weight": 0.15,
+      "checks": [
+        "pattern-compliance",
+        "layer-violations",
+        "naming-conventions",
+        "dead-code"
+      ]
+    },
+    "regression": {
+      "enabled": true,
+      "weight": 0.1,
+      "strategy": "all-existing-tests-pass"
+    }
+  },
+  "modules": [
+    {
+      "path": "packages/mcp",
+      "files": 10,
+      "lines": 4648,
+      "complexity": "high",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 12,
+            "current": 521,
+            "files": [
+              "packages/mcp/src/session.test.ts",
+              "packages/mcp/src/session-state.test.ts",
+              "packages/mcp/src/tools.test.ts",
+              "packages/mcp/src/tools-instructions.test.ts",
+              "packages/mcp/src/tools-config-formats.test.ts",
+              "packages/mcp/src/daemon.test.ts",
+              "packages/mcp/src/index.test.ts",
+              "packages/mcp/src/register-tools.test.ts",
+              "packages/mcp/src/setup.test.ts"
+            ]
+          },
+          "integration": {
+            "expected": 20,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/shared",
+      "files": 47,
+      "lines": 2411,
+      "complexity": "high",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 12,
+            "current": 307,
+            "files": [
+              "packages/shared/src/crypto/chain.test.ts",
+              "packages/shared/src/crypto/derive.test.ts",
+              "packages/shared/src/crypto/keystore.test.ts",
+              "packages/shared/src/crypto/verify.test.ts",
+              "packages/shared/src/daemon/ensure.test.ts",
+              "packages/shared/src/daemon/resolve-npx.test.ts",
+              "packages/shared/src/utils/detect-client.test.ts",
+              "packages/shared/src/utils/format.test.ts",
+              "packages/shared/src/utils/fs.test.ts",
+              "packages/shared/src/utils/id.test.ts",
+              "packages/shared/src/validation/guards.test.ts",
+              "packages/shared/src/validation/schemas.test.ts"
+            ]
+          },
+          "integration": {
+            "expected": 10,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/cli",
+      "files": 16,
+      "lines": 2188,
+      "complexity": "medium",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 6,
+            "current": 348,
+            "files": [
+              "packages/cli/src/commands/config.test.ts",
+              "packages/cli/src/commands/export.test.ts",
+              "packages/cli/src/commands/milestones.test.ts",
+              "packages/cli/src/commands/purge.test.ts",
+              "packages/cli/src/commands/setup.test.ts",
+              "packages/cli/src/commands/stats.test.ts",
+              "packages/cli/src/commands/status.test.ts",
+              "packages/cli/src/services/config.service.test.ts",
+              "packages/cli/src/services/stats.service.test.ts",
+              "packages/cli/src/services/tools.formats.test.ts",
+              "packages/cli/src/services/tools.test.ts",
+              "packages/cli/src/utils/display.test.ts"
+            ]
+          },
+          "integration": {
+            "expected": 10,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/api",
+      "files": 43,
+      "lines": 1886,
+      "complexity": "high",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 12,
+            "current": 245,
+            "files": [
+              "packages/api/src/auth/auth.service.test.ts",
+              "packages/api/src/admin/admin.guard.test.ts",
+              "packages/api/src/admin/admin.service.test.ts",
+              "packages/api/src/common/guards/api-token-auth.guard.test.ts",
+              "packages/api/src/common/guards/auth-guards.test.ts",
+              "packages/api/src/common/guards/jwt-auth.guard.test.ts",
+              "packages/api/src/common/interceptors/transform.interceptor.test.ts",
+              "packages/api/src/common/pipes/zod-validation.pipe.test.ts",
+              "packages/api/src/keys/keys.service.test.ts",
+              "packages/api/src/leaderboard/leaderboard.service.test.ts",
+              "packages/api/src/milestones/milestones.service.test.ts",
+              "packages/api/src/profiles/profiles.service.test.ts",
+              "packages/api/src/render/render.service.test.ts",
+              "packages/api/src/sync/sync.service.test.ts",
+              "packages/api/src/users/users.service.test.ts"
+            ]
+          },
+          "api": {
+            "expected": 8,
+            "current": 199,
+            "files": [
+              "packages/api/src/controllers.test.ts",
+              "packages/api/src/auth/auth.controller.test.ts",
+              "packages/api/src/admin/admin.controller.test.ts",
+              "packages/api/src/keys/keys.controller.test.ts",
+              "packages/api/src/leaderboard/leaderboard.controller.test.ts",
+              "packages/api/src/milestones/milestones.controller.test.ts",
+              "packages/api/src/profiles/profiles.controller.test.ts",
+              "packages/api/src/render/render.controller.test.ts",
+              "packages/api/src/sync/sync.controller.test.ts",
+              "packages/api/src/users/users.controller.test.ts"
+            ]
+          },
+          "integration": {
+            "expected": 20,
+            "current": 0,
+            "files": []
+          },
+          "contract": {
+            "expected": 4,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/dashboard",
+      "files": 14,
+      "lines": 2513,
+      "complexity": "medium",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 6,
+            "current": 0,
+            "files": []
+          },
+          "e2e": {
+            "expected": 4,
+            "current": 147,
+            "files": [
+              "packages/dashboard/e2e/app-init.spec.ts",
+              "packages/dashboard/e2e/auth.spec.ts",
+              "packages/dashboard/e2e/delete.spec.ts",
+              "packages/dashboard/e2e/filters.spec.ts",
+              "packages/dashboard/e2e/header.spec.ts",
+              "packages/dashboard/e2e/insights.spec.ts",
+              "packages/dashboard/e2e/keyboard.spec.ts",
+              "packages/dashboard/e2e/profile.spec.ts",
+              "packages/dashboard/e2e/scrubber.spec.ts",
+              "packages/dashboard/e2e/search.spec.ts",
+              "packages/dashboard/e2e/sessions.spec.ts",
+              "packages/dashboard/e2e/stats.spec.ts",
+              "packages/dashboard/e2e/time-navigation.spec.ts"
+            ]
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/web",
+      "files": 31,
+      "lines": 6086,
+      "complexity": "medium",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 6,
+            "current": 0,
+            "files": []
+          },
+          "integration": {
+            "expected": 10,
+            "current": 0,
+            "files": []
+          },
+          "e2e": {
+            "expected": 2,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/ui",
+      "files": 30,
+      "lines": 6106,
+      "complexity": "medium",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 6,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/admin",
+      "files": 27,
+      "lines": 1264,
+      "complexity": "low",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 3,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    },
+    {
+      "path": "packages/worker",
+      "files": 8,
+      "lines": 242,
+      "complexity": "low",
+      "functionality": {
+        "tests": {
+          "unit": {
+            "expected": 3,
+            "current": 81,
+            "files": [
+              "packages/worker/src/card/card.processor.test.ts",
+              "packages/worker/src/card/card.service.test.ts",
+              "packages/worker/src/card/card.test.ts",
+              "packages/worker/src/card/templates/share-card.test.tsx",
+              "packages/worker/src/storage/storage.service.test.ts"
+            ]
+          },
+          "integration": {
+            "expected": 5,
+            "current": 0,
+            "files": []
+          }
+        }
+      },
+      "security": {
+        "issues": 0,
+        "resolved": 0,
+        "findings": []
+      },
+      "stability": {
+        "score": 0,
+        "gaps": []
+      },
+      "conformance": {
+        "score": 0,
+        "violations": []
+      }
+    }
+  ],
+  "journeys": [
+    {
+      "id": "j1",
+      "name": "MCP session lifecycle (start → heartbeat → end → seal)",
+      "steps": [
+        "AI tool calls useai_start with task metadata",
+        "Session state initialized with chain record",
+        "Periodic useai_heartbeat calls update activity timestamp",
+        "AI tool calls useai_end with evaluation and milestones",
+        "Session sealed with Ed25519 signature and moved to sealed directory"
+      ],
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "id": "j2",
+      "name": "User authentication and cloud sync",
+      "steps": [
+        "User requests OTP via POST /api/auth/send-otp",
+        "User verifies OTP via POST /api/auth/verify-otp and receives JWT",
+        "Client syncs local sessions via POST /api/sync with JWT",
+        "Server validates sync payload and persists to database"
+      ],
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "id": "j3",
+      "name": "Dashboard session browsing and filtering",
+      "steps": [
+        "Dashboard loads sessions from daemon local API",
+        "User views stats bar with evaluation metrics",
+        "User filters sessions by date range via time scrubber",
+        "User searches sessions by keyword",
+        "User views session details and milestones"
+      ],
+      "covered": true,
+      "testFile": "packages/dashboard/e2e/sessions.spec.ts"
+    },
+    {
+      "id": "j4",
+      "name": "MCP tool setup and installation",
+      "steps": [
+        "Detect installed AI tools on the system",
+        "User selects tools to configure",
+        "Install MCP config entries (HTTP or stdio)",
+        "Inject UseAI instructions into tool rules files",
+        "Start daemon process for HTTP transport"
+      ],
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "id": "j5",
+      "name": "Public profile and leaderboard viewing",
+      "steps": [
+        "User registers and syncs sessions to cloud",
+        "Other users view public profile via GET /api/profile/:username",
+        "Leaderboard aggregates and ranks users via GET /api/leaderboard",
+        "Share card rendered via POST /api/render/card"
+      ],
+      "covered": false,
+      "testFile": null
+    }
+  ],
+  "contracts": [
+    {
+      "endpoint": "POST /api/auth/send-otp",
+      "method": "POST",
+      "requestSchema": "{ email: string }",
+      "responseSchema": "{ message: string }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "POST /api/auth/verify-otp",
+      "method": "POST",
+      "requestSchema": "{ email: string, code: string }",
+      "responseSchema": "{ access_token: string }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "POST /api/sync",
+      "method": "POST",
+      "requestSchema": "SyncPayload",
+      "responseSchema": "{ synced: boolean }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/sync/sessions",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "SessionSeal[]",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/users/me",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "User",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "PATCH /api/users/me",
+      "method": "PATCH",
+      "requestSchema": "{ username?: string, display_name?: string, avatar_url?: string, bio?: string }",
+      "responseSchema": "User",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "POST /api/keys/register",
+      "method": "POST",
+      "requestSchema": "{ public_key_pem: string }",
+      "responseSchema": "{ registered: boolean }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "POST /api/publish",
+      "method": "POST",
+      "requestSchema": "{ milestones: unknown[] }",
+      "responseSchema": "{ published: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/milestones",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: Milestone[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/profile/:username",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "PublicProfile",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/leaderboard",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ entries: LeaderboardEntry[] }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "POST /api/render/card",
+      "method": "POST",
+      "requestSchema": "{ type?: string, theme?: string }",
+      "responseSchema": "{ job_id: string }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/dashboard",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "AdminDashboard",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/users",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: User[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/sessions",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: Session[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/milestones",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: Milestone[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "PATCH /api/admin/milestones/:id/flag",
+      "method": "PATCH",
+      "requestSchema": "{ reason: string }",
+      "responseSchema": "{ flagged: boolean }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/syncs",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: Sync[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/analytics",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "AnalyticsData",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/alerts",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ data: Alert[], total: number }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/leaderboard",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "{ entries: LeaderboardEntry[] }",
+      "covered": false,
+      "testFile": null
+    },
+    {
+      "endpoint": "GET /api/admin/health",
+      "method": "GET",
+      "requestSchema": null,
+      "responseSchema": "SystemHealth",
+      "covered": false,
+      "testFile": null
+    }
+  ],
+  "score": {
+    "overall": 30,
+    "breakdown": {
+      "functionality": 30,
+      "security": 100,
+      "stability": 0,
+      "conformance": 0,
+      "regression": 100
+    },
+    "gaps": {
+      "total": 102,
+      "critical": 0,
+      "byDimension": {
+        "functionality": {
+          "missing": 102,
+          "priority": "high"
+        },
+        "security": {
+          "issues": 0,
+          "priority": "low"
+        },
+        "stability": {
+          "gaps": 0,
+          "priority": "critical"
+        },
+        "conformance": {
+          "violations": 0,
+          "priority": "critical"
+        }
+      }
+    },
+    "history": [
+      {
+        "date": "2026-03-01T08:27:42.799Z",
+        "score": 30,
+        "scope": "first-time"
+      }
+    ],
+    "scanned": {
+      "functionality": "2026-03-01T08:27:42.799Z"
+    }
+  }
+}

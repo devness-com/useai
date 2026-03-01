@@ -138,15 +138,20 @@ function sealOrphanFile(sessionId: string): void {
     const chainTip = lastRecord.hash;
     // Use the last record's timestamp as the end time when we have multiple records
     // (heartbeats, etc.), so orphan-sealed sessions reflect actual activity.
-    // But if the chain has only session_start (single record), the last record IS
-    // the first record, giving 0 duration. In that case, use Date.now() — the session
-    // was active until now (it's being sealed because it's orphaned, not because it's idle).
+    // For single-record chains (only session_start), use file mtime as the end time —
+    // it reflects when the last write happened, which is a reliable proxy for activity.
+    // Previously this used Date.now(), which caused massive duration inflation (e.g. 24h+)
+    // when orphan sweep ran long after the session actually ended.
     const lastRecordTime = new Date(lastRecord.timestamp).getTime();
     const startTimeMs = new Date(startTime).getTime();
     const chainDuration = Math.round((lastRecordTime - startTimeMs) / 1000);
-    const useWallClock = chainDuration < 1; // single record or sub-second gap
-    const duration = useWallClock ? Math.round((Date.now() - startTimeMs) / 1000) : chainDuration;
-    const now = useWallClock ? new Date().toISOString() : lastRecord.timestamp;
+    const mtimeMs = statSync(filePath).mtimeMs;
+    const duration = chainDuration < 1
+      ? Math.max(0, Math.round((mtimeMs - startTimeMs) / 1000))
+      : chainDuration;
+    const now = chainDuration < 1
+      ? new Date(mtimeMs).toISOString()
+      : lastRecord.timestamp;
 
     // Append session_end
     const endRecord = buildChainRecord('session_end', sessionId, {
