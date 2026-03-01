@@ -1,13 +1,13 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T12:14:55.445Z",
+  "updatedAt": "2026-03-01T12:40:27.699Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
-    "language": "javascript",
+    "language": "typescript",
     "framework": "none",
-    "testFramework": "unknown",
+    "testFramework": "vitest",
     "sourceFiles": 226,
     "sourceLines": 27359
   },
@@ -1020,14 +1020,19 @@
         "date": "2026-03-01T12:14:55.445Z",
         "score": 38.7,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T12:40:27.699Z",
+        "score": 38.7,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T12:14:55.445Z",
-      "regression": "2026-03-01T12:14:55.445Z",
+      "functionality": "2026-03-01T12:40:27.699Z",
+      "regression": "2026-03-01T12:40:27.699Z",
       "stability": "2026-03-01T12:14:55.445Z",
-      "conformance": "2026-03-01T12:14:55.445Z",
-      "security": "2026-03-01T12:14:55.445Z"
+      "conformance": "2026-03-01T12:40:27.699Z",
+      "security": "2026-03-01T12:40:27.699Z"
     }
   }
 }
