@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T12:40:27.699Z",
+  "updatedAt": "2026-03-01T13:15:20.496Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
@@ -130,11 +130,13 @@
         ]
       },
       "conformance": {
-        "score": 84,
+        "score": 80,
         "violations": [
           "Pattern duplication: Tool registry in tools.ts reimplements installStandardHttp, installVscodeHttp, readTomlFile, writeTomlFile, installTomlHttp, readYamlFile, writeYamlFile, installYamlHttp, installCrushHttp — all duplicated in packages/cli/src/services/tools.ts",
           "Large file: daemon.ts at 1442 lines handles HTTP server setup, session management, orphan recovery, stale session recovery, auto-seal logic, dashboard serving, health checks, MCP protocol server, and local API handlers — should be split into focused modules",
-          "Large file: dashboard/local-api.ts at 711 lines implements 16+ HTTP handlers spanning data retrieval, configuration, sync operations, authentication, profile management, and data deletion — could be split into domain-specific handler modules"
+          "Large file: dashboard/local-api.ts at 711 lines implements 19 HTTP handlers spanning data retrieval, configuration, sync operations, authentication, profile management, and data deletion — could be split into domain-specific handler modules",
+          "Large file: register-tools.ts at 963 lines embeds all MCP tool definitions and handlers inline within a single registerTools() function plus session enrichment logic — should be modularized",
+          "Dead code: getInstructionsText() and getInstructions() in tools.ts are exported but only consumed internally within tools.ts — never imported by any other file"
         ]
       }
     },
@@ -204,9 +206,11 @@
         ]
       },
       "conformance": {
-        "score": 91,
+        "score": 87,
         "violations": [
-          "Dead code: exceedsMaxDailyHours(), exceedsMaxContinuous(), isSpikeFromAverage(), hasTimeOverlap() in validation/guards.ts are exported but never imported by any production code across the monorepo — only referenced in guards.test.ts"
+          "Dead code: exceedsMaxDailyHours(), exceedsMaxContinuous(), isSpikeFromAverage(), hasTimeOverlap() in validation/guards.ts are exported but never imported by any production code across the monorepo — only referenced in guards.test.ts",
+          "Dead code: computeLocalAPS() in scoring/aps.ts is exported via barrel but never imported by any production code across the monorepo",
+          "Dead code: verifyChainRecord(), verifySignature(), verifyChain() in crypto/verify.ts are exported via barrel but never imported by any production code — only referenced in verify.test.ts"
         ]
       }
     },
@@ -337,12 +341,11 @@
         }
       },
       "security": {
-        "issues": 3,
+        "issues": 2,
         "resolved": 0,
         "findings": [
           "insecure-config:packages/api/src/main.ts:7",
-          "data-exposure:packages/api/src/auth/auth.service.ts:30",
-          "insecure-config:packages/api/src/auth/auth.controller.ts:8"
+          "data-exposure:packages/api/src/auth/auth.service.ts:30"
         ]
       },
       "stability": {
@@ -586,10 +589,12 @@
         }
       },
       "security": {
-        "issues": 1,
+        "issues": 3,
         "resolved": 0,
         "findings": [
-          "auth-bypass:packages/admin/src/App.tsx:22"
+          "auth-bypass:packages/admin/src/App.tsx:22",
+          "auth-bypass:packages/admin/src/lib/auth.ts:15",
+          "auth-bypass:packages/admin/src/lib/auth.ts:25"
         ]
       },
       "stability": {
@@ -960,24 +965,24 @@
     }
   ],
   "score": {
-    "overall": 38.7,
+    "overall": 38.5,
     "breakdown": {
       "functionality": 30,
       "security": 0,
       "stability": 41.5,
-      "conformance": 80,
+      "conformance": 78.7,
       "regression": 100
     },
     "gaps": {
-      "total": 317,
-      "critical": 11,
+      "total": 322,
+      "critical": 12,
       "byDimension": {
         "functionality": {
           "missing": 102,
           "priority": "high"
         },
         "security": {
-          "issues": 11,
+          "issues": 12,
           "priority": "critical"
         },
         "stability": {
@@ -985,7 +990,7 @@
           "priority": "high"
         },
         "conformance": {
-          "violations": 37,
+          "violations": 41,
           "priority": "low"
         }
       }
@@ -1025,14 +1030,19 @@
         "date": "2026-03-01T12:40:27.699Z",
         "score": 38.7,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T13:15:20.496Z",
+        "score": 38.5,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T12:40:27.699Z",
-      "regression": "2026-03-01T12:40:27.699Z",
+      "functionality": "2026-03-01T13:15:20.496Z",
+      "regression": "2026-03-01T13:15:20.496Z",
       "stability": "2026-03-01T12:14:55.445Z",
-      "conformance": "2026-03-01T12:40:27.699Z",
-      "security": "2026-03-01T12:40:27.699Z"
+      "conformance": "2026-03-01T13:15:20.496Z",
+      "security": "2026-03-01T13:15:20.496Z"
     }
   }
 }
