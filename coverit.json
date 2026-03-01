@@ -1,15 +1,15 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T10:26:33.267Z",
+  "updatedAt": "2026-03-01T11:33:16.317Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
     "language": "javascript",
     "framework": "none",
     "testFramework": "unknown",
-    "sourceFiles": 227,
-    "sourceLines": 27381
+    "sourceFiles": 226,
+    "sourceLines": 27359
   },
   "dimensions": {
     "functionality": {
@@ -74,8 +74,8 @@
   "modules": [
     {
       "path": "packages/mcp",
-      "files": 11,
-      "lines": 4670,
+      "files": 10,
+      "lines": 4648,
       "complexity": "high",
       "functionality": {
         "tests": {
@@ -102,9 +102,14 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 4,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "insecure-config:packages/mcp/src/dashboard/local-api.ts:24",
+          "data-exposure:packages/mcp/src/dashboard/local-api.ts:462",
+          "injection:packages/mcp/src/register-tools.ts:906",
+          "injection:packages/mcp/src/dashboard/local-api.ts:587"
+        ]
       },
       "stability": {
         "score": 38,
@@ -132,10 +137,10 @@
         ]
       },
       "conformance": {
-        "score": 87,
+        "score": 85,
         "violations": [
-          "Pattern duplication: Tool registry in tools.ts overlaps significantly with packages/cli/src/services/tools.ts — two separate implementations of the same AI-tool registry concept",
-          "Large file: daemon.ts at 1442 lines handles HTTP server, orphan recovery, stale session recovery, dashboard serving, and health checks — could be split into focused modules"
+          "Pattern duplication: Tool registry in tools.ts reimplements installStandardHttp, installVscodeHttp, readTomlFile, writeTomlFile, installTomlHttp, readYamlFile, writeYamlFile, installYamlHttp, installCrushHttp — all duplicated in packages/cli/src/services/tools.ts",
+          "Large file: daemon.ts at 1442 lines handles HTTP server setup, session management, orphan recovery, stale session recovery, auto-seal logic, dashboard serving, health checks, MCP protocol server, and local API handlers — should be split into focused modules"
         ]
       }
     },
@@ -172,9 +177,11 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 1,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "injection:packages/shared/src/daemon/resolve-npx.ts:51"
+        ]
       },
       "stability": {
         "score": 45,
@@ -204,7 +211,7 @@
       "conformance": {
         "score": 91,
         "violations": [
-          "Dead code: exceedsMaxDailyHours(), exceedsMaxContinuous(), isSpikeFromAverage(), hasTimeOverlap() in validation/guards.ts are exported but never imported by any production code across the monorepo"
+          "Dead code: exceedsMaxDailyHours(), exceedsMaxContinuous(), isSpikeFromAverage(), hasTimeOverlap() in validation/guards.ts are exported but never imported by any production code across the monorepo — only referenced in guards.test.ts"
         ]
       }
     },
@@ -241,9 +248,11 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 1,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "data-exposure:packages/cli/src/commands/export.ts:14"
+        ]
       },
       "stability": {
         "score": 42,
@@ -271,10 +280,11 @@
         ]
       },
       "conformance": {
-        "score": 84,
+        "score": 81,
         "violations": [
-          "Pattern duplication: services/tools.ts (763 lines) reimplements the full AI-tool registry and config format handlers that also exist in @devness/mcp-setup and packages/mcp/src/tools.ts",
-          "Large file: services/tools.ts at 763 lines combines tool definitions, config format handlers (JSON/TOML/YAML), instruction injection, and tool resolution — could be split"
+          "Pattern duplication: services/tools.ts (762 lines) reimplements the full AI-tool registry, config format handlers (JSON/TOML/YAML read/write), and HTTP install helpers that also exist in packages/mcp/src/tools.ts via @devness/mcp-setup",
+          "Large file: services/tools.ts at 762 lines combines type definitions, constants, file I/O utilities, 6 config format handler sets, HTTP install helpers, instruction injection logic, tool creation/resolution, 24+ hardcoded tool definitions, and re-injection logic",
+          "Naming inconsistency: services/tools.ts does not follow the *.service.ts naming convention used by services/config.service.ts and services/stats.service.ts in the same directory"
         ]
       }
     },
@@ -335,9 +345,12 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 2,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "insecure-config:packages/api/src/main.ts:7",
+          "data-exposure:packages/api/src/auth/auth.service.ts:30"
+        ]
       },
       "stability": {
         "score": 34,
@@ -370,11 +383,11 @@
         ]
       },
       "conformance": {
-        "score": 83,
+        "score": 82,
         "violations": [
-          "Dead code: ZodValidationPipe in common/pipes/zod-validation.pipe.ts is defined and has tests but is never applied to any controller route or registered globally",
-          "Inconsistent validation: Controllers use manual if-checks (e.g., if (!body.email) throw BadRequestException) instead of the project-defined ZodValidationPipe pattern",
-          "Incomplete implementation: ProfilesService.getPublicProfile() returns hardcoded empty arrays for top_tools and top_languages"
+          "Dead code: ZodValidationPipe in common/pipes/zod-validation.pipe.ts is defined with tests but is never applied to any controller route via @UsePipes() or registered globally in AppModule",
+          "Inconsistent validation: auth.controller.ts uses manual if-checks (if (!body.email) throw BadRequestException) in sendOtp and verifyOtp routes instead of the project-defined ZodValidationPipe pattern",
+          "Incomplete implementation: ProfilesService.getPublicProfile() returns hardcoded empty arrays for top_tools and top_languages despite dailySyncs table containing clients and languages data that could be aggregated"
         ]
       }
     },
@@ -446,10 +459,11 @@
         ]
       },
       "conformance": {
-        "score": 78,
+        "score": 74,
         "violations": [
-          "Type duplication: lib/api.ts locally defines SessionSeal, Milestone, SessionEvaluation, and LocalConfig interfaces instead of importing from @useai/shared — inconsistent with packages/web which correctly imports shared types",
-          "No custom hooks extracted: auth flow, API fetching, and config update patterns are repeated inline instead of being abstracted into reusable hooks like the web package does"
+          "Type duplication: lib/api.ts locally defines SessionSeal, Milestone, SessionEvaluation, and LocalConfig interfaces instead of importing from @useai/shared — the local LocalConfig has a flat structure incompatible with the nested CaptureConfig/SyncConfig structure in @useai/shared",
+          "Missing dependency: @useai/shared is not declared in package.json dependencies, preventing import of shared types and forcing local type duplication",
+          "No custom hooks extracted: auth flow (send OTP, verify OTP, sync, logout), API fetching with loading/error state, and config update patterns are repeated inline across ProfileDropdown.tsx and SettingsPage.tsx instead of being abstracted into reusable hooks"
         ]
       }
     },
@@ -510,11 +524,11 @@
         ]
       },
       "conformance": {
-        "score": 82,
+        "score": 80,
         "violations": [
-          "Dead code: check-err.js references port 3457 but dev server runs on port 3456 — stale development artifact",
-          "Large file: Landing page src/app/(public)/page.tsx at ~54KB should be decomposed into smaller components",
-          "Pattern inconsistency: Policy pages (about, privacy, security, terms) share nearly identical structure but don't use a shared template/layout component"
+          "Dead code: check-err.js references port 3457 but dev server runs on port 3456 (per package.json 'next dev --port 3456') — stale development artifact not referenced anywhere",
+          "Large file: Landing page src/app/(public)/page.tsx at 930 lines (~49.5KB) defines 6 inline components (SkillRadar, TerminalMockup, CopyCommand, ToolChip, ToolMarquee, HeroDashboardPreview) that should be extracted into separate files",
+          "Pattern inconsistency: Policy pages (about/page.tsx 367 lines, privacy/page.tsx 473 lines, security/page.tsx 285 lines, terms/page.tsx 321 lines) share nearly identical page header, section divider, and hud-border card structure but don't use a shared template/layout component — ~1,446 lines of duplicated structure"
         ]
       }
     },
@@ -560,10 +574,11 @@
         ]
       },
       "conformance": {
-        "score": 87,
+        "score": 84,
         "violations": [
-          "Large file: TimeScrubber.tsx at 534 lines and TimeDetailPanel.tsx at 509 lines could be decomposed into smaller components",
-          "Unused dependency: clsx is declared in package.json but rarely used in component source files"
+          "Large file: TimeScrubber.tsx at 533 lines and TimeDetailPanel.tsx at 508 lines contain multiple internal helper components (SessionTooltip, MilestoneTooltip in TimeScrubber; 7 helpers in TimeDetailPanel) that could be extracted into separate files",
+          "Unused dependency: clsx is declared in package.json but has zero imports across all source files in packages/ui/src",
+          "Code duplication: formatDuration() is independently defined in TimeScrubber.tsx, TimeDetailPanel.tsx, SessionList.tsx, and SessionCard.tsx with slight variations — should be extracted to a shared utility"
         ]
       }
     },
@@ -582,9 +597,11 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 1,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "auth-bypass:packages/admin/src/App.tsx:22"
+        ]
       },
       "stability": {
         "score": 42,
@@ -613,15 +630,15 @@
       "conformance": {
         "score": 55,
         "violations": [
-          "Dead code: Zustand store defines sidebarOpen, filters state and toggleSidebar, setFilter, clearFilters actions that are never called anywhere in the application",
-          "Dead code: Search input in topbar.tsx has no onChange handler or search functionality — purely decorative",
+          "Dead code: Zustand store in admin-store.ts defines sidebarOpen, filters state and toggleSidebar, setFilter, clearFilters actions that are never called anywhere in the application",
+          "Dead code: Search input in topbar.tsx has no onChange handler or state binding — purely decorative",
           "Dead code: Recompute Rankings button in leaderboard/index.tsx has no onClick handler",
           "Dead code: Three action buttons (Approve, Edit, Unpublish) in milestones/flagged.tsx have no onClick handlers",
           "Unused dependency: @useai/shared is declared in package.json but never imported in any source file — misses shared VERSION, types, and constants",
-          "Placeholder pages: users/[id].tsx, analytics/growth.tsx, analytics/tools.tsx are stubs with no implementation",
-          "Pattern inconsistency: Uses unicode symbols for navigation icons (◉, ◎, ▣) instead of lucide-react icons used by dashboard and web packages",
-          "Pattern inconsistency: Hardcodes version string 'v0.2.0' in sidebar instead of importing VERSION from @useai/shared like other packages",
-          "Incomplete Recent Activity section in dashboard/index.tsx renders hardcoded 'No recent activity' with no data integration"
+          "Placeholder pages: users/[id].tsx, analytics/growth.tsx, analytics/tools.tsx are stubs with no implementation — only render placeholder messages",
+          "Pattern inconsistency: Uses unicode symbols (◉, ◎, ▣, ◆, ⟳, ▲, ◧, ▽, ⚙) for navigation icons instead of lucide-react icons used by dashboard and web packages",
+          "Pattern inconsistency: Hardcodes version string 'v0.2.0' in sidebar.tsx line 46 instead of importing VERSION from @useai/shared — shared VERSION is currently '0.7.0'",
+          "Incomplete implementation: Recent Activity section in dashboard/index.tsx renders hardcoded 'No recent activity' with no data integration"
         ]
       }
     },
@@ -651,9 +668,11 @@
         }
       },
       "security": {
-        "issues": 0,
+        "issues": 1,
         "resolved": 0,
-        "findings": []
+        "findings": [
+          "injection:packages/worker/src/storage/storage.service.ts:17"
+        ]
       },
       "stability": {
         "score": 20,
@@ -680,15 +699,16 @@
         ]
       },
       "conformance": {
-        "score": 62,
+        "score": 57,
         "violations": [
-          "Configuration inconsistency: Default Redis port is 6479 in worker.module.ts vs 6379 in packages/api/src/queue/queue.module.ts — likely a typo that causes connection failures when REDIS_PORT env var is not set",
-          "Mixed test frameworks: Uses both Jest (card.test.ts, storage.service.test.ts) and Vitest (card.processor.test.ts, share-card.test.tsx) in the same package — all other packages use one framework consistently",
-          "Dead code: StorageService is defined and exported in storage.module.ts but never injected into CardProcessor which writes to hardcoded /tmp path instead",
-          "Dead code: contentType parameter in StorageService.upload() is declared but never used",
-          "Pattern inconsistency: main.ts uses console.log for startup logging instead of NestJS Logger used in packages/api",
-          "Pattern inconsistency: CardProcessor hardcodes string 'render-queue' instead of importing RENDER_QUEUE constant defined in packages/api/src/queue/queue.constants.ts",
-          "Incomplete implementation: Satori fonts array is empty (fonts:[]) so card text rendering will use fallback; S3/R2 upload is a TODO stub"
+          "Configuration inconsistency: Default Redis port is 6479 in worker.module.ts line 16 vs standard 6379 in packages/api/src/queue/queue.module.ts — likely a typo causing connection failures when REDIS_PORT env var is not set",
+          "Mixed test frameworks: Uses both Jest (card.test.ts, storage.service.test.ts, card.service.test.ts) and Vitest (card.processor.test.ts, share-card.test.tsx) in the same package — other packages use one framework consistently",
+          "Dead code: StorageService is defined and exported in storage.module.ts but never injected into CardProcessor which writes to hardcoded /tmp/card-{userId}.png path instead",
+          "Dead code: contentType parameter in StorageService.upload() is declared but never referenced in the method body",
+          "Pattern inconsistency: main.ts uses console.log for startup logging instead of NestJS Logger used by services in this package and in packages/api",
+          "Pattern inconsistency: worker.module.ts and card.processor.ts hardcode string 'render-queue' instead of importing RENDER_QUEUE constant defined in packages/api/src/queue/queue.constants.ts",
+          "Incomplete implementation: Satori fonts array is empty (fonts:[]) in card.service.ts so card text rendering uses fallback; S3/R2 upload in storage.service.ts is a TODO stub that logs a warning and returns a mock URL",
+          "Missing test infrastructure: Neither jest nor vitest is declared in devDependencies despite 5 test files using both frameworks, and no test script is defined in package.json"
         ]
       }
     }
@@ -950,32 +970,32 @@
     }
   ],
   "score": {
-    "overall": 52,
+    "overall": 38.7,
     "breakdown": {
       "functionality": 30,
-      "security": 100,
+      "security": 0,
       "stability": 40.9,
-      "conformance": 82.2,
+      "conformance": 80.2,
       "regression": 100
     },
     "gaps": {
-      "total": 313,
-      "critical": 0,
+      "total": 327,
+      "critical": 10,
       "byDimension": {
         "functionality": {
           "missing": 102,
           "priority": "high"
         },
         "security": {
-          "issues": 0,
-          "priority": "low"
+          "issues": 10,
+          "priority": "critical"
         },
         "stability": {
           "gaps": 180,
           "priority": "high"
         },
         "conformance": {
-          "violations": 31,
+          "violations": 35,
           "priority": "low"
         }
       }
@@ -1000,13 +1020,19 @@
         "date": "2026-03-01T10:26:33.267Z",
         "score": 52,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T11:33:16.317Z",
+        "score": 38.7,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T10:26:33.267Z",
-      "regression": "2026-03-01T10:26:33.267Z",
+      "functionality": "2026-03-01T11:33:16.317Z",
+      "regression": "2026-03-01T11:33:16.317Z",
       "stability": "2026-03-01T10:26:33.267Z",
-      "conformance": "2026-03-01T10:26:33.267Z"
+      "conformance": "2026-03-01T11:33:16.317Z",
+      "security": "2026-03-01T11:33:16.317Z"
     }
   }
 }
