@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T14:27:16.823Z",
+  "updatedAt": "2026-03-01T15:02:20.301Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
@@ -81,7 +81,7 @@
         "tests": {
           "unit": {
             "expected": 12,
-            "current": 514,
+            "current": 455,
             "files": [
               "packages/mcp/src/session.test.ts",
               "packages/mcp/src/session-state.test.ts",
@@ -89,15 +89,15 @@
               "packages/mcp/src/tools-instructions.test.ts",
               "packages/mcp/src/tools-config-formats.test.ts",
               "packages/mcp/src/daemon.test.ts",
-              "packages/mcp/src/index.test.ts",
               "packages/mcp/src/register-tools.test.ts",
               "packages/mcp/src/setup.test.ts"
             ]
           },
           "integration": {
             "expected": 20,
-            "current": 137,
+            "current": 196,
             "files": [
+              "packages/mcp/src/index.test.ts",
               "packages/mcp/src/session-lifecycle.integration.test.ts",
               "packages/mcp/src/session-state-advanced.integration.test.ts",
               "packages/mcp/src/session-chain-integrity.integration.test.ts",
@@ -124,15 +124,15 @@
         "gaps": [
           "daemon.ts parseBody()/readBody() has no timeout or size limit on request body reading — slowloris or unbounded payload can hang/OOM the process",
           "daemon.ts orphan sweep setInterval (line 1142) is never cleared on daemon shutdown — interval keeps running until process exit (mitigated by .unref())",
-          "daemon.ts URL construction (line 1150) with new URL(req.url!, `http://${req.headers.host}`) can throw if req.headers.host is malformed — no try/catch",
+          "daemon.ts URL construction with new URL(req.url!, `http://${req.headers.host}`) can throw TypeError if req.headers.host is malformed — no try/catch around it",
           "daemon.ts and local-api.ts all fetch calls to useai.dev API (sync, publish, auth, username check, cloud pull) have no AbortSignal.timeout — requests hang indefinitely if API is slow or unreachable",
           "daemon.ts sealOrphanFile() and recoverHeartbeat() use non-null assertions on lines[0]! and lines[lines.length-1]! for JSON.parse — though wrapped in outer try/catch, corrupted lines produce unstructured error",
           "register-tools.ts writeJson() calls for milestones/sessions have no retry or fallback — if writeJson fails (disk full, permissions), data is silently lost",
-          "session-state.ts appendFileSync (line 319) has no error handling — disk-full or permissions errors throw unhandled, but chainTipHash is not updated on failure so chain stays consistent",
+          "session-state.ts appendFileSync (line 319) has no error handling — disk-full or permissions errors throw unhandled, crashing the MCP session",
           "mcp-map.ts writeMcpMapping() delegates to writeJson which has no try/catch — if write fails, MCP-to-UseAI session mapping is lost and daemon recovery breaks",
           "dashboard/local-api.ts readBody() has no size limit on request body — unbounded data causes OOM",
           "dashboard/local-api.ts handleCloudPull pagination while-loop has no page limit or total timeout — corrupted pagination headers or slow API causes infinite loop",
-          "daemon.ts decodeURIComponent(usernameMatch[1]!) on line 1175 can throw on malformed percent-encoded URLs — no try/catch"
+          "daemon.ts decodeURIComponent(usernameMatch[1]!) on URL path segments can throw URIError on malformed percent-encoded URLs — no try/catch on 4 route handlers"
         ]
       },
       "conformance": {
@@ -173,8 +173,20 @@
           },
           "integration": {
             "expected": 10,
-            "current": 0,
-            "files": []
+            "current": 121,
+            "files": [
+              "packages/shared/__tests__/scoring-aps-integration.test.ts",
+              "packages/shared/__tests__/scoring-components-integration.test.ts",
+              "packages/shared/__tests__/config-migrate-integration.test.ts",
+              "packages/shared/__tests__/sync-sanitize-integration.test.ts",
+              "packages/shared/__tests__/tools-constants-integration.test.ts",
+              "packages/shared/__tests__/validation-schemas-integration.test.ts",
+              "packages/shared/__tests__/framework-space-raw-integration.test.ts",
+              "packages/shared/__tests__/constants-paths-defaults-integration.test.ts",
+              "packages/shared/__tests__/full-pipeline-integration.test.ts",
+              "packages/shared/__tests__/daemon-check-update-integration.test.ts",
+              "packages/shared/__tests__/framework-registry-integration.test.ts"
+            ]
           }
         }
       },
@@ -188,7 +200,7 @@
         ]
       },
       "stability": {
-        "score": 46,
+        "score": 48,
         "gaps": [
           "daemon/ensure.ts findPidsByPort() interpolates port directly into execSync shell command — though port is a numeric constant, the pattern is unsafe if port source changes",
           "daemon/ensure.ts spawn() in ensureDaemon() (line 192) never registers an 'error' event handler — if npx binary doesn't exist, the spawn error event is unhandled",
@@ -197,17 +209,16 @@
           "daemon/autostart.ts installLinux() systemctl execSync at lines 146-147 have no try/catch — if systemctl daemon-reload or enable fails, error propagates unhandled and installation appears to succeed",
           "daemon/autostart.ts installMacos() line 103 execSync for launchctl bootstrap has no try/catch — bootstrap failure crashes the entire setup flow",
           "daemon/check-update.ts fetchLatestVersion() does not validate npm registry JSON response structure — data.version cast with 'as' accepts any string without semver validation",
-          "crypto/keystore.ts decryptKeystore() decipher.final() can throw on GCM auth tag validation failure — no custom error message or recovery path",
           "crypto/derive.ts deriveEncryptionKey() calls os.userInfo() which can throw on some systems (e.g. containerized environments) — no try/catch or fallback",
-          "crypto/verify.ts verifySignature() calls createPublicKey() without validating that PEM is an Ed25519 key — wrong key type silently accepted (error caught but reason not logged)",
+          "crypto/verify.ts verifySignature() catch block returns false for ALL errors without logging — cannot distinguish wrong key type from corrupted data for debugging",
           "utils/fs.ts readJson() catch block returns fallback without distinguishing between 'file not found' and 'corrupted JSON' — callers cannot tell if data file is damaged",
           "utils/fs.ts writeJson() has no try/catch — writeFileSync or renameSync failure propagates unhandled and can leave temp file on disk",
-          "hooks/claude-code.ts writeSettings() (line 71) writeFileSync overwrites without backup — partial write failure or crash during write loses entire Claude Code settings",
+          "hooks/claude-code.ts writeSettings() (line 71) writeFileSync overwrites without backup or atomic write — partial write failure or crash during write loses entire Claude Code settings",
           "hooks/claude-code.ts installClaudeCodeHooks() catches chmod errors silently (lines 87-88) — hook scripts may not be executable but no verification or warning",
           "validation/schemas.ts date regex /^\\d{4}-\\d{2}-\\d{2}$/ matches syntactically invalid dates like '9999-99-99' — no semantic date validation",
           "validation/guards.ts hasTimeOverlap() creates Date objects from strings without validating ISO format — Invalid Date comparison silently returns false",
           "utils/config-migrate.ts migrateConfig() uses 'as unknown as UseaiConfig' double-cast — corrupted config passes migration without runtime field validation",
-          "constants/paths.ts USEAI_HOME reads from env var without validating the path exists or is writable — empty string silently accepted as data directory"
+          "constants/paths.ts USEAI_HOME reads from env var without validating the path exists, is absolute, or is writable — empty string or relative path silently accepted as data directory"
         ]
       },
       "conformance": {
@@ -228,7 +239,7 @@
         "tests": {
           "unit": {
             "expected": 6,
-            "current": 347,
+            "current": 341,
             "files": [
               "packages/cli/src/commands/config.test.ts",
               "packages/cli/src/commands/export.test.ts",
@@ -334,25 +345,47 @@
           },
           "integration": {
             "expected": 20,
-            "current": 0,
-            "files": []
+            "current": 110,
+            "files": [
+              "packages/api/__tests__/admin-integration.test.ts",
+              "packages/api/__tests__/admin-services.integration.test.ts",
+              "packages/api/__tests__/auth-integration.test.ts",
+              "packages/api/__tests__/email-integration.test.ts",
+              "packages/api/__tests__/guards-integration.test.ts",
+              "packages/api/__tests__/keys-integration.test.ts",
+              "packages/api/__tests__/leaderboard-cron.integration.test.ts",
+              "packages/api/__tests__/leaderboard-integration.test.ts",
+              "packages/api/__tests__/milestones-integration.test.ts",
+              "packages/api/__tests__/module-di-wiring.integration.test.ts",
+              "packages/api/__tests__/profiles-deep.integration.test.ts",
+              "packages/api/__tests__/profiles-integration.test.ts",
+              "packages/api/__tests__/render-integration.test.ts",
+              "packages/api/__tests__/streak-logic.integration.test.ts",
+              "packages/api/__tests__/sync-integration.test.ts",
+              "packages/api/__tests__/transform-interceptor-integration.test.ts",
+              "packages/api/__tests__/users-integration.test.ts"
+            ]
           },
           "contract": {
             "expected": 4,
-            "current": 0,
-            "files": []
+            "current": 13,
+            "files": [
+              "packages/api/__tests__/api-contracts.test.ts",
+              "packages/api/__tests__/protected-api-contracts.test.ts"
+            ]
           }
         }
       },
       "security": {
-        "issues": 5,
+        "issues": 6,
         "resolved": 0,
         "findings": [
           "insecure-config:packages/api/src/main.ts:7",
           "data-exposure:packages/api/src/auth/auth.service.ts:30",
           "insecure-config:packages/api/src/auth/auth.service.ts:19",
           "insecure-config:packages/api/src/auth/auth.controller.ts:8",
-          "auth-bypass:packages/api/src/admin/admin.guard.ts:21"
+          "auth-bypass:packages/api/src/admin/admin.guard.ts:21",
+          "insecure-config:packages/api/src/auth/auth.module.ts:13"
         ]
       },
       "stability": {
@@ -375,7 +408,7 @@
           "admin/admin.service.ts all list methods (getUsers, getSessions, getMilestones, getSyncs, getAlerts) catch all errors and return empty arrays — no distinction between 'no data' and 'query failed'",
           "keys/keys.service.ts registerPublicKey() deletes old keys before inserting new one (lines 17-22) — if insert fails, old key is permanently lost with no transaction rollback",
           "keys/keys.service.ts validates key with string.includes('PUBLIC KEY') only — accepts malformed PEM that will fail on actual crypto operations",
-          "sync/sync.service.ts processSync() check-then-write pattern has race condition — concurrent requests can cause duplicate inserts or lost updates",
+          "sync/sync.service.ts processSync() check-then-write pattern has race condition — concurrent requests can cause duplicate inserts or unique constraint violations",
           "sync/sync.service.ts updateStreak() reads existing streak, calculates, then writes — concurrent requests can overwrite each other's streak data",
           "leaderboard/leaderboard.service.ts recomputeLeaderboard() deletes all records then inserts without transaction — partial insert failure leaves empty leaderboard",
           "leaderboard/leaderboard.service.ts no distributed lock on @Cron execution — multiple server instances run recompute simultaneously causing data corruption",
@@ -388,7 +421,7 @@
       "conformance": {
         "score": 82,
         "violations": [
-          "Dead code: ZodValidationPipe in common/pipes/zod-validation.pipe.ts is defined with tests (321 lines) but is never applied to any controller route via @UsePipes() or registered globally in AppModule",
+          "Dead code: ZodValidationPipe in common/pipes/zod-validation.pipe.ts is defined with tests but is never applied to any controller route via @UsePipes() or registered globally in AppModule",
           "Inconsistent validation: auth.controller.ts uses manual if-checks (if (!body.email) throw BadRequestException) in sendOtp and verifyOtp routes instead of the project-defined ZodValidationPipe pattern",
           "Incomplete implementation: ProfilesService.getPublicProfile() returns hardcoded empty arrays for top_tools and top_languages despite dailySyncs table containing clients and languages jsonb data that could be aggregated"
         ]
@@ -408,7 +441,7 @@
           },
           "e2e": {
             "expected": 4,
-            "current": 234,
+            "current": 224,
             "files": [
               "packages/dashboard/e2e/app-init.spec.ts",
               "packages/dashboard/e2e/auth.spec.ts",
@@ -515,7 +548,7 @@
           "app/dashboard/layout.tsx 100ms setTimeout for auth check is a race condition — hydrate() may not have updated token yet",
           "app/dashboard/settings/page.tsx setTimeout for error clear not cancelled on unmount — potential setState on unmounted component",
           "app/(public)/[username]/page.tsx server-side fetch has no timeout — slow API blocks page generation indefinitely",
-          "app/(public)/leaderboard/page.tsx no AbortController for fetch — multiple concurrent fetchLeaderboard calls on rapid remount",
+          "app/(public)/leaderboard/page.tsx no AbortController for fetch — multiple concurrent fetchLeaderboard calls on rapid remount cause stale data overwrites",
           "components/ProfileDropdown.tsx username check debounce timer not cleared on unmount — API response setState on unmounted component",
           "components/ProfileDropdown.tsx rapid input creates out-of-order API responses — no request cancellation, stale available/taken status displayed",
           "components/TopNav.tsx GitHub API fetch .then(r => r.ok ? r.json() : null) — if r.json() rejects, produces unhandled promise rejection",
@@ -528,7 +561,7 @@
         "violations": [
           "Dead code: check-err.js references port 3457 but dev server runs on port 3456 (per package.json 'next dev --port 3456') — stale development artifact not referenced anywhere in scripts or source",
           "Large file: Landing page src/app/(public)/page.tsx at 930 lines defines 6 inline components (SkillRadar, TerminalMockup, CopyCommand, ToolChip, ToolMarquee, HeroDashboardPreview), data constants (AI_TOOLS, FEATURES, STEPS, RADAR_DIMENSIONS, DASHBOARD_SECTIONS), and animation variants that should be extracted into separate files",
-          "Pattern inconsistency: Policy pages (about/page.tsx 367 lines, privacy/page.tsx 473 lines, security/page.tsx 285 lines, terms/page.tsx 321 lines) share nearly identical page header, section divider, and hud-border card structure but don't use a shared template/layout component — ~1,446 lines of duplicated structure across 74 hud-border instances"
+          "Pattern inconsistency: Policy pages (about/page.tsx 367 lines, privacy/page.tsx 473 lines, security/page.tsx 285 lines, terms/page.tsx 321 lines) share nearly identical page header, section divider, and hud-border card structure but don't use a shared template/layout component — ~1,446 lines of duplicated structure across 43 hud-border instances"
         ]
       }
     },
@@ -552,15 +585,12 @@
         "findings": []
       },
       "stability": {
-        "score": 62,
+        "score": 65,
         "gaps": [
           "stats.ts parseTimestamp() returns NaN for malformed ISO strings — cached NaN values propagate silently through all dependent calculations (filtering, sorting, metrics)",
           "stats.ts filterSessionsByWindow() creates Date objects from strings without validating ISO format — Invalid Date comparisons silently return false",
           "stats.ts s.evaluation! non-null assertion used after filter but runtime doesn't enforce — changed evaluation structure could crash silently",
-          "stats.ts Record<string, number> accumulation for byClient/byLanguage/byTaskType doesn't guard against prototype pollution — keys like '__proto__' from untrusted data could pollute prototype",
           "components/StatsBar.tsx animateCounter() requestAnimationFrame callback doesn't check if component still mounted — throws if element removed during animation",
-          "components/SessionList.tsx IntersectionObserver created but sentinelRef.current not null-checked before observer.observe() — null ref causes runtime error",
-          "components/SearchOverlay.tsx escape key handler captures onClose in closure — if onClose prop changes between renders, stale callback is invoked",
           "components/SearchOverlay.tsx and TimeDetailPanel.tsx both set document.body.style.overflow='hidden' independently — closing one modal re-enables scroll when other modal still open",
           "components/TimeDetailPanel.tsx computeActivePeriods() silently skips sessions where end <= start with no logging — data quality issues hidden from user",
           "components/DailyRecap.tsx getSessionsInRange() creates Date from s.started_at without validation — invalid ISO string produces NaN, silently corrupting daily metrics",
@@ -634,7 +664,7 @@
           "Unused dependency: @useai/shared is declared in package.json but never imported in any source file — misses shared VERSION, types, and constants",
           "Placeholder pages: users/[id].tsx, analytics/growth.tsx, analytics/tools.tsx are stubs with no implementation — only render placeholder messages noting missing API endpoints",
           "Pattern inconsistency: Uses unicode symbols (◉, ◎, ▣, ◆, ⟳, ▲, ◧, ▽, ⚙) for navigation icons in sidebar.tsx instead of lucide-react icons — lucide-react is not even imported anywhere in the package",
-          "Pattern inconsistency: Hardcodes version string 'v0.2.0' in sidebar.tsx line 46 instead of importing VERSION from @useai/shared — shared VERSION is currently '0.7.0'",
+          "Pattern inconsistency: Hardcodes version string 'v0.2.0' in sidebar.tsx instead of importing VERSION from @useai/shared — shared VERSION is currently '0.7.0'",
           "Incomplete implementation: Recent Activity section in dashboard/index.tsx renders hardcoded 'No recent activity' with no data integration"
         ]
       }
@@ -648,7 +678,7 @@
         "tests": {
           "unit": {
             "expected": 3,
-            "current": 81,
+            "current": 89,
             "files": [
               "packages/worker/src/card/card.processor.test.ts",
               "packages/worker/src/card/card.service.test.ts",
@@ -698,7 +728,7 @@
       "conformance": {
         "score": 56,
         "violations": [
-          "Configuration inconsistency: Default Redis port is 6479 in worker.module.ts line 16 vs standard 6379 in packages/api/src/queue/queue.module.ts — likely a typo causing connection failures when REDIS_PORT env var is not set",
+          "Configuration inconsistency: Default Redis port is 6479 in worker.module.ts vs standard 6379 in packages/api/src/queue/queue.module.ts — likely a typo causing connection failures when REDIS_PORT env var is not set",
           "Mixed test frameworks: Uses both Jest (card.test.ts, storage.service.test.ts, card.service.test.ts) and Vitest (card.processor.test.ts) in the same package — other packages use one framework consistently",
           "Dead code: StorageService is defined and exported in storage.module.ts but never injected into CardProcessor which only injects CardService",
           "Dead code: contentType parameter in StorageService.upload() is declared but never referenced in the method body",
@@ -795,24 +825,24 @@
       "method": "POST",
       "requestSchema": "{ email: string }",
       "responseSchema": "{ message: string }",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "POST /api/auth/verify-otp",
       "method": "POST",
       "requestSchema": "{ email: string, code: string }",
-      "responseSchema": "{ access_token: string }",
-      "covered": false,
-      "testFile": null
+      "responseSchema": "{ token: string, user: User }",
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "POST /api/sync",
       "method": "POST",
       "requestSchema": "SyncPayload",
-      "responseSchema": "{ synced: boolean }",
-      "covered": false,
-      "testFile": null
+      "responseSchema": "{ synced: boolean, date: string, sessions_inserted: number, verification_tier: string }",
+      "covered": true,
+      "testFile": "packages/api/__tests__/protected-api-contracts.test.ts"
     },
     {
       "endpoint": "GET /api/sync/sessions",
@@ -827,32 +857,32 @@
       "method": "GET",
       "requestSchema": null,
       "responseSchema": "User",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "PATCH /api/users/me",
       "method": "PATCH",
       "requestSchema": "{ username?: string, display_name?: string, avatar_url?: string, bio?: string }",
       "responseSchema": "User",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "POST /api/keys/register",
       "method": "POST",
       "requestSchema": "{ public_key_pem: string }",
-      "responseSchema": "{ registered: boolean }",
-      "covered": false,
-      "testFile": null
+      "responseSchema": "{ id: string, registered_at: string }",
+      "covered": true,
+      "testFile": "packages/api/__tests__/protected-api-contracts.test.ts"
     },
     {
       "endpoint": "POST /api/publish",
       "method": "POST",
       "requestSchema": "{ milestones: unknown[] }",
       "responseSchema": "{ published: number }",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/protected-api-contracts.test.ts"
     },
     {
       "endpoint": "GET /api/milestones",
@@ -867,24 +897,24 @@
       "method": "GET",
       "requestSchema": null,
       "responseSchema": "PublicProfile",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "GET /api/leaderboard",
       "method": "GET",
       "requestSchema": null,
       "responseSchema": "{ entries: LeaderboardEntry[] }",
-      "covered": false,
-      "testFile": null
+      "covered": true,
+      "testFile": "packages/api/__tests__/api-contracts.test.ts"
     },
     {
       "endpoint": "POST /api/render/card",
       "method": "POST",
       "requestSchema": "{ type?: string, theme?: string }",
-      "responseSchema": "{ job_id: string }",
-      "covered": false,
-      "testFile": null
+      "responseSchema": "{ job_id: string, status: string }",
+      "covered": true,
+      "testFile": "packages/api/__tests__/protected-api-contracts.test.ts"
     },
     {
       "endpoint": "GET /api/admin/dashboard",
@@ -968,28 +998,28 @@
     }
   ],
   "score": {
-    "overall": 42.4,
+    "overall": 49.1,
     "breakdown": {
-      "functionality": 40.5,
+      "functionality": 59.6,
       "security": 0,
-      "stability": 42.5,
+      "stability": 43.2,
       "conformance": 78.7,
       "regression": 100
     },
     "gaps": {
-      "total": 297,
-      "critical": 17,
+      "total": 260,
+      "critical": 18,
       "byDimension": {
         "functionality": {
-          "missing": 82,
-          "priority": "high"
+          "missing": 48,
+          "priority": "medium"
         },
         "security": {
-          "issues": 17,
+          "issues": 18,
           "priority": "critical"
         },
         "stability": {
-          "gaps": 157,
+          "gaps": 153,
           "priority": "high"
         },
         "conformance": {
@@ -1043,14 +1073,19 @@
         "date": "2026-03-01T14:27:16.823Z",
         "score": 42.4,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T15:02:20.301Z",
+        "score": 49.1,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T14:27:16.823Z",
-      "regression": "2026-03-01T14:27:16.823Z",
-      "stability": "2026-03-01T14:27:16.823Z",
-      "conformance": "2026-03-01T14:27:16.823Z",
-      "security": "2026-03-01T14:27:16.823Z"
+      "functionality": "2026-03-01T15:02:20.301Z",
+      "regression": "2026-03-01T15:02:20.301Z",
+      "stability": "2026-03-01T15:02:20.301Z",
+      "conformance": "2026-03-01T15:02:20.301Z",
+      "security": "2026-03-01T15:02:20.301Z"
     }
   }
 }
