@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-03-01T08:27:42.799Z",
-  "updatedAt": "2026-03-01T11:33:16.317Z",
+  "updatedAt": "2026-03-01T12:14:55.445Z",
   "project": {
     "name": "useai",
     "root": "/Users/apple/Code/devness/useai/useai-oss",
@@ -112,35 +112,29 @@
         ]
       },
       "stability": {
-        "score": 38,
+        "score": 42,
         "gaps": [
-          "daemon.ts parseBody() has no timeout or size limit on request body reading — a slowloris attack or unbounded payload can hang/OOM the process",
-          "daemon.ts recoverEndSession() has multiple unguarded JSON.parse calls (lines 745, 769) that throw on corrupted chain files with no per-parse try/catch",
-          "daemon.ts orphan sweep setInterval (line 1141) is never cleared on daemon shutdown — interval keeps running until force kill",
+          "daemon.ts parseBody() has no timeout or size limit on request body reading — slowloris or unbounded payload can hang/OOM the process",
+          "daemon.ts orphan sweep setInterval (line 1142) is never cleared on daemon shutdown — interval keeps running until force kill",
           "daemon.ts handleUpdateCheck() fetch to npm registry has no timeout — blocks entire request if registry is slow or unreachable",
-          "daemon.ts listenWithRetry() only retries EADDRINUSE — EACCES, ENOTFOUND and other errors exit immediately with no retry or helpful message",
           "daemon.ts URL construction (line 1150) with new URL() can throw if req.headers.host is malformed — no try/catch",
-          "daemon.ts req.headers['mcp-session-id'] assumed string but can be string[] in HTTP/2 — no type narrowing",
-          "register-tools.ts enrichAutoSealedSession() has multiple unguarded JSON.parse calls on chain file lines with non-null assertions on array access without bounds checking",
-          "register-tools.ts coerceJsonString() silently returns original value on JSON.parse failure with no logging — malformed input passes through to downstream validation",
+          "daemon.ts sealOrphanFile() and recoverHeartbeat() have unguarded JSON.parse on chain file lines — corrupted chain files crash the process",
           "register-tools.ts getFramework() call in useai_end tool (line 668) is not wrapped in try/catch — unknown framework ID crashes entire end-session flow",
-          "register-tools.ts writeJson() calls for milestones/sessions (lines 660, 788) have no retry or fallback — data is silently lost on file write failure",
+          "register-tools.ts writeJson() calls for milestones/sessions have no retry or fallback — data is silently lost on file write failure",
           "session-state.ts appendFileSync (line 319) has no error handling — disk-full or permissions errors throw with no finally block to prevent chainTipHash update on failure",
-          "session-state.ts decryptKeystore() catch block (line 295) has no logging — corrupted keystore returns generic error with zero debugging context",
-          "setup.ts multiSelect() internal promise rejection (line 212) has empty catch block — error silently swallowed",
           "setup.ts tool.detect() (line 172) has no error handling — if detect throws (permission error), entire setup crashes",
-          "mcp-map.ts writeMcpMapping() (lines 29-31) has no error handling — if writeJson fails, mapping is silently lost and daemon recovery breaks",
+          "mcp-map.ts writeMcpMapping() (line 31) has no error handling — if writeJson fails, MCP→UseAI session mapping is silently lost and daemon recovery breaks",
           "dashboard/local-api.ts readBody() has no size limit on request body — unbounded data causes OOM",
-          "dashboard/local-api.ts performSync fetch (line 292), milestone publish fetch (line 319), and all auth fetches have no timeout — hang indefinitely if useai.dev API is down",
-          "dashboard/local-api.ts handleCloudPull (line 668) pagination while-loop has no page limit — corrupted pagination headers cause infinite loop",
-          "index.ts main().catch (line 185-188) catches error but doesn't exit with non-zero code — process exits 0 on async errors"
+          "dashboard/local-api.ts performSync fetch, milestone publish fetch, and all auth fetches have no timeout — hang indefinitely if useai.dev API is down",
+          "dashboard/local-api.ts handleCloudPull pagination while-loop has no page limit — corrupted pagination headers cause infinite loop"
         ]
       },
       "conformance": {
-        "score": 85,
+        "score": 84,
         "violations": [
           "Pattern duplication: Tool registry in tools.ts reimplements installStandardHttp, installVscodeHttp, readTomlFile, writeTomlFile, installTomlHttp, readYamlFile, writeYamlFile, installYamlHttp, installCrushHttp — all duplicated in packages/cli/src/services/tools.ts",
-          "Large file: daemon.ts at 1442 lines handles HTTP server setup, session management, orphan recovery, stale session recovery, auto-seal logic, dashboard serving, health checks, MCP protocol server, and local API handlers — should be split into focused modules"
+          "Large file: daemon.ts at 1442 lines handles HTTP server setup, session management, orphan recovery, stale session recovery, auto-seal logic, dashboard serving, health checks, MCP protocol server, and local API handlers — should be split into focused modules",
+          "Large file: dashboard/local-api.ts at 711 lines implements 16+ HTTP handlers spanning data retrieval, configuration, sync operations, authentication, profile management, and data deletion — could be split into domain-specific handler modules"
         ]
       }
     },
@@ -184,27 +178,28 @@
         ]
       },
       "stability": {
-        "score": 45,
+        "score": 43,
         "gaps": [
           "daemon/ensure.ts findPidsByPort() interpolates port directly into execSync shell command without validation — potential shell injection on Windows netstat and macOS lsof commands",
           "daemon/ensure.ts spawn() in ensureDaemon() (line 192) never registers an 'error' event handler — if npx doesn't exist, error event is unhandled and daemon start silently fails",
           "daemon/ensure.ts killDaemon() has race condition between isProcessRunning() check and unlinkSync() on PID file — another instance could restart between check and delete",
           "daemon/ensure.ts checkDaemonHealth() catches all errors uniformly — no distinction between timeout, connection refused, and DNS failure; no logging of actual error",
-          "daemon/resolve-npx.ts buildNodePath() filters directories that exist at script startup via existsSync() but paths could be deleted before daemon starts — TOCTOU vulnerability",
-          "daemon/autostart.ts installMacos() (line 103) interpolates LAUNCHD_PLIST_PATH directly into execSync without shell quoting — paths with spaces or special chars break silently",
-          "daemon/autostart.ts installLinux() systemctl execSync failures (lines 146-147) are silently ignored — caller doesn't know if systemd service install actually worked",
+          "daemon/resolve-npx.ts buildNodePath() filters directories via existsSync() but paths could be deleted before daemon starts — TOCTOU vulnerability",
+          "daemon/resolve-npx.ts resolveNpxPath() interpolates $SHELL env var directly into execSync without validation — malicious SHELL value enables command injection",
+          "daemon/autostart.ts installMacos() target variable not shell-quoted in execSync — paths with spaces or special chars break silently",
+          "daemon/autostart.ts installLinux() systemctl execSync at lines 146-147 have no try/catch — if systemctl fails, error is silently ignored and function returns success",
           "daemon/check-update.ts fetchLatestVersion() does not validate npm registry JSON response — data.version not checked for valid semver format",
-          "crypto/keystore.ts decryptKeystore() decipher.final() can throw on GCM tag validation failure but has no try/catch — corrupted keystore crashes process without context",
-          "crypto/derive.ts deriveEncryptionKey() calls os.userInfo() which can throw on some systems — no validation that returned username is non-empty before use as key material",
+          "crypto/keystore.ts decryptKeystore() decipher.final() can throw on GCM tag validation failure with no custom error message or context",
+          "crypto/derive.ts deriveEncryptionKey() calls os.userInfo() which can throw on some systems — no try/catch or fallback",
           "crypto/verify.ts verifySignature() calls createPublicKey() without validating that PEM is actually an Ed25519 key — wrong key type accepted silently",
           "utils/fs.ts readJson() catch block returns fallback without distinguishing between 'file not found' and 'corrupted JSON' — callers cannot tell if data file is damaged",
-          "utils/fs.ts writeJson() uses process PID in temp filename — multiple processes after fork can collide; renameSync is not atomic on all filesystems",
+          "utils/fs.ts writeJson() uses process PID in temp filename — concurrent writes in same process can collide; renameSync is not atomic on all filesystems",
           "hooks/claude-code.ts writeFileSync for settings (line 71) overwrites without backup — partial write failure loses entire Claude Code settings with no rollback",
-          "hooks/claude-code.ts installClaudeCodeHooks() catches chmod errors silently (line 87-88) — hook scripts on Windows may not execute but no verification or fallback",
+          "hooks/claude-code.ts installClaudeCodeHooks() catches chmod errors silently (lines 87-88) — hook scripts may not execute but no verification or fallback",
           "validation/schemas.ts date regex /^\\d{4}-\\d{2}-\\d{2}$/ matches invalid dates like '9999-99-99' — no semantic date validation",
           "validation/guards.ts hasTimeOverlap() creates Date objects from strings without validating ISO format — Invalid Date comparison silently returns false instead of erroring",
-          "scoring/aps.ts computeLocalAPS() uses non-null assertions sorted[0]! and sorted[sorted.length-1]! after length check — filter could produce empty array after original check passes",
-          "utils/config-migrate.ts migrateConfig() uses 'as unknown as UseaiConfig' double-cast (line 11) — corrupted config passes migration without any runtime validation",
+          "scoring/aps.ts computeLocalAPS() uses non-null assertions sorted[0]! and sorted[sorted.length-1]! — filter could produce empty array after original length check passes",
+          "utils/config-migrate.ts migrateConfig() uses 'as unknown as UseaiConfig' double-cast — corrupted config passes migration without any runtime validation",
           "constants/paths.ts USEAI_HOME reads from env var without validating the path exists or is writable — empty string or non-existent directory silently accepted"
         ]
       },
@@ -251,27 +246,24 @@
         "issues": 1,
         "resolved": 0,
         "findings": [
-          "data-exposure:packages/cli/src/commands/export.ts:14"
+          "data-exposure:packages/cli/src/commands/export.ts:16"
         ]
       },
       "stability": {
-        "score": 42,
+        "score": 44,
         "gaps": [
           "commands/login.ts apiCall() fetch (line 8) has no timeout — hangs indefinitely on network failure with no AbortController",
           "commands/login.ts res.json() (line 15) can throw on non-JSON response but is not wrapped in try/catch — malformed server response crashes login flow",
           "commands/login.ts result.user.id/email/username (lines 93-107) accessed without null checks — partial user object from API causes crash",
-          "commands/serve.ts ensureDaemon() (line 13) is not wrapped in try/catch — if it throws (not just returns false), exception is unhandled",
           "commands/serve.ts setInterval (line 35) never cleared if process exits via means other than SIGINT/SIGTERM",
           "commands/daemon.ts spawn() child process (lines 40-48) has no 'error' event handler — if npx fails to execute, error event is unhandled",
           "commands/daemon.ts health object fields (lines 116-129) cast without validation — unsafe 'as number'/'as string' on unvalidated daemon response",
           "commands/update.ts no rollback mechanism if daemon fails to update — old daemon killed, tools removed, but new daemon may fail to start, leaving user in broken state",
           "commands/update.ts tool.remove() errors in loop (lines 48-55) caught silently — user doesn't know how many tools failed to remove",
-          "commands/setup.ts checkbox() catch block (line 203, 287) is empty — user interruption errors silently swallowed",
-          "commands/setup.ts installClaudeCodeHooks() (line 134) called without try/catch — if hooks fail to install, exception unhandled",
+          "commands/setup.ts checkbox() catch block (lines 203, 287) is empty — user interruption errors silently swallowed with no diagnostics",
           "commands/config.ts updateConfig() calls (lines 21-51) not wrapped in try/catch — filesystem errors propagate unhandled to user",
-          "commands/purge.ts readline interface not closed on error path (line 12) — if question throws, rl never closes (resource leak)",
+          "commands/purge.ts readline interface not closed on error path (line 12) — if question throws or EOF sent, rl never closes (resource leak)",
           "commands/purge.ts rmSync with force:true (line 35) suppresses all errors — user told data deleted when it may not be",
-          "services/stats.service.ts calculateStreak() uses s.started_at.slice(0,10) without validating ISO string format — changed format silently breaks streak calculation",
           "services/tools.ts readJsonFile() returns empty object for ALL errors (lines 78-84) — file permission errors treated same as missing file, masking real problems",
           "services/tools.ts writeFileSync calls (lines 89, 200, 255) have no try/catch — if directory not writable, exception unhandled",
           "services/tools.ts removeInstructions catch blocks (lines 400, 419) are empty — file deletion failures silently swallowed",
@@ -345,11 +337,12 @@
         }
       },
       "security": {
-        "issues": 2,
+        "issues": 3,
         "resolved": 0,
         "findings": [
           "insecure-config:packages/api/src/main.ts:7",
-          "data-exposure:packages/api/src/auth/auth.service.ts:30"
+          "data-exposure:packages/api/src/auth/auth.service.ts:30",
+          "insecure-config:packages/api/src/auth/auth.controller.ts:8"
         ]
       },
       "stability": {
@@ -359,27 +352,27 @@
           "No request timeout middleware configured — long-running requests hang indefinitely with no protection",
           "No rate limiting on any endpoint — auth endpoints (OTP send/verify) and API key endpoints accept unlimited requests",
           "database/database.provider.ts creates postgres client with no pool configuration (max connections, idle timeout) and no onModuleDestroy hook to close connection on shutdown",
-          "database/migrate.ts client.end() only called on success path (line 11) — if migrate() throws, database connection is orphaned",
+          "database/migrate.ts client.end() only called on success path — if migrate() throws, database connection is orphaned",
           "auth/auth.service.ts sendOtp() has no try/catch around bcrypt.hash() or database insert — exceptions bubble unhandled with no context",
           "auth/auth.service.ts sendOtp() returns 'OTP sent' even if emailService.sendOtpEmail() fails — misleading success response when email never delivered",
-          "auth/auth.service.ts verifyOtp() has race condition — concurrent requests can use same OTP, and between user lookup (line 66) and insert (line 73) duplicate users can be created",
+          "auth/auth.service.ts verifyOtp() has race condition — concurrent requests can use same OTP, and between user lookup and insert duplicate users can be created",
           "email/email.service.ts send() fetch to Resend API has no timeout or retry logic — network failure means email permanently lost with no recovery",
           "email/email.service.ts constructor logs warning if RESEND_API_KEY missing but service still created — all subsequent send() calls fail silently",
-          "admin/admin.guard.ts uses strict equality (===) for token comparison (line 21) — timing attack vulnerability; should use crypto.timingSafeEqual()",
+          "admin/admin.guard.ts uses strict equality (===) for token comparison — timing attack vulnerability; should use crypto.timingSafeEqual()",
           "admin/admin.guard.ts no logging on failed auth attempts — cannot detect brute force attacks",
-          "admin/admin.service.ts getDashboard() catch block returns hardcoded zeros on ANY error (line 58-65) — masks which query failed, no logging, clients see zeros instead of error state",
+          "admin/admin.service.ts getDashboard() catch block returns hardcoded zeros on ANY error — masks which query failed, no logging, clients see zeros instead of error state",
           "admin/admin.service.ts all list methods (getUsers, getSessions, getMilestones, getSyncs, getAlerts) catch all errors and return empty arrays — no distinction between 'no data' and 'query failed'",
-          "keys/keys.service.ts registerPublicKey() deletes old keys before inserting new one (line 17) — if insert fails, old key is permanently lost with no transaction rollback",
-          "keys/keys.service.ts validates key with string.includes('PUBLIC KEY') only (line 11-14) — accepts malformed PEM that will fail on actual crypto operations",
-          "sync/sync.service.ts processSync() checks existence then updates/inserts (lines 61-93) — race condition between check and write allows duplicate records",
-          "sync/sync.service.ts updateStreak() reads existing streak, calculates new one, then writes (lines 156-196) — concurrent requests can overwrite each other's streak data",
-          "leaderboard/leaderboard.service.ts recomputeLeaderboard() deletes all records then inserts new ones without transaction (lines 64-71, 91-98) — partial insert failure loses all leaderboard data",
+          "keys/keys.service.ts registerPublicKey() deletes old keys before inserting new one — if insert fails, old key is permanently lost with no transaction rollback",
+          "keys/keys.service.ts validates key with string.includes('PUBLIC KEY') only — accepts malformed PEM that will fail on actual crypto operations",
+          "sync/sync.service.ts processSync() checks existence then updates/inserts — race condition between check and write allows duplicate records",
+          "sync/sync.service.ts updateStreak() reads existing streak, calculates new one, then writes — concurrent requests can overwrite each other's streak data",
+          "leaderboard/leaderboard.service.ts recomputeLeaderboard() deletes all records then inserts new ones without transaction — partial insert failure loses all leaderboard data",
           "leaderboard/leaderboard.service.ts no distributed lock on cron execution — multiple server instances run recompute simultaneously causing data corruption",
-          "milestones/milestones.service.ts publish() uses unsafe cast 'milestones as MilestoneInput[]' (line 24) and no transaction — partial insert failure leaves inconsistent state",
-          "profiles/profiles.service.ts getPublicProfile() fetches all user syncs then filters in memory (line 36-41) — N+1 query pattern; user with millions of syncs causes OOM",
-          "common/guards/api-token-auth.guard.ts queries database on every single request for key validation (lines 20-24) — no caching, causes heavy database load",
+          "milestones/milestones.service.ts publish() uses unsafe cast 'milestones as MilestoneInput[]' and no transaction — partial insert failure leaves inconsistent state",
+          "profiles/profiles.service.ts getPublicProfile() fetches all user syncs then filters in memory — user with many syncs causes memory pressure",
+          "common/guards/api-token-auth.guard.ts queries database on every single request for key validation — no caching, causes heavy database load",
           "All controllers use parseInt() for query params without NaN validation or max bounds checking — negative/NaN/excessive values passed to database queries",
-          "sync/sync.controller.ts casts body to Record<string, unknown> (line 12) with no schema validation before passing to service"
+          "sync/sync.controller.ts casts body to Record<string, unknown> with no schema validation before passing to service"
         ]
       },
       "conformance": {
@@ -441,20 +434,18 @@
           "lib/api.ts get()/post()/patch()/del() have no timeout on fetch calls — network hangs block UI indefinitely with no AbortController",
           "lib/api.ts post() and patch() silently swallow JSON parse errors with .catch(() => ({})) — error context lost, returns empty object as if success",
           "lib/api.ts del() uses 'error' field for error extraction instead of 'message' like other functions — inconsistent, could produce undefined error messages",
-          "lib/api.ts postSync() uses Promise.all for fetchSessions/fetchMilestones (line 198) — single failure stops entire sync with no partial recovery",
-          "lib/api.ts postSync() sync loop (lines 225-231) has no retry mechanism — if 5th batch of 10 fails, first 4 already synced with no rollback or tracking",
-          "lib/api.ts postVerifyOtp() sets multiple localStorage items (lines 184-186) without try/catch — quota exceeded error leaves partial auth state",
-          "store.ts loadAll() catch block sets loading:false but provides no error state (line 58-68) — user sees stale data with no indication that refresh failed",
+          "lib/api.ts postSync() uses Promise.all for fetchSessions/fetchMilestones — single failure stops entire sync with no partial recovery",
+          "lib/api.ts postSync() sync loop has no retry mechanism — if 5th batch of 10 fails, first 4 already synced with no rollback or tracking",
+          "lib/api.ts postVerifyOtp() sets multiple localStorage items without try/catch — QuotaExceededError leaves partial auth state",
+          "store.ts loadAll() catch block sets loading:false but provides no error state — user sees stale data with no indication that refresh failed",
           "store.ts loadHealth() and loadUpdateCheck() have 'catch { /* ignore */ }' blocks — health check failures invisible to UI",
           "store.ts deleteSession()/deleteConversation()/deleteMilestone() use optimistic updates that revert on error without user notification — item disappears then reappears with no explanation",
-          "store.ts localStorage reads (lines 42-49, 51-56) have empty catch blocks — no logging if storage is disabled or corrupted",
           "components/ProfileDropdown.tsx debounceRef timeout not cleared on component unmount — fires setState on unmounted component",
-          "components/ProfileDropdown.tsx abortRef AbortController created but signal never passed to fetch (line 80) — dead code, requests are never actually cancelled",
+          "components/ProfileDropdown.tsx abortRef AbortController created but signal never passed to fetch — dead code, requests are never actually cancelled",
           "components/ProfileDropdown.tsx click-outside and escape-key listeners added on each render when open=true — rapid open/close accumulates duplicate event listeners",
-          "components/SettingsPage.tsx structuredClone(c) called without null check on config (line 111) — null config crashes component",
-          "components/SettingsPage.tsx error toast auto-clears after 3s via setTimeout (line 133) — not cancelled on unmount, triggers setState warning",
-          "components/EvaluationStatsBar.tsx requestAnimationFrame-based animation never cancelled on unmount (lines 13-24) — memory leak and wasted CPU",
-          "components/SearchOverlay.tsx debounce setTimeout (lines 81-84) not stored in ref for cleanup — multiple timers queue up on rapid input",
+          "components/SettingsPage.tsx structuredClone(c) called without null check on config — null config crashes component",
+          "components/SettingsPage.tsx error toast auto-clears after 3s via setTimeout — not cancelled on unmount, triggers setState warning",
+          "components/EvaluationStatsBar.tsx requestAnimationFrame-based animation never cancelled on unmount — memory leak and wasted CPU",
           "No runtime schema validation on any API response — TypeScript interfaces don't protect against malformed data at runtime"
         ]
       },
@@ -499,35 +490,35 @@
       "stability": {
         "score": 42,
         "gaps": [
-          "lib/api-client.ts clientFetch throws Error with only status code (line 13) — response body context lost, making debugging impossible",
-          "lib/api-client.ts res.json() (line 14) has no error handling for malformed JSON responses — unhandled exception on non-JSON server response",
+          "lib/api-client.ts clientFetch throws Error with only status code — response body context lost, making debugging impossible",
+          "lib/api-client.ts res.json() has no error handling for malformed JSON responses — unhandled exception on non-JSON server response",
           "lib/api-client.ts no timeout configured on any fetch call — all network operations can hang indefinitely",
-          "lib/auth.ts localStorage.getItem/removeItem (lines 3, 12-13) not wrapped in try/catch — throws if localStorage disabled or quota exceeded",
-          "hooks/usePresence.ts catch blocks (lines 28-29, 37-38) are empty — all errors including non-network issues silently swallowed with no logging",
+          "lib/auth.ts localStorage.getItem/removeItem not wrapped in try/catch — throws if localStorage disabled or quota exceeded",
+          "hooks/usePresence.ts catch blocks are empty — all errors including non-network issues silently swallowed with no logging",
           "hooks/usePresence.ts no timeout on apiFetch calls — component hangs on network failure",
-          "store/dashboard-store.ts Promise.all catch (line 46) swallows error without distinguishing which API failed — stale data shown with no error indicator",
-          "store/dashboard-store.ts localStorage.getItem (line 30) not in try/catch — hydration crashes if storage disabled",
-          "store/auth-store.ts JSON.parse in try/catch (line 38) silently ignores parse errors — corrupted user data quietly set to null with no logging",
-          "store/auth-store.ts localStorage.setItem (lines 24-25) can throw QuotaExceededError — not caught, auth state partially saved",
-          "app/login/page.tsx catch blocks (lines 37-41, 51-56) treat all errors identically — network errors, JSON parse errors, rate limits all show same generic message",
-          "app/login/page.tsx data.user accessed (line 51) without null check — partial API response crashes login flow",
-          "app/dashboard/layout.tsx apiFetch for user (lines 42-46) has no try/catch — network error during dashboard load silently fails without logout or error state",
-          "app/dashboard/layout.tsx 100ms setTimeout for auth check (line 51-56) is a race condition — hydrate() may not have updated token yet",
-          "app/dashboard/settings/page.tsx setTimeout for error clear (line 37) not cancelled on unmount — potential setState on unmounted component",
-          "app/(public)/[username]/page.tsx server-side fetch (lines 57-62) has no timeout — slow API blocks page generation indefinitely",
+          "store/dashboard-store.ts Promise.all catch swallows error without distinguishing which API failed — stale data shown with no error indicator",
+          "store/dashboard-store.ts localStorage.getItem not in try/catch — hydration crashes if storage disabled",
+          "store/auth-store.ts JSON.parse in try/catch silently ignores parse errors — corrupted user data quietly set to null with no logging",
+          "store/auth-store.ts localStorage.setItem can throw QuotaExceededError — not caught, auth state partially saved",
+          "app/login/page.tsx catch blocks treat all errors identically — network errors, JSON parse errors, rate limits all show same generic message",
+          "app/login/page.tsx data.user accessed without null check — partial API response crashes login flow",
+          "app/dashboard/layout.tsx apiFetch for user has no try/catch — network error during dashboard load silently fails without logout or error state",
+          "app/dashboard/layout.tsx 100ms setTimeout for auth check is a race condition — hydrate() may not have updated token yet",
+          "app/dashboard/settings/page.tsx setTimeout for error clear not cancelled on unmount — potential setState on unmounted component",
+          "app/(public)/[username]/page.tsx server-side fetch has no timeout — slow API blocks page generation indefinitely",
           "app/(public)/leaderboard/page.tsx no AbortController for fetch deduplication — multiple concurrent fetchLeaderboard calls on rapid remount",
           "components/ProfileDropdown.tsx username check debounce timer not cleared on unmount — API response tries setState on unmounted component",
           "components/ProfileDropdown.tsx rapid input creates out-of-order API responses — no request cancellation, stale 'available'/'taken' status displayed",
-          "components/TopNav.tsx GitHub API fetch .then(r => r.ok ? r.json() : null) — if r.json() rejects, unhandled promise rejection (no .catch on json())",
-          "components/HeroHeading.tsx chained setTimeout animations (lines 56-63) have no cleanup — component unmount during animation fires setState on unmounted component",
-          "components/RadarChart.tsx data[d.key] / 100 (line 45) has no null check — undefined data key produces NaN in SVG rendering"
+          "components/TopNav.tsx GitHub API fetch .then(r => r.ok ? r.json() : null) — if r.json() rejects, unhandled promise rejection",
+          "components/HeroHeading.tsx chained setTimeout animations have no cleanup — component unmount during animation fires setState on unmounted component",
+          "components/RadarChart.tsx data[d.key] / 100 has no null check — undefined data key produces NaN in SVG rendering"
         ]
       },
       "conformance": {
         "score": 80,
         "violations": [
           "Dead code: check-err.js references port 3457 but dev server runs on port 3456 (per package.json 'next dev --port 3456') — stale development artifact not referenced anywhere",
-          "Large file: Landing page src/app/(public)/page.tsx at 930 lines (~49.5KB) defines 6 inline components (SkillRadar, TerminalMockup, CopyCommand, ToolChip, ToolMarquee, HeroDashboardPreview) that should be extracted into separate files",
+          "Large file: Landing page src/app/(public)/page.tsx at 930 lines defines multiple inline component patterns, data constants (AI_TOOLS, FEATURES, STEPS, RADAR_DIMENSIONS, DASHBOARD_SECTIONS), and animation variants that should be extracted into separate files",
           "Pattern inconsistency: Policy pages (about/page.tsx 367 lines, privacy/page.tsx 473 lines, security/page.tsx 285 lines, terms/page.tsx 321 lines) share nearly identical page header, section divider, and hud-border card structure but don't use a shared template/layout component — ~1,446 lines of duplicated structure"
         ]
       }
@@ -552,22 +543,20 @@
         "findings": []
       },
       "stability": {
-        "score": 58,
+        "score": 60,
         "gaps": [
           "stats.ts computeStats() accesses s.duration_seconds, s.files_touched, s.client, s.languages, s.task_type without null/undefined checks — undefined properties produce NaN or silent data corruption",
           "stats.ts calculateStreak() uses sorted[i-1]! and sorted[i]! non-null assertions without full bounds validation after filter operations",
-          "stats.ts parseTimestamp() (line 10) returns NaN for malformed ISO strings — callers use result in comparisons without NaN check, silently producing wrong date filtering",
-          "stats.ts s.evaluation! non-null assertion (line 135) used after filter but TypeScript doesn't enforce runtime safety — changed evaluation structure crashes silently",
+          "stats.ts parseTimestamp() returns NaN for malformed ISO strings — callers use result in comparisons without NaN check, silently producing wrong date filtering",
+          "stats.ts s.evaluation! non-null assertion used after filter but TypeScript doesn't enforce runtime safety — changed evaluation structure crashes silently",
           "stats.ts filterSessionsByWindow() creates Date objects from strings without validating ISO format — Invalid Date comparisons silently return false",
-          "components/StatsBar.tsx animateCounter() requestAnimationFrame callback (line 19-20) doesn't check if DOM element still exists — throws if element removed during animation",
-          "components/SessionList.tsx IntersectionObserver created but sentinelRef.current not null-checked before observer.observe() (lines 316-329)",
+          "components/StatsBar.tsx animateCounter() requestAnimationFrame callback doesn't check if DOM element still exists — throws if element removed during animation",
+          "components/SessionList.tsx IntersectionObserver created but sentinelRef.current not null-checked before observer.observe()",
           "components/SearchOverlay.tsx escape key handler captures onClose in closure — if onClose prop changes between renders, stale callback is invoked",
           "components/SearchOverlay.tsx and TimeDetailPanel.tsx both set document.body.style.overflow='hidden' independently — closing one modal re-enables scroll when other modal still open",
-          "components/TimeDetailPanel.tsx computeActivePeriods() silently skips sessions where end <= start (line 75) with no logging — data quality issues hidden from user",
+          "components/TimeDetailPanel.tsx computeActivePeriods() silently skips sessions where end <= start with no logging — data quality issues hidden from user",
           "components/DailyRecap.tsx getSessionsInRange() creates Date from s.started_at without validation — invalid ISO string parsed as current time, silently corrupting metrics",
-          "components/ProjectAllocation.tsx share = sliceMs / numProjects (line 115) — numProjects derived from filtered keys could be 0 despite outer guard if activeCount mutations occur",
-          "components/ComplexityDistribution.tsx (count / maxCount) * 100 — maxCount could be 0 while total > 0 in edge case, producing Infinity",
-          "components/TimeScrubber.tsx drag commit timer (line 146-150) not cancelled if component unmounts during active drag — setTimeout fires after unmount",
+          "components/ProjectAllocation.tsx share = sliceMs / numProjects — numProjects derived from filtered keys could be 0 despite outer guard, producing Infinity",
           "components/DashboardBody.tsx readLocalStorage() and writeLocalStorage() have empty catch blocks — localStorage failures completely invisible for debugging",
           "components/RecentMilestones.tsx relativeTime() calls new Date(iso).getTime() without validating ISO string — NaN diff produces wrong relative time display",
           "stats.ts Record<string, number> accumulation for byClient/byLanguage/byTaskType doesn't guard against prototype pollution — keys like '__proto__' from untrusted data could pollute object prototype"
@@ -576,9 +565,9 @@
       "conformance": {
         "score": 84,
         "violations": [
-          "Large file: TimeScrubber.tsx at 533 lines and TimeDetailPanel.tsx at 508 lines contain multiple internal helper components (SessionTooltip, MilestoneTooltip in TimeScrubber; 7 helpers in TimeDetailPanel) that could be extracted into separate files",
-          "Unused dependency: clsx is declared in package.json but has zero imports across all source files in packages/ui/src",
-          "Code duplication: formatDuration() is independently defined in TimeScrubber.tsx, TimeDetailPanel.tsx, SessionList.tsx, and SessionCard.tsx with slight variations — should be extracted to a shared utility"
+          "Large file: TimeScrubber.tsx at 533 lines and TimeDetailPanel.tsx at 508 lines contain multiple internal helper components (SessionTooltip, MilestoneTooltip in TimeScrubber; ExplanationBlock, CalcRow, ActiveTimeContent, AITimeContent, ParallelContent, StreakContent, SessionList in TimeDetailPanel) that could be extracted into separate files",
+          "Unused dependency: clsx is declared in package.json but has zero imports across all source files in packages/ui/src — all conditional styling uses template literals instead",
+          "Code duplication: formatDuration() is independently defined in TimeScrubber.tsx, TimeDetailPanel.tsx, SessionList.tsx, and SessionCard.tsx with slight variations (TimeDetailPanel uses different rounding logic) — should be extracted to a shared utility"
         ]
       }
     },
@@ -604,27 +593,27 @@
         ]
       },
       "stability": {
-        "score": 42,
+        "score": 40,
         "gaps": [
-          "lib/api-client.ts fetch() (line 15) not wrapped in try/catch — network failure throws unhandled rejection with no context",
+          "lib/api-client.ts fetch() not wrapped in try/catch — network failure throws unhandled rejection with no context",
           "lib/api-client.ts no timeout mechanism on any fetch request — hanging server response blocks UI indefinitely",
-          "lib/api-client.ts res.json() (line 21) can throw on non-JSON response but error path returns empty object via .catch(() => ({})) — error context silently lost",
-          "lib/api-client.ts VITE_API_URL (line 1) not validated — undefined or malformed env var causes all requests to fail with no helpful error message",
-          "lib/api-client.ts getToken() returns null token that is included in Authorization header as 'Bearer null' — API receives invalid auth header instead of omitting it",
+          "lib/api-client.ts res.json() error path returns empty object via .catch(() => ({})) — error context silently lost",
+          "lib/api-client.ts VITE_API_URL not validated — undefined or malformed env var causes all requests to fail with no helpful error message",
           "lib/use-api.ts no AbortController to cancel in-flight requests on component unmount — setState called on unmounted component causes memory leak",
-          "lib/use-api.ts promise chain (lines 19-28) collapses all error types (network, parse, auth, server) into single err.message — if error is not Error instance, message is undefined",
+          "lib/use-api.ts promise chain collapses all error types (network, parse, auth, server) into single err.message — if error is not Error instance, message is undefined",
           "lib/use-api.ts no retry mechanism — single network failure is permanent until user manually navigates away and back",
-          "lib/auth.ts parseToken() catch block (lines 26-32) returns null for ALL errors with no logging — cannot distinguish invalid JWT format from malformed base64 from null payload",
-          "store/admin-store.ts localStorage.setItem() (line 29) and removeItem() (line 34) can throw QuotaExceededError — not wrapped in try/catch",
-          "store/admin-store.ts reads admin_token from localStorage on init (line 23) without validating it's a valid JWT — corrupted token accepted silently",
-          "pages/dashboard/index.tsx API failure returns hardcoded zero values object (line 19) — user cannot distinguish 'system has zero activity' from 'failed to load data'",
-          "pages/users/index.tsx calls .toLowerCase() on u.username and u.email (lines 44-45) without null checks — null values from API crash filter function",
-          "pages/system/index.tsx health.status === 'ok' (line 16) uses case-sensitive comparison — API returning 'OK' or 'Ok' incorrectly shown as unhealthy",
-          "pages/analytics/languages.tsx Object.entries(breakdown) iterated without validating values are numbers (line 25) — mixed types from API cause incorrect sorting",
-          "pages/analytics/index.tsx Math.round(totalSeconds / totalUsers / 60) (line 41) divides by zero if totalUsers is 0 or null — produces NaN in dashboard",
-          "pages/milestones/flagged.tsx action buttons (approve/reject/dismiss at lines 48-54) have no onClick handlers — buttons appear functional but do nothing",
-          "pages/leaderboard/index.tsx 'Recompute Rankings' button (line 39) has no onClick handler — non-functional admin action",
-          "components/shared/data-table.tsx sort function coerces values to empty string with ?? '' (line 26-27) — mixed number/string columns sort lexicographically ('10' < '2')"
+          "lib/auth.ts parseToken() catch block returns null for ALL errors with no logging — cannot distinguish invalid JWT format from malformed base64 from null payload",
+          "store/admin-store.ts localStorage.setItem() and removeItem() can throw QuotaExceededError — not wrapped in try/catch",
+          "store/admin-store.ts reads admin_token from localStorage on init without validating it's a valid JWT — corrupted token accepted silently",
+          "pages/dashboard/index.tsx API failure returns hardcoded zero values object — user cannot distinguish 'system has zero activity' from 'failed to load data'",
+          "pages/users/index.tsx calls .toLowerCase() on u.username and u.email without null checks — null values from API crash filter function",
+          "pages/system/index.tsx health.status === 'ok' uses case-sensitive comparison — API returning 'OK' or 'Ok' incorrectly shown as unhealthy",
+          "pages/analytics/languages.tsx Object.entries(breakdown) iterated without validating values are numbers — mixed types from API cause incorrect sorting",
+          "pages/analytics/index.tsx totalSeconds reduce can produce NaN if d.totalSeconds is null/undefined — NaN propagates through division producing incorrect dashboard values",
+          "pages/milestones/flagged.tsx action buttons (approve/reject/unpublish) have no onClick handlers — buttons appear functional but do nothing",
+          "pages/leaderboard/index.tsx 'Recompute Rankings' button has no onClick handler — non-functional admin action",
+          "components/shared/data-table.tsx sort function coerces values to empty string with ?? '' — mixed number/string columns sort lexicographically ('10' < '2')",
+          "main.tsx has no React ErrorBoundary — any component error crashes entire admin app with no recovery UI"
         ]
       },
       "conformance": {
@@ -679,27 +668,27 @@
         "gaps": [
           "main.ts bootstrap() has no try/catch — if NestFactory.createApplicationContext() fails, application crashes without any error logging",
           "main.ts signal handlers (lines 11-15) call app.close() without error handling — if close() throws, process may not exit cleanly and resources leak",
-          "main.ts bootstrap() call on line 5 has no .catch() — unhandled promise rejection if bootstrap fails",
-          "worker.module.ts REDIS_PORT defaults to 6479 instead of standard 6379 (line 16) — likely typo that silently fails to connect to Redis at runtime",
+          "main.ts bootstrap() call on line 18 has no .catch() — unhandled promise rejection if bootstrap fails",
+          "worker.module.ts REDIS_PORT defaults to 6479 instead of standard 6379 — likely typo that silently fails to connect to Redis at runtime",
           "worker.module.ts useFactory callback has no try/catch — if config.get() throws, error propagates unhandled during module initialization",
           "worker.module.ts no validation that REDIS_HOST and REDIS_PORT are valid formats before passing to BullModule connection",
-          "card/card.service.ts generateCard() (lines 11-24) has no try/catch — satori() and sharp() failures crash the job processor with no error logging or context",
-          "card/card.service.ts fonts array is hardcoded empty (line 16) — satori rendering without fonts may produce invisible or broken text with no warning",
+          "card/card.service.ts generateCard() has no try/catch — satori() and sharp() failures crash the job processor with no error logging or context",
+          "card/card.service.ts fonts array is hardcoded empty — satori rendering without fonts may produce invisible or broken text with no warning",
           "card/card.service.ts no null/undefined validation on data parameter — null data passed to ShareCard causes runtime error",
-          "card/card.processor.ts process() method (lines 23-32) has no try/catch — job processing errors are unhandled by the processor itself",
+          "card/card.processor.ts process() method has no try/catch — job processing errors are unhandled by the processor itself",
           "card/card.processor.ts no timeout on card generation — if satori/sharp hang, job hangs indefinitely",
           "card/card.processor.ts no validation of job.data structure before passing to service — invalid data structure silently accepted",
-          "card/card.processor.ts TODO comment indicates storage upload is unimplemented (line 27) — generated cards written to /tmp but never uploaded, with no warning to callers",
-          "storage/storage.service.ts upload() (lines 12-27) has no try/catch — fs.mkdir() and fs.writeFile() failures for permission denied or disk full are unhandled",
-          "storage/storage.service.ts key parameter not sanitized (line 12) — path traversal via '../' in key allows writing files outside intended directory (security vulnerability)",
-          "storage/storage.service.ts S3 upload is unimplemented but returns hardcoded success URL (line 25) — silent failure masquerading as success; callers believe upload succeeded",
-          "storage/storage.service.ts fallback to /tmp for missing S3_BUCKET (line 14-22) — temporary storage gets cleaned up by OS, cards permanently lost with no warning",
+          "card/card.processor.ts TODO comment indicates storage upload is unimplemented — generated cards written to /tmp but never uploaded, with no warning to callers",
+          "storage/storage.service.ts upload() has no try/catch — fs.mkdir() and fs.writeFile() failures for permission denied or disk full are unhandled",
+          "storage/storage.service.ts key parameter not sanitized — path traversal via '../' in key allows writing files outside intended directory (security vulnerability)",
+          "storage/storage.service.ts S3 upload is unimplemented but returns hardcoded success URL — silent failure masquerading as success; callers believe upload succeeded",
+          "storage/storage.service.ts fallback to /tmp for missing S3_BUCKET — temporary storage gets cleaned up by OS, cards permanently lost with no warning",
           "storage/storage.service.ts no retry logic — single filesystem failure causes permanent job failure with no recovery",
-          "card/templates/share-card.tsx formatNumber() (line 92-96) has no guard for NaN, null, or undefined input — produces 'NaN' or throws in template rendering"
+          "card/templates/share-card.tsx formatNumber() has no guard for NaN, null, or undefined input — produces 'NaN' or throws in template rendering"
         ]
       },
       "conformance": {
-        "score": 57,
+        "score": 56,
         "violations": [
           "Configuration inconsistency: Default Redis port is 6479 in worker.module.ts line 16 vs standard 6379 in packages/api/src/queue/queue.module.ts — likely a typo causing connection failures when REDIS_PORT env var is not set",
           "Mixed test frameworks: Uses both Jest (card.test.ts, storage.service.test.ts, card.service.test.ts) and Vitest (card.processor.test.ts, share-card.test.tsx) in the same package — other packages use one framework consistently",
@@ -708,7 +697,8 @@
           "Pattern inconsistency: main.ts uses console.log for startup logging instead of NestJS Logger used by services in this package and in packages/api",
           "Pattern inconsistency: worker.module.ts and card.processor.ts hardcode string 'render-queue' instead of importing RENDER_QUEUE constant defined in packages/api/src/queue/queue.constants.ts",
           "Incomplete implementation: Satori fonts array is empty (fonts:[]) in card.service.ts so card text rendering uses fallback; S3/R2 upload in storage.service.ts is a TODO stub that logs a warning and returns a mock URL",
-          "Missing test infrastructure: Neither jest nor vitest is declared in devDependencies despite 5 test files using both frameworks, and no test script is defined in package.json"
+          "Missing test infrastructure: Neither jest nor vitest is declared in devDependencies despite 5 test files using both frameworks, and no test script is defined in package.json",
+          "Unused dependency: @useai/shared is declared in package.json dependencies but never imported in any source file under src/"
         ]
       }
     }
@@ -974,28 +964,28 @@
     "breakdown": {
       "functionality": 30,
       "security": 0,
-      "stability": 40.9,
-      "conformance": 80.2,
+      "stability": 41.5,
+      "conformance": 80,
       "regression": 100
     },
     "gaps": {
-      "total": 327,
-      "critical": 10,
+      "total": 317,
+      "critical": 11,
       "byDimension": {
         "functionality": {
           "missing": 102,
           "priority": "high"
         },
         "security": {
-          "issues": 10,
+          "issues": 11,
           "priority": "critical"
         },
         "stability": {
-          "gaps": 180,
+          "gaps": 167,
           "priority": "high"
         },
         "conformance": {
-          "violations": 35,
+          "violations": 37,
           "priority": "low"
         }
       }
@@ -1025,14 +1015,19 @@
         "date": "2026-03-01T11:33:16.317Z",
         "score": 38.7,
         "scope": "re-analysis"
+      },
+      {
+        "date": "2026-03-01T12:14:55.445Z",
+        "score": 38.7,
+        "scope": "re-analysis"
       }
     ],
     "scanned": {
-      "functionality": "2026-03-01T11:33:16.317Z",
-      "regression": "2026-03-01T11:33:16.317Z",
-      "stability": "2026-03-01T10:26:33.267Z",
-      "conformance": "2026-03-01T11:33:16.317Z",
-      "security": "2026-03-01T11:33:16.317Z"
+      "functionality": "2026-03-01T12:14:55.445Z",
+      "regression": "2026-03-01T12:14:55.445Z",
+      "stability": "2026-03-01T12:14:55.445Z",
+      "conformance": "2026-03-01T12:14:55.445Z",
+      "security": "2026-03-01T12:14:55.445Z"
     }
   }
 }
