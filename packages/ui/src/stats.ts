@@ -373,7 +373,7 @@ export function groupIntoConversations(
     });
   }
 
-  result.sort((a, b) => parseTimestamp(b.startedAt) - parseTimestamp(a.startedAt));
+  result.sort((a, b) => parseTimestamp(b.endedAt) - parseTimestamp(a.endedAt));
 
   return result;
 }

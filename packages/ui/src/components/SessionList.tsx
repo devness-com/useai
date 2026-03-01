@@ -156,11 +156,8 @@ const ConversationCard = memo(function ConversationCard({ group, defaultExpanded
               </span>
 
               <span className="text-text-secondary/80 font-mono tracking-tight">
-                {showFullDate && `${new Date(group.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
-                {formatTime(group.startedAt)}
-                {group.sessions.length > 1 && group.endedAt && formatTime(group.startedAt) !== formatTime(group.endedAt) && (
-                  <> – {formatTime(group.endedAt)}</>
-                )}
+                {showFullDate && `${new Date(group.sessions.length > 1 && group.endedAt ? group.endedAt : group.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · `}
+                {formatTime(group.sessions.length > 1 && group.endedAt ? group.endedAt : group.startedAt)}
               </span>
 
               {!showPublic && hasProject && (
