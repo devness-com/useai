@@ -134,8 +134,8 @@ function enrichAutoSealedSession(
       if (lastRecord.type === 'session_seal' && lastRecord.data['seal']) {
         try {
           const sealObj = JSON.parse(lastRecord.data['seal'] as string) as { duration_seconds?: number; ended_at?: string };
-          duration = sealObj.duration_seconds ?? Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
-          endedAt = sealObj.ended_at ?? lastRecord.timestamp;
+          duration = sealObj.duration_seconds || Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
+          endedAt = sealObj.ended_at && sealObj.ended_at !== startedAt ? sealObj.ended_at : lastRecord.timestamp;
         } catch {
           duration = Math.round((new Date(lastRecord.timestamp).getTime() - new Date(startedAt).getTime()) / 1000);
           endedAt = lastRecord.timestamp;
@@ -233,6 +233,9 @@ function enrichAutoSealedSession(
       evaluation: args.evaluation ?? existing.evaluation,
       session_score: sessionScore ?? existing.session_score,
       evaluation_framework: frameworkId ?? existing.evaluation_framework,
+      // Fix duration/ended_at for auto-sealed sessions that had 0s duration
+      duration_seconds: duration || existing.duration_seconds,
+      ended_at: endedAt !== startedAt ? endedAt : existing.ended_at,
     };
   } else {
     allSessions.push(richSeal);
