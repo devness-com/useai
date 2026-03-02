@@ -8,21 +8,9 @@ export interface CaptureConfig {
   milestones: boolean;                // default: true
 }
 
-export interface SyncIncludeConfig {
-  sessions: boolean;                  // default: true
-  evaluations: boolean;               // default: true
-  milestones: boolean;                // default: true
-  prompts: boolean;                   // default: false (NEVER default true)
-  private_titles: boolean;            // default: false
-  projects: boolean;                  // default: false
-  model: boolean;                     // default: true
-  languages: boolean;                 // default: true
-}
-
 export interface SyncConfig {
   enabled: boolean;                   // default: false
-  interval_hours: number;             // default: 24
-  include: SyncIncludeConfig;
+  interval_hours: number;             // default: 3
 }
 
 export interface LocalConfig {

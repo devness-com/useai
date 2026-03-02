@@ -20,7 +20,6 @@ import {
 import {
   DEFAULT_CAPTURE_CONFIG,
   DEFAULT_SYNC_CONFIG,
-  DEFAULT_SYNC_INCLUDE_CONFIG,
   DEFAULT_CONFIG,
   DEFAULT_SYNC_INTERVAL_HOURS,
   GENESIS_HASH,
@@ -84,18 +83,16 @@ describe('Default config constants consistency', () => {
     expect(DEFAULT_CONFIG.sync.interval_hours).toBe(DEFAULT_SYNC_CONFIG.interval_hours);
   });
 
-  it('DEFAULT_SYNC_CONFIG.include matches DEFAULT_SYNC_INCLUDE_CONFIG', () => {
-    expect(DEFAULT_SYNC_CONFIG.include).toEqual(DEFAULT_SYNC_INCLUDE_CONFIG);
+  it('DEFAULT_SYNC_CONFIG has no include field', () => {
+    expect((DEFAULT_SYNC_CONFIG as any).include).toBeUndefined();
   });
 
   it('DEFAULT_SYNC_INTERVAL_HOURS matches sync config default', () => {
     expect(DEFAULT_SYNC_INTERVAL_HOURS).toBe(DEFAULT_SYNC_CONFIG.interval_hours);
   });
 
-  it('sync defaults are privacy-safe (prompts, private_titles, projects off)', () => {
-    expect(DEFAULT_SYNC_INCLUDE_CONFIG.prompts).toBe(false);
-    expect(DEFAULT_SYNC_INCLUDE_CONFIG.private_titles).toBe(false);
-    expect(DEFAULT_SYNC_INCLUDE_CONFIG.projects).toBe(false);
+  it('sync defaults are privacy-safe (no include config)', () => {
+    expect(DEFAULT_SYNC_CONFIG.enabled).toBe(false);
   });
 
   it('capture defaults are all enabled', () => {

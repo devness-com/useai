@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { computeLocalAPS } from '../src/scoring/aps';
 import { getFramework } from '../src/frameworks/registry';
 import { migrateConfig } from '../src/utils/config-migrate';
-import { sanitizeSealForSync } from '../src/utils/sync-sanitize';
 import { milestoneInputSchema, taskTypeSchema, complexitySchema } from '../src/validation/schemas';
 import { DEFAULT_CONFIG } from '../src/constants/defaults';
 import { resolveClient, TOOL_DISPLAY_NAMES } from '../src/constants/tools';
@@ -11,11 +10,11 @@ import type { Milestone } from '../src/types/milestone';
 
 /**
  * Integration: End-to-end pipeline tests that simulate realistic workflows
- * crossing multiple modules: validation → config → scoring → sync sanitization.
+ * crossing multiple modules: validation -> config -> scoring.
  */
 
 describe('Full pipeline: session lifecycle integration', () => {
-  it('validates input, scores session, and sanitizes for sync', () => {
+  it('validates input, scores session end-to-end', () => {
     // Step 1: Validate task type
     const taskResult = taskTypeSchema.safeParse('debug'); // alias
     expect(taskResult.success).toBe(true);
@@ -25,8 +24,8 @@ describe('Full pipeline: session lifecycle integration', () => {
     // Step 2: Validate milestone inputs
     const msInput = milestoneInputSchema.safeParse({
       title: 'Fixed auth token expiry',
-      category: 'bug',      // alias → bugfix
-      complexity: 'basic',  // alias → simple
+      category: 'bug',      // alias -> bugfix
+      complexity: 'basic',  // alias -> simple
     });
     expect(msInput.success).toBe(true);
 
@@ -90,13 +89,6 @@ describe('Full pipeline: session lifecycle integration', () => {
     expect(apsResult.score).toBeGreaterThan(0);
     expect(apsResult.framework).toBe('space');
     expect(apsResult.sessionCount).toBe(1);
-
-    // Step 5: Sanitize for sync
-    const sanitized = sanitizeSealForSync(seal, config.sync.include);
-    expect(sanitized.prompt).toBeUndefined(); // prompts are off by default
-    expect(sanitized.private_title).toBeUndefined();
-    expect(sanitized.evaluation).toBeDefined();
-    expect(sanitized.model).toBe('claude-3-opus');
   });
 
   it('end-to-end with legacy config migration', () => {

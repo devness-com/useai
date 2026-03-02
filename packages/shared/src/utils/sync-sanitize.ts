@@ -1,5 +1,5 @@
-import type { SessionSeal, SessionEvaluation } from '../types/chain.js';
-import type { SyncIncludeConfig, EvaluationReasonsLevel } from '../types/config.js';
+import type { SessionEvaluation } from '../types/chain.js';
+import type { EvaluationReasonsLevel } from '../types/config.js';
 
 /**
  * Strip reason fields from an evaluation based on the configured level.
@@ -38,38 +38,4 @@ export function filterEvaluationReasons(evaluation: SessionEvaluation, level: Ev
       delete ev.task_outcome_reason;
     }
   }
-}
-
-/**
- * Sanitize a SessionSeal for cloud sync based on user's sync.include config.
- * The evaluationReasonsLevel is inherited from capture.evaluation_reasons.
- * Returns a new object — does not mutate the original.
- */
-export function sanitizeSealForSync(
-  seal: SessionSeal,
-  include: SyncIncludeConfig,
-  evaluationReasonsLevel?: EvaluationReasonsLevel,
-): SessionSeal {
-  const s = { ...seal };
-
-  if (!include.prompts) {
-    delete s.prompt;
-    delete s.prompt_images;
-  }
-  if (!include.private_titles) delete s.private_title;
-  if (!include.projects) delete s.project;
-  if (!include.model) delete s.model;
-  if (!include.languages) s.languages = [];
-
-  const reasonsLevel = evaluationReasonsLevel ?? 'all';
-  if (!include.evaluations) {
-    delete s.evaluation;
-    delete s.session_score;
-    delete s.evaluation_framework;
-  } else if (s.evaluation && reasonsLevel !== 'all') {
-    s.evaluation = { ...s.evaluation };
-    filterEvaluationReasons(s.evaluation, reasonsLevel);
-  }
-
-  return s;
 }

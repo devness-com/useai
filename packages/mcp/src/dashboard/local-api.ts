@@ -9,7 +9,6 @@ import {
   CONFIG_FILE,
   SEALED_DIR,
   migrateConfig,
-  sanitizeSealForSync,
   isValidSessionSeal,
 } from '@useai/shared';
 import type { SessionSeal, Milestone, UseaiConfig } from '@useai/shared';
@@ -197,14 +196,11 @@ export async function handleLocalConfigUpdate(req: IncomingMessage, res: ServerR
       config.capture = { ...config.capture, ...(body.capture as Partial<UseaiConfig['capture']>) };
     }
 
-    // Deep-merge sync (with nested include)
+    // Deep-merge sync
     if (body.sync && typeof body.sync === 'object') {
       const syncUpdate = body.sync as Record<string, unknown>;
       if (syncUpdate.enabled !== undefined) config.sync.enabled = syncUpdate.enabled as boolean;
       if (syncUpdate.interval_hours !== undefined) config.sync.interval_hours = syncUpdate.interval_hours as number;
-      if (syncUpdate.include && typeof syncUpdate.include === 'object') {
-        config.sync.include = { ...config.sync.include, ...(syncUpdate.include as Partial<UseaiConfig['sync']['include']>) };
-      }
     }
 
     writeJson(CONFIG_FILE, config);
@@ -243,7 +239,6 @@ export function setOnConfigUpdated(cb: () => void): void {
 export async function performSync(): Promise<{ success: boolean; last_sync_at?: string; error?: string }> {
   const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
   const config = migrateConfig(raw) as UseaiConfig;
-  const syncInclude = config.sync.include;
 
   if (!config.auth?.token) {
     return { success: false, error: 'Not authenticated. Login at useai.dev first.' };
@@ -290,7 +285,7 @@ export async function performSync(): Promise<{ success: boolean; last_sync_at?: 
       clients,
       task_types: taskTypes,
       languages,
-      sessions: daySessions.map(s => sanitizeSealForSync(s, syncInclude, config.capture.evaluation_reasons)),
+      sessions: daySessions,
       sync_signature: '',
     };
 
@@ -306,45 +301,35 @@ export async function performSync(): Promise<{ success: boolean; last_sync_at?: 
     }
   }
 
-  // Publish milestones (skip if milestones sync disabled)
-  if (syncInclude.milestones) {
-    const MILESTONE_CHUNK = 50;
-    const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
+  // Publish milestones
+  const MILESTONE_CHUNK = 50;
+  const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
 
-    // Only send milestones that haven't been published yet
-    const unpublished = allMilestones.filter(m => !m.published && m.title && m.category);
+  // Only send milestones that haven't been published yet
+  const unpublished = allMilestones.filter(m => !m.published && m.title && m.category);
 
-    if (unpublished.length > 0) {
-      // Strip private_titles from milestones if not included
-      const sanitizedMilestones = syncInclude.private_titles
-        ? unpublished
-        : unpublished.map(m => {
-            const { private_title: _, ...rest } = m;
-            return rest as Milestone;
-          });
+  if (unpublished.length > 0) {
+    for (let i = 0; i < unpublished.length; i += MILESTONE_CHUNK) {
+      const chunk = unpublished.slice(i, i + MILESTONE_CHUNK);
+      const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ milestones: chunk }),
+      });
 
-      for (let i = 0; i < sanitizedMilestones.length; i += MILESTONE_CHUNK) {
-        const chunk = sanitizedMilestones.slice(i, i + MILESTONE_CHUNK);
-        const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ milestones: chunk }),
-        });
-
-        if (!milestonesRes.ok) {
-          const errBody = await milestonesRes.text();
-          return { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` };
-        }
+      if (!milestonesRes.ok) {
+        const errBody = await milestonesRes.text();
+        return { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` };
       }
-
-      // Mark all synced milestones as published locally
-      const sentIds = new Set(unpublished.map(m => m.id));
-      const now = new Date().toISOString();
-      const updated = allMilestones.map(m =>
-        sentIds.has(m.id) ? { ...m, published: true, published_at: now } : m,
-      );
-      writeJson(MILESTONES_FILE, updated);
     }
+
+    // Mark all synced milestones as published locally
+    const sentIds = new Set(unpublished.map(m => m.id));
+    const now = new Date().toISOString();
+    const updated = allMilestones.map(m =>
+      sentIds.has(m.id) ? { ...m, published: true, published_at: now } : m,
+    );
+    writeJson(MILESTONES_FILE, updated);
   }
 
   // Update last_sync_at

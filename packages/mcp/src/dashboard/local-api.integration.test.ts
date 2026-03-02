@@ -344,19 +344,19 @@ describe('handleLocalConfigUpdate', () => {
     expect(body.capture.milestones).toBe(false);
   });
 
-  it('deep-merges sync settings including nested include', async () => {
+  it('deep-merges sync settings', async () => {
     writeJsonFile(configFile, {});
     const req = createMockRequest(JSON.stringify({
-      sync: { enabled: true, include: { milestones: false } },
+      sync: { enabled: true },
     }));
     const res = createMockResponse();
 
     await handleLocalConfigUpdate(req, res);
 
     expect(res._status).toBe(200);
-    const body = parseResponseBody(res) as { sync: { enabled: boolean; include: { milestones: boolean } } };
+    const body = parseResponseBody(res) as { sync: { enabled: boolean; interval_hours: number } };
     expect(body.sync.enabled).toBe(true);
-    expect(body.sync.include.milestones).toBe(false);
+    expect(body.sync.interval_hours).toBeDefined();
   });
 
   it('calls onConfigUpdated callback when registered', async () => {

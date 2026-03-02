@@ -3,7 +3,6 @@ import { migrateConfig } from '../src/utils/config-migrate';
 import {
   DEFAULT_CAPTURE_CONFIG,
   DEFAULT_SYNC_CONFIG,
-  DEFAULT_SYNC_INCLUDE_CONFIG,
 } from '../src/constants/defaults';
 
 /**
@@ -18,7 +17,7 @@ describe('Config migration integration', () => {
     expect(result.capture).toEqual(DEFAULT_CAPTURE_CONFIG);
     expect(result.sync.enabled).toBe(DEFAULT_SYNC_CONFIG.enabled);
     expect(result.sync.interval_hours).toBe(DEFAULT_SYNC_CONFIG.interval_hours);
-    expect(result.sync.include).toEqual(DEFAULT_SYNC_INCLUDE_CONFIG);
+    expect((result.sync as any).include).toBeUndefined();
     expect(result.evaluation_framework).toBe('space');
   });
 
@@ -70,21 +69,18 @@ describe('Config migration integration', () => {
     expect(result.capture.milestones).toBe(DEFAULT_CAPTURE_CONFIG.milestones);
   });
 
-  it('fills missing nested sync.include fields with defaults', () => {
+  it('strips sync.include from old configs that still have it', () => {
     const result = migrateConfig({
       sync: {
         enabled: true,
         interval_hours: 1,
-        include: { sessions: true },
+        include: { sessions: true, prompts: false },
       },
     });
 
     expect(result.sync.enabled).toBe(true);
     expect(result.sync.interval_hours).toBe(1);
-    expect(result.sync.include.sessions).toBe(true);
-    expect(result.sync.include.prompts).toBe(DEFAULT_SYNC_INCLUDE_CONFIG.prompts);
-    expect(result.sync.include.private_titles).toBe(DEFAULT_SYNC_INCLUDE_CONFIG.private_titles);
-    expect(result.sync.include.projects).toBe(DEFAULT_SYNC_INCLUDE_CONFIG.projects);
+    expect((result.sync as any).include).toBeUndefined();
   });
 
   it('preserves existing evaluation_framework', () => {
@@ -100,14 +96,14 @@ describe('Config migration integration', () => {
   it('preserves a complete modern config without modification', () => {
     const fullConfig = {
       capture: { ...DEFAULT_CAPTURE_CONFIG },
-      sync: { ...DEFAULT_SYNC_CONFIG, include: { ...DEFAULT_SYNC_INCLUDE_CONFIG } },
+      sync: { ...DEFAULT_SYNC_CONFIG },
       evaluation_framework: 'raw',
     };
 
     const result = migrateConfig(fullConfig as Record<string, unknown>);
 
     expect(result.capture).toEqual(DEFAULT_CAPTURE_CONFIG);
-    expect(result.sync.include).toEqual(DEFAULT_SYNC_INCLUDE_CONFIG);
+    expect(result.sync).toEqual(DEFAULT_SYNC_CONFIG);
     expect(result.evaluation_framework).toBe('raw');
   });
 });

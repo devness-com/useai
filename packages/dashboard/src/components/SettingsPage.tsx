@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Camera, BarChart3, Cloud, Shield, AlertTriangle, ChevronDown, Save, Check, Loader2 } from 'lucide-react';
+import { Camera, BarChart3, Cloud, AlertTriangle, ChevronDown, Save, Check, Loader2 } from 'lucide-react';
 import type { FullConfig } from '../lib/api';
 import { fetchFullConfig, patchConfig } from '../lib/api';
 
@@ -146,12 +146,8 @@ export function SettingsPage() {
     setDraft((d) => d ? { ...d, capture: { ...d.capture, ...partial } } : d);
   }, []);
 
-  const setSync = useCallback((partial: Partial<Omit<FullConfig['sync'], 'include'>>) => {
+  const setSync = useCallback((partial: Partial<FullConfig['sync']>) => {
     setDraft((d) => d ? { ...d, sync: { ...d.sync, ...partial } } : d);
-  }, []);
-
-  const setSyncInclude = useCallback((partial: Partial<FullConfig['sync']['include']>) => {
-    setDraft((d) => d ? { ...d, sync: { ...d.sync, include: { ...d.sync.include, ...partial } } } : d);
   }, []);
 
   const setFramework = useCallback((v: string) => {
@@ -279,69 +275,6 @@ export function SettingsPage() {
                 onChange={(v) => setSync({ interval_hours: Number(v) })}
               />
 
-              <div className="pt-3 pb-1">
-                <div className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Include in sync</div>
-              </div>
-
-              <SettingToggle
-                label="Sessions"
-                description="Session metadata (duration, task type, client)"
-                checked={draft.sync.include.sessions}
-                onChange={(v) => setSyncInclude({ sessions: v })}
-              />
-              <SettingToggle
-                label="Evaluations"
-                description="Session quality scores"
-                checked={draft.sync.include.evaluations}
-                onChange={(v) => setSyncInclude({ evaluations: v })}
-              />
-              <SettingToggle
-                label="Milestones"
-                description="Accomplishments and categories"
-                checked={draft.sync.include.milestones}
-                onChange={(v) => setSyncInclude({ milestones: v })}
-              />
-              <SettingToggle
-                label="Model"
-                description="AI model used for each session"
-                checked={draft.sync.include.model}
-                onChange={(v) => setSyncInclude({ model: v })}
-              />
-              <SettingToggle
-                label="Languages"
-                description="Programming languages used"
-                checked={draft.sync.include.languages}
-                onChange={(v) => setSyncInclude({ languages: v })}
-              />
-              {/* Privacy-sensitive section */}
-              <div className="pt-3 pb-1">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-3 h-3 text-warning" />
-                  <div className="text-[11px] font-medium text-warning uppercase tracking-wider">Privacy-sensitive</div>
-                </div>
-              </div>
-
-              <SettingToggle
-                label="Prompts"
-                description="Prompt content sent to AI tools"
-                checked={draft.sync.include.prompts}
-                onChange={(v) => setSyncInclude({ prompts: v })}
-                warning="Prompts may contain sensitive code or context"
-              />
-              <SettingToggle
-                label="Private titles"
-                description="Detailed session/milestone titles with project names"
-                checked={draft.sync.include.private_titles}
-                onChange={(v) => setSyncInclude({ private_titles: v })}
-                warning="May reveal project names and specifics"
-              />
-              <SettingToggle
-                label="Projects"
-                description="Project names associated with sessions"
-                checked={draft.sync.include.projects}
-                onChange={(v) => setSyncInclude({ projects: v })}
-                warning="Project names will be visible on your profile"
-              />
             </>
           )}
         </div>

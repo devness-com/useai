@@ -316,16 +316,6 @@ export interface FullConfig {
   sync: {
     enabled: boolean;
     interval_hours: number;
-    include: {
-      sessions: boolean;
-      evaluations: boolean;
-      milestones: boolean;
-      prompts: boolean;
-      private_titles: boolean;
-      projects: boolean;
-      model: boolean;
-      languages: boolean;
-    };
   };
   evaluation_framework: string;
   authenticated: boolean;

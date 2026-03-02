@@ -1,11 +1,12 @@
-import type { UseaiConfig, CaptureConfig, SyncConfig, SyncIncludeConfig } from '../types/config.js';
-import { DEFAULT_CAPTURE_CONFIG, DEFAULT_SYNC_CONFIG, DEFAULT_SYNC_INCLUDE_CONFIG } from '../constants/defaults.js';
+import type { UseaiConfig, CaptureConfig, SyncConfig } from '../types/config.js';
+import { DEFAULT_CAPTURE_CONFIG, DEFAULT_SYNC_CONFIG } from '../constants/defaults.js';
 
 /**
  * Migrate a raw config (possibly old flat format) to the current nested structure.
  * - Detects legacy flat fields (milestone_tracking, auto_sync, sync_interval_hours)
  * - Maps them to the new nested capture/sync structure
  * - Fills missing nested fields with defaults
+ * - Strips removed fields (sync.include) from old configs
  */
 export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
   const config = { ...raw } as unknown as UseaiConfig;
@@ -32,7 +33,7 @@ export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
 
   // ── Sync config ─────────────────────────────────────────────────────────
   if (!config.sync || typeof config.sync !== 'object') {
-    config.sync = { ...DEFAULT_SYNC_CONFIG, include: { ...DEFAULT_SYNC_INCLUDE_CONFIG } };
+    config.sync = { ...DEFAULT_SYNC_CONFIG };
 
     // Legacy: auto_sync → sync.enabled
     if (typeof raw['auto_sync'] === 'boolean') {
@@ -46,23 +47,15 @@ export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
   } else {
     // Fill missing sync fields with defaults
     const s = config.sync as Partial<SyncConfig>;
-    const include = (s.include ?? {}) as Partial<SyncIncludeConfig>;
 
     config.sync = {
       enabled: s.enabled ?? DEFAULT_SYNC_CONFIG.enabled,
       interval_hours: s.interval_hours ?? DEFAULT_SYNC_CONFIG.interval_hours,
-      include: {
-        sessions: include.sessions ?? DEFAULT_SYNC_INCLUDE_CONFIG.sessions,
-        evaluations: include.evaluations ?? DEFAULT_SYNC_INCLUDE_CONFIG.evaluations,
-        milestones: include.milestones ?? DEFAULT_SYNC_INCLUDE_CONFIG.milestones,
-        prompts: include.prompts ?? DEFAULT_SYNC_INCLUDE_CONFIG.prompts,
-        private_titles: include.private_titles ?? DEFAULT_SYNC_INCLUDE_CONFIG.private_titles,
-        projects: include.projects ?? DEFAULT_SYNC_INCLUDE_CONFIG.projects,
-        model: include.model ?? DEFAULT_SYNC_INCLUDE_CONFIG.model,
-        languages: include.languages ?? DEFAULT_SYNC_INCLUDE_CONFIG.languages,
-      },
     };
   }
+
+  // Strip removed sync.include from old configs
+  delete (config.sync as any).include;
 
   // Default evaluation_framework
   if (!config.evaluation_framework) {
