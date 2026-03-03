@@ -606,7 +606,7 @@ describe('installHttp file format behavior', () => {
     const config = JSON.parse(readFileSync(configPath, 'utf-8'));
     const servers = (config['servers'] as Record<string, unknown>) ?? {};
     delete servers['useai'];
-    servers['UseAI'] = { type: 'http', url: 'http://localhost:52419/mcp' };
+    servers['UseAI'] = { type: 'http', url: 'http://localhost:52419/mcp', httpUrl: 'http://localhost:52419/mcp' };
     config['servers'] = servers;
     writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
 
@@ -614,6 +614,7 @@ describe('installHttp file format behavior', () => {
     expect(result.servers.UseAI).toEqual({
       type: 'http',
       url: 'http://localhost:52419/mcp',
+      httpUrl: 'http://localhost:52419/mcp'
     });
   });
 

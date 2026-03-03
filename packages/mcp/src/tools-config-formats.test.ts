@@ -1023,7 +1023,7 @@ describe('HTTP install variants', () => {
 
     const config = readJson(configPath);
     const servers = config['mcpServers'] as Record<string, unknown>;
-    expect(servers['UseAI']).toEqual({ type: 'http', url: 'http://localhost:12425/mcp' });
+    expect(servers['UseAI']).toEqual({ type: 'http', url: 'http://localhost:12425/mcp', httpUrl: 'http://localhost:12425/mcp' });
     expect(servers['useai']).toBeUndefined();
   });
 
@@ -1038,6 +1038,7 @@ describe('HTTP install variants', () => {
     expect(servers['UseAI']).toEqual({
       type: 'http',
       url: 'http://localhost:12425/mcp',
+      httpUrl: 'http://localhost:12425/mcp'
     });
     expect(servers['useai']).toBeUndefined();
   });
@@ -1057,7 +1058,7 @@ describe('HTTP install variants', () => {
     const config = readJson(configPath);
     const servers = config['mcpServers'] as Record<string, unknown>;
     expect(servers['useai']).toBeUndefined();
-    expect(servers['UseAI']).toEqual({ type: 'http', url: 'http://localhost:12425/mcp' });
+    expect(servers['UseAI']).toEqual({ type: 'http', url: 'http://localhost:12425/mcp', httpUrl: 'http://localhost:12425/mcp' });
   });
 
   it('installHttp falls back to stdio install for unsupported formats like toml', () => {

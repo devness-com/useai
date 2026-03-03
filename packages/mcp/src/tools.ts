@@ -49,7 +49,7 @@ export const USEAI_INSTRUCTIONS_TEXT = [
 
 export const MCP_HTTP_URL = DAEMON_MCP_URL;
 
-const MCP_HTTP_ENTRY = { type: 'http', url: MCP_HTTP_URL };
+const MCP_HTTP_ENTRY = { type: 'http', url: MCP_HTTP_URL, httpUrl: MCP_HTTP_URL };
 
 const INSTRUCTIONS: InstructionsConfig = {
   text: USEAI_INSTRUCTIONS_TEXT,
@@ -115,7 +115,7 @@ function installVscodeHttp(configPath: string): void {
   const config = readJsonFile(configPath);
   const servers = (config['servers'] as Record<string, unknown>) ?? {};
   delete servers['useai'];
-  servers['UseAI'] = { type: 'http', url: MCP_HTTP_URL };
+  servers['UseAI'] = { ...MCP_HTTP_ENTRY };
   config['servers'] = servers;
   writeJsonFile(configPath, config);
 }
