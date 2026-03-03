@@ -31,6 +31,9 @@ export interface DashboardState {
   deleteMilestone: (milestoneId: string) => Promise<void>;
 }
 
+// Track IDs with in-flight delete operations so loadAll doesn't resurrect them
+let pendingDeletes = new Set<string>();
+
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   sessions: [],
   milestones: [],
@@ -62,7 +65,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         fetchMilestones(),
         fetchConfig(),
       ]);
-      set({ sessions, milestones, config, loading: false });
+      // Filter out sessions/milestones with in-flight deletes so auto-refresh doesn't resurrect them
+      set({
+        sessions: pendingDeletes.size > 0 ? sessions.filter(s => !pendingDeletes.has(s.session_id)) : sessions,
+        milestones: pendingDeletes.size > 0 ? milestones.filter(m => !pendingDeletes.has(m.session_id)) : milestones,
+        config,
+        loading: false,
+      });
     } catch {
       set({ loading: false });
     }
@@ -98,39 +107,46 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   deleteSession: async (sessionId) => {
-    const prev = { sessions: get().sessions, milestones: get().milestones };
+    pendingDeletes.add(sessionId);
     set({
-      sessions: prev.sessions.filter(s => s.session_id !== sessionId),
-      milestones: prev.milestones.filter(m => m.session_id !== sessionId),
+      sessions: get().sessions.filter(s => s.session_id !== sessionId),
+      milestones: get().milestones.filter(m => m.session_id !== sessionId),
     });
     try {
       await apiDeleteSession(sessionId);
-    } catch {
-      set(prev);
+    } catch (err) {
+      console.error('Failed to delete session:', sessionId, err);
+      // Re-fetch to get the actual server state instead of blindly reverting
+      get().loadAll();
+    } finally {
+      pendingDeletes.delete(sessionId);
     }
   },
 
   deleteConversation: async (conversationId) => {
-    const prev = { sessions: get().sessions, milestones: get().milestones };
-    const sessionIds = new Set(prev.sessions.filter(s => s.conversation_id === conversationId).map(s => s.session_id));
+    const sessionIds = new Set(get().sessions.filter(s => s.conversation_id === conversationId).map(s => s.session_id));
+    for (const id of sessionIds) pendingDeletes.add(id);
     set({
-      sessions: prev.sessions.filter(s => s.conversation_id !== conversationId),
-      milestones: prev.milestones.filter(m => !sessionIds.has(m.session_id)),
+      sessions: get().sessions.filter(s => s.conversation_id !== conversationId),
+      milestones: get().milestones.filter(m => !sessionIds.has(m.session_id)),
     });
     try {
       await apiDeleteConversation(conversationId);
-    } catch {
-      set(prev);
+    } catch (err) {
+      console.error('Failed to delete conversation:', conversationId, err);
+      get().loadAll();
+    } finally {
+      for (const id of sessionIds) pendingDeletes.delete(id);
     }
   },
 
   deleteMilestone: async (milestoneId) => {
-    const prev = { milestones: get().milestones };
-    set({ milestones: prev.milestones.filter(m => m.id !== milestoneId) });
+    set({ milestones: get().milestones.filter(m => m.id !== milestoneId) });
     try {
       await apiDeleteMilestone(milestoneId);
-    } catch {
-      set(prev);
+    } catch (err) {
+      console.error('Failed to delete milestone:', milestoneId, err);
+      get().loadAll();
     }
   },
 }));
