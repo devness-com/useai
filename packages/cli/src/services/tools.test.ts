@@ -215,11 +215,11 @@ describe('standard config format (mcpServers)', () => {
       expect(tool.isConfigured()).toBe(false);
     });
 
-    it('returns true when mcpServers has useai entry', () => {
+    it('returns true when mcpServers has UseAI entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
-          mcpServers: { useai: { command: 'npx', args: ['-y', '@devness/useai@latest'] } },
+          mcpServers: { UseAI: { command: 'npx', args: ['-y', '@devness/useai@latest'] } },
         }),
       );
       expect(tool.isConfigured()).toBe(true);
@@ -240,13 +240,13 @@ describe('standard config format (mcpServers)', () => {
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.mcpServers.useai).toEqual({
+      expect(written.mcpServers.UseAI).toEqual({
         command: 'npx',
         args: ['-y', '@devness/useai@latest'],
       });
     });
 
-    it('adds useai to existing mcpServers without removing other entries', () => {
+    it('adds UseAI to existing mcpServers without removing other entries', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({ mcpServers: { otherTool: { command: 'other' } } }),
@@ -258,7 +258,7 @@ describe('standard config format (mcpServers)', () => {
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
       expect(written.mcpServers.otherTool).toEqual({ command: 'other' });
-      expect(written.mcpServers.useai).toEqual({
+      expect(written.mcpServers.UseAI).toEqual({
         command: 'npx',
         args: ['-y', '@devness/useai@latest'],
       });
@@ -274,7 +274,7 @@ describe('standard config format (mcpServers)', () => {
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
       expect(written.existingKey).toBe('value');
-      expect(written.mcpServers.useai).toEqual({
+      expect(written.mcpServers.UseAI).toEqual({
         command: 'npx',
         args: ['-y', '@devness/useai@latest'],
       });
@@ -282,12 +282,12 @@ describe('standard config format (mcpServers)', () => {
   });
 
   describe('remove', () => {
-    it('removes useai entry from mcpServers', () => {
+    it('removes UseAI entry from mcpServers', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
           mcpServers: {
-            useai: { command: 'npx' },
+            UseAI: { command: 'npx' },
             otherTool: { command: 'other' },
           },
         }),
@@ -298,14 +298,14 @@ describe('standard config format (mcpServers)', () => {
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.mcpServers.useai).toBeUndefined();
+      expect(written.mcpServers.UseAI).toBeUndefined();
       expect(written.mcpServers.otherTool).toEqual({ command: 'other' });
     });
 
-    it('removes mcpServers key entirely when useai was the only entry', () => {
+    it('removes mcpServers key entirely when UseAI was the only entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
-        JSON.stringify({ mcpServers: { useai: { command: 'npx' } } }),
+        JSON.stringify({ mcpServers: { UseAI: { command: 'npx' } } }),
       );
 
       tool.remove();
@@ -316,21 +316,29 @@ describe('standard config format (mcpServers)', () => {
       expect(written.mcpServers).toBeUndefined();
     });
 
-    it('does nothing when config has no mcpServers key', () => {
+    it('does not modify config when it has no mcpServers key', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify({ otherKey: 'value' }));
 
       tool.remove();
 
-      expect(mockWriteFileSync).not.toHaveBeenCalled();
+      // The config file should not be written (but instructions file may be)
+      const configWrites = mockWriteFileSync.mock.calls.filter(
+        (call) => String(call[0]) === tool.getConfigPath(),
+      );
+      expect(configWrites).toHaveLength(0);
     });
 
-    it('does nothing when config file does not exist', () => {
+    it('does not modify config when file does not exist', () => {
       mockExistsSync.mockReturnValue(false);
 
       tool.remove();
 
-      expect(mockWriteFileSync).not.toHaveBeenCalled();
+      // The config file should not be written (but instructions cleanup may happen)
+      const configWrites = mockWriteFileSync.mock.calls.filter(
+        (call) => String(call[0]) === tool.getConfigPath(),
+      );
+      expect(configWrites).toHaveLength(0);
     });
   });
 });
@@ -348,7 +356,7 @@ describe('vscode config format (servers)', () => {
       expect(tool.isConfigured()).toBe(false);
     });
 
-    it('returns false when servers key exists but no useai', () => {
+    it('returns false when servers key exists but no UseAI', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({ servers: { someOther: {} } }),
@@ -356,24 +364,24 @@ describe('vscode config format (servers)', () => {
       expect(tool.isConfigured()).toBe(false);
     });
 
-    it('returns true when servers has useai entry', () => {
+    it('returns true when servers has UseAI entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
-        JSON.stringify({ servers: { useai: { command: 'npx' } } }),
+        JSON.stringify({ servers: { UseAI: { command: 'npx' } } }),
       );
       expect(tool.isConfigured()).toBe(true);
     });
   });
 
   describe('install', () => {
-    it('creates config with servers.useai', () => {
+    it('creates config with servers.UseAI', () => {
       mockExistsSync.mockReturnValue(false);
       tool.install();
 
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.servers.useai).toEqual({
+      expect(written.servers.UseAI).toEqual({
         command: 'npx',
         args: ['-y', '@devness/useai@latest'],
       });
@@ -391,7 +399,7 @@ describe('vscode config format (servers)', () => {
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
       expect(written.servers.existing).toEqual({ command: 'node' });
-      expect(written.servers.useai).toEqual({
+      expect(written.servers.UseAI).toEqual({
         command: 'npx',
         args: ['-y', '@devness/useai@latest'],
       });
@@ -399,11 +407,11 @@ describe('vscode config format (servers)', () => {
   });
 
   describe('remove', () => {
-    it('removes useai from servers and keeps other entries', () => {
+    it('removes UseAI from servers and keeps other entries', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
-          servers: { useai: { command: 'npx' }, other: { command: 'node' } },
+          servers: { UseAI: { command: 'npx' }, other: { command: 'node' } },
         }),
       );
 
@@ -412,14 +420,14 @@ describe('vscode config format (servers)', () => {
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.servers.useai).toBeUndefined();
+      expect(written.servers.UseAI).toBeUndefined();
       expect(written.servers.other).toEqual({ command: 'node' });
     });
 
-    it('removes servers key entirely when useai was the only entry', () => {
+    it('removes servers key entirely when UseAI was the only entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
-        JSON.stringify({ servers: { useai: { command: 'npx' } } }),
+        JSON.stringify({ servers: { UseAI: { command: 'npx' } } }),
       );
 
       tool.remove();
@@ -454,15 +462,15 @@ describe('zed config format (context_servers)', () => {
       expect(tool.isConfigured()).toBe(false);
     });
 
-    it('returns true when context_servers has useai entry', () => {
+    it('returns true when context_servers has UseAI entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
-        JSON.stringify({ context_servers: { useai: {} } }),
+        JSON.stringify({ context_servers: { UseAI: {} } }),
       );
       expect(tool.isConfigured()).toBe(true);
     });
 
-    it('returns false when context_servers has no useai entry', () => {
+    it('returns false when context_servers has no UseAI entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({ context_servers: { other: {} } }),
@@ -472,14 +480,14 @@ describe('zed config format (context_servers)', () => {
   });
 
   describe('install', () => {
-    it('creates config with context_servers.useai in zed format', () => {
+    it('creates config with context_servers.UseAI in zed format', () => {
       mockExistsSync.mockReturnValue(false);
       tool.install();
 
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.context_servers.useai).toEqual({
+      expect(written.context_servers.UseAI).toEqual({
         command: { path: 'npx', args: ['-y', '@devness/useai@latest'] },
         settings: {},
       });
@@ -501,7 +509,7 @@ describe('zed config format (context_servers)', () => {
       expect(written.context_servers.existing).toEqual({
         command: { path: 'other' },
       });
-      expect(written.context_servers.useai).toEqual({
+      expect(written.context_servers.UseAI).toEqual({
         command: { path: 'npx', args: ['-y', '@devness/useai@latest'] },
         settings: {},
       });
@@ -509,12 +517,12 @@ describe('zed config format (context_servers)', () => {
   });
 
   describe('remove', () => {
-    it('removes useai from context_servers and keeps other entries', () => {
+    it('removes UseAI from context_servers and keeps other entries', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
           context_servers: {
-            useai: { command: { path: 'npx' } },
+            UseAI: { command: { path: 'npx' } },
             other: { command: { path: 'node' } },
           },
         }),
@@ -525,17 +533,17 @@ describe('zed config format (context_servers)', () => {
       const written = JSON.parse(
         mockWriteFileSync.mock.calls[0]![1] as string,
       );
-      expect(written.context_servers.useai).toBeUndefined();
+      expect(written.context_servers.UseAI).toBeUndefined();
       expect(written.context_servers.other).toEqual({
         command: { path: 'node' },
       });
     });
 
-    it('removes context_servers key entirely when useai was the only entry', () => {
+    it('removes context_servers key entirely when UseAI was the only entry', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
-          context_servers: { useai: { command: { path: 'npx' } } },
+          context_servers: { UseAI: { command: { path: 'npx' } } },
         }),
       );
 
@@ -614,7 +622,7 @@ describe('writeJsonFile behavior', () => {
 
     // Verify it is valid JSON
     const parsed = JSON.parse(writtenContent);
-    expect(parsed.mcpServers.useai).toBeDefined();
+    expect(parsed.mcpServers.UseAI).toBeDefined();
 
     // Verify 2-space indentation
     expect(writtenContent).toContain('  "mcpServers"');

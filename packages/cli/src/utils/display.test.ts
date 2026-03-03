@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import chalk from 'chalk';
-import { header, table, success, error, info } from './display';
+import pc from 'picocolors';
+import { header, table, success, error, info, shortenPath } from './display';
 
 describe('display utilities', () => {
   describe('header', () => {
     it('produces bold cyan formatted string with underline matching text length', () => {
       const result = header('My Section');
-      const expected = chalk.bold.cyan(`\n  My Section\n  ${'─'.repeat('My Section'.length)}`);
+      const expected = pc.bold(pc.cyan(`\n  My Section\n  ${'─'.repeat('My Section'.length)}`));
       expect(result).toBe(expected);
     });
 
@@ -18,20 +18,20 @@ describe('display utilities', () => {
 
     it('handles a single character', () => {
       const result = header('X');
-      const expected = chalk.bold.cyan('\n  X\n  ─');
+      const expected = pc.bold(pc.cyan('\n  X\n  ─'));
       expect(result).toBe(expected);
     });
 
     it('handles empty string with zero-length underline', () => {
       const result = header('');
-      const expected = chalk.bold.cyan('\n  \n  ');
+      const expected = pc.bold(pc.cyan('\n  \n  '));
       expect(result).toBe(expected);
     });
 
     it('preserves spaces in the text', () => {
       const text = 'Hello World';
       const result = header(text);
-      const expected = chalk.bold.cyan(`\n  Hello World\n  ${'─'.repeat(11)}`);
+      const expected = pc.bold(pc.cyan(`\n  Hello World\n  ${'─'.repeat(11)}`));
       expect(result).toBe(expected);
     });
   });
@@ -44,8 +44,8 @@ describe('display utilities', () => {
       ];
       const result = table(rows);
       const expected = [
-        `  ${chalk.dim('Name ')}  Alice`,
-        `  ${chalk.dim('Email')}  alice@example.com`,
+        `  ${pc.dim('Name ')}  Alice`,
+        `  ${pc.dim('Email')}  alice@example.com`,
       ].join('\n');
       expect(result).toBe(expected);
     });
@@ -59,15 +59,15 @@ describe('display utilities', () => {
       const result = table(rows);
       const lines = result.split('\n');
       expect(lines).toHaveLength(3);
-      expect(lines[0]).toBe(`  ${chalk.dim('ID      ')}  42`);
-      expect(lines[1]).toBe(`  ${chalk.dim('Username')}  johndoe`);
-      expect(lines[2]).toBe(`  ${chalk.dim('Status  ')}  active`);
+      expect(lines[0]).toBe(`  ${pc.dim('ID      ')}  42`);
+      expect(lines[1]).toBe(`  ${pc.dim('Username')}  johndoe`);
+      expect(lines[2]).toBe(`  ${pc.dim('Status  ')}  active`);
     });
 
     it('handles a single row', () => {
       const rows: [string, string][] = [['Version', '1.0.0']];
       const result = table(rows);
-      expect(result).toBe(`  ${chalk.dim('Version')}  1.0.0`);
+      expect(result).toBe(`  ${pc.dim('Version')}  1.0.0`);
     });
 
     it('handles rows where all labels are the same length', () => {
@@ -77,8 +77,8 @@ describe('display utilities', () => {
       ];
       const result = table(rows);
       const expected = [
-        `  ${chalk.dim('abc')}  value1`,
-        `  ${chalk.dim('def')}  value2`,
+        `  ${pc.dim('abc')}  value1`,
+        `  ${pc.dim('def')}  value2`,
       ].join('\n');
       expect(result).toBe(expected);
     });
@@ -97,67 +97,86 @@ describe('display utilities', () => {
   describe('success', () => {
     it('returns green colored text with leading padding', () => {
       const result = success('Operation completed');
-      const expected = chalk.green('  Operation completed');
+      const expected = pc.green('  Operation completed');
       expect(result).toBe(expected);
     });
 
     it('handles empty string', () => {
       const result = success('');
-      const expected = chalk.green('  ');
+      const expected = pc.green('  ');
       expect(result).toBe(expected);
     });
 
     it('preserves message content within the green styling', () => {
       const message = 'Deployed to production successfully';
       const result = success(message);
-      expect(result).toBe(chalk.green(`  ${message}`));
+      expect(result).toBe(pc.green(`  ${message}`));
     });
   });
 
   describe('error', () => {
     it('returns red colored text with leading padding', () => {
       const result = error('Connection failed');
-      const expected = chalk.red('  Connection failed');
+      const expected = pc.red('  Connection failed');
       expect(result).toBe(expected);
     });
 
     it('handles empty string', () => {
       const result = error('');
-      const expected = chalk.red('  ');
+      const expected = pc.red('  ');
       expect(result).toBe(expected);
     });
 
     it('preserves error message content within the red styling', () => {
       const message = 'Failed to connect to database at localhost:5432';
       const result = error(message);
-      expect(result).toBe(chalk.red(`  ${message}`));
+      expect(result).toBe(pc.red(`  ${message}`));
     });
   });
 
   describe('info', () => {
     it('returns dim colored text with leading padding', () => {
       const result = info('Loading configuration...');
-      const expected = chalk.dim('  Loading configuration...');
+      const expected = pc.dim('  Loading configuration...');
       expect(result).toBe(expected);
     });
 
     it('handles empty string', () => {
       const result = info('');
-      const expected = chalk.dim('  ');
+      const expected = pc.dim('  ');
       expect(result).toBe(expected);
     });
 
     it('preserves informational message content within dim styling', () => {
       const message = 'Using default settings from ~/.config/app.json';
       const result = info(message);
-      expect(result).toBe(chalk.dim(`  ${message}`));
+      expect(result).toBe(pc.dim(`  ${message}`));
+    });
+  });
+
+  describe('shortenPath', () => {
+    it('replaces home directory with ~', () => {
+      const home = process.env['HOME'] ?? '';
+      if (home) {
+        expect(shortenPath(`${home}/Documents/file.txt`)).toBe('~/Documents/file.txt');
+      }
+    });
+
+    it('returns path unchanged when not under home', () => {
+      expect(shortenPath('/tmp/something')).toBe('/tmp/something');
+    });
+
+    it('handles exact home directory path', () => {
+      const home = process.env['HOME'] ?? '';
+      if (home) {
+        expect(shortenPath(home)).toBe('~'); // Exact match shortens to ~
+      }
     });
   });
 
   describe('consistent formatting across functions', () => {
     it('all output functions indent with two spaces', () => {
       const text = 'test message';
-      // Use a comprehensive ANSI stripping regex that handles all escape sequences
       const stripAnsi = (str: string) =>
         str.replace(/\x1B\[[0-9;]*m/g, '');
 
@@ -166,15 +185,16 @@ describe('display utilities', () => {
       expect(stripAnsi(info(text))).toBe(`  ${text}`);
     });
 
-    it('each function applies distinct chalk styling', () => {
+    it('each function wraps with the correct picocolors function', () => {
       const text = 'same message';
       const successResult = success(text);
       const errorResult = error(text);
       const infoResult = info(text);
 
-      expect(successResult).not.toBe(errorResult);
-      expect(successResult).not.toBe(infoResult);
-      expect(errorResult).not.toBe(infoResult);
+      // Verify each function uses the correct picocolors wrapper
+      expect(successResult).toBe(pc.green(`  ${text}`));
+      expect(errorResult).toBe(pc.red(`  ${text}`));
+      expect(infoResult).toBe(pc.dim(`  ${text}`));
     });
   });
 });

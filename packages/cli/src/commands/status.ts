@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { existsSync, statSync, readdirSync } from 'node:fs';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { readJson } from '@useai/shared/utils';
 import {
   USEAI_DIR,
@@ -57,11 +57,11 @@ export const statusCommand = new Command('status')
 
     console.log(
       table([
-        ['Sessions recorded', chalk.bold(String(sessions.length))],
-        ['Total tracked time', chalk.bold(formatDuration(totalSeconds))],
-        ['Milestones', chalk.bold(`${unpublished} unpublished, ${published} published`)],
-        ['Local storage', chalk.bold(formatBytes(storageSize))],
-        ['Data directory', chalk.dim(DATA_DIR)],
+        ['Sessions recorded', pc.bold(String(sessions.length))],
+        ['Total tracked time', pc.bold(formatDuration(totalSeconds))],
+        ['Milestones', pc.bold(`${unpublished} unpublished, ${published} published`)],
+        ['Local storage', pc.bold(formatBytes(storageSize))],
+        ['Data directory', pc.dim(DATA_DIR)],
       ]),
     );
 
@@ -69,13 +69,13 @@ export const statusCommand = new Command('status')
 
     console.log(
       table([
-        ['Milestone tracking', config.capture.milestones ? chalk.green('on') : chalk.red('off')],
-        ['Prompt capture', config.capture.prompt ? chalk.green('on') : chalk.red('off')],
+        ['Milestone tracking', config.capture.milestones ? pc.green('on') : pc.red('off')],
+        ['Prompt capture', config.capture.prompt ? pc.green('on') : pc.red('off')],
         ['Eval reasons', config.capture.evaluation_reasons],
-        ['Cloud sync', config.sync.enabled ? chalk.green('on') : chalk.red('off')],
+        ['Cloud sync', config.sync.enabled ? pc.green('on') : pc.red('off')],
         ['Sync interval', `${config.sync.interval_hours}h`],
-        ['Last sync', config.last_sync_at ?? chalk.dim('never')],
-        ['Logged in', config.auth ? chalk.green(config.auth.user.email) : chalk.dim('no')],
+        ['Last sync', config.last_sync_at ?? pc.dim('never')],
+        ['Logged in', config.auth ? pc.green(config.auth.user.email) : pc.dim('no')],
       ]),
     );
 

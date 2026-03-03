@@ -525,7 +525,7 @@ export const AI_TOOLS: AiTool[] = [
     name: 'Claude Code',
     configFormat: 'standard',
     configPath: join(home, '.claude.json'),
-    detect: () => hasBinary('claude') || existsSync(join(home, '.claude.json')),
+    detect: () => existsSync(join(home, '.claude.json')) || hasBinary('claude'),
     instructions: { method: 'append', path: join(home, '.claude', 'CLAUDE.md') },
     supportsUrl: true,
   }),
@@ -598,7 +598,7 @@ export const AI_TOOLS: AiTool[] = [
     name: 'Copilot CLI',
     configFormat: 'standard',
     configPath: join(home, '.copilot', 'mcp-config.json'),
-    detect: () => hasBinary('copilot') || existsSync(join(home, '.copilot')),
+    detect: () => existsSync(join(home, '.copilot')) || hasBinary('copilot'),
     manualHint: 'No global instructions file — add UseAI instructions to your project-level agent rules.',
     supportsUrl: true,
   }),
@@ -684,7 +684,7 @@ export const AI_TOOLS: AiTool[] = [
     name: 'Amazon Q CLI',
     configFormat: 'standard',
     configPath: join(home, '.aws', 'amazonq', 'mcp.json'),
-    detect: () => hasBinary('q') || existsSync(join(home, '.aws', 'amazonq')),
+    detect: () => existsSync(join(home, '.aws', 'amazonq')) || hasBinary('q'),
     manualHint: 'Create .amazonq/rules/useai.md in your project root with the instructions below.',
   }),
   createTool({
@@ -701,9 +701,9 @@ export const AI_TOOLS: AiTool[] = [
     configFormat: 'toml',
     configPath: join(home, '.codex', 'config.toml'),
     detect: () =>
-      hasBinary('codex') ||
       existsSync(join(home, '.codex')) ||
-      existsSync('/Applications/Codex.app'),
+      existsSync('/Applications/Codex.app') ||
+      hasBinary('codex'),
     instructions: { method: 'append', path: join(home, '.codex', 'AGENTS.md') },
     supportsUrl: true,
   }),
@@ -721,7 +721,7 @@ export const AI_TOOLS: AiTool[] = [
     name: 'OpenCode',
     configFormat: 'standard',
     configPath: join(home, '.config', 'opencode', 'opencode.json'),
-    detect: () => hasBinary('opencode') || existsSync(join(home, '.config', 'opencode')),
+    detect: () => existsSync(join(home, '.config', 'opencode')) || hasBinary('opencode'),
     instructions: { method: 'append', path: join(home, '.config', 'opencode', 'AGENTS.md') },
     supportsUrl: true,
   }),
@@ -730,7 +730,7 @@ export const AI_TOOLS: AiTool[] = [
     name: 'Crush',
     configFormat: 'crush',
     configPath: join(home, '.config', 'crush', 'crush.json'),
-    detect: () => hasBinary('crush') || existsSync(join(home, '.config', 'crush')),
+    detect: () => existsSync(join(home, '.config', 'crush')) || hasBinary('crush'),
     manualHint: 'No global instructions file — add UseAI instructions to your project-level .crush.json.',
     supportsUrl: true,
   }),

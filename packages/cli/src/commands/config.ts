@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { getFrameworkIds } from '@useai/shared';
 import { getConfig, updateConfig } from '../services/config.service.js';
 import { reinjectInstructions } from '../services/tools.js';
@@ -49,7 +49,7 @@ export const configCommand = new Command('config')
         console.log(error(`Unknown framework: ${opts.framework}. Valid: ${validIds.join(', ')}`));
       } else {
         updateConfig({ evaluation_framework: opts.framework });
-        console.log(success(`Evaluation framework set to ${chalk.bold(opts.framework)}.`));
+        console.log(success(`Evaluation framework set to ${pc.bold(opts.framework)}.`));
 
         // Re-inject instructions into configured tools with new framework text
         const results = reinjectInstructions(opts.framework);
@@ -68,14 +68,14 @@ export const configCommand = new Command('config')
       console.log(header('Current Settings'));
       console.log(
         table([
-          ['Milestone tracking', config.capture.milestones ? chalk.green('on') : chalk.red('off')],
-          ['Prompt capture', config.capture.prompt ? chalk.green('on') : chalk.red('off')],
+          ['Milestone tracking', config.capture.milestones ? pc.green('on') : pc.red('off')],
+          ['Prompt capture', config.capture.prompt ? pc.green('on') : pc.red('off')],
           ['Eval reasons', config.capture.evaluation_reasons],
-          ['Cloud sync', config.sync.enabled ? chalk.green('on') : chalk.red('off')],
-          ['Eval framework', chalk.cyan(config.evaluation_framework ?? 'space')],
+          ['Cloud sync', config.sync.enabled ? pc.green('on') : pc.red('off')],
+          ['Eval framework', pc.cyan(config.evaluation_framework ?? 'space')],
           ['Sync interval', `${config.sync.interval_hours}h`],
-          ['Last sync', config.last_sync_at ?? chalk.dim('never')],
-          ['Logged in', config.auth ? chalk.green(config.auth.user.email) : chalk.dim('no')],
+          ['Last sync', config.last_sync_at ?? pc.dim('never')],
+          ['Logged in', config.auth ? pc.green(config.auth.user.email) : pc.dim('no')],
         ]),
       );
       console.log('');

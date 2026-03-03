@@ -40,14 +40,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@clack/prompts": "^1.0.1",
     "@devness/mcp-setup": "^0.1.0",
-    "@inquirer/prompts": "^8.2.1"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/node": "^22.13.4",
     "@useai/shared": "workspace:*",
-    "chalk": "^5.4.1",
+
     "smol-toml": "^1.6.0",
     "tsup": "^8.0.0",
     "typescript": "^5.7.3",

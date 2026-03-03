@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import {
   VERSION,
   DAEMON_PORT,
@@ -15,12 +15,12 @@ import { success, error, info } from '../utils/display.js';
 export const updateCommand = new Command('update')
   .description('Update UseAI to the latest version (daemon + MCP configs)')
   .action(async () => {
-    console.log(chalk.dim('  Checking for updates...'));
+    console.log(pc.dim('  Checking for updates...'));
 
     // 1. Fetch latest version from npm
     const latest = await fetchLatestVersion();
     if (!latest) {
-      console.log(chalk.red('  ✗ Could not reach npm registry'));
+      console.log(pc.red('  ✗ Could not reach npm registry'));
       return;
     }
 
@@ -29,12 +29,12 @@ export const updateCommand = new Command('update')
     const currentVersion = (health?.['version'] as string) ?? VERSION;
 
     if (currentVersion === latest) {
-      console.log(chalk.green(`  ✓ Already up to date (v${latest})`));
+      console.log(pc.green(`  ✓ Already up to date (v${latest})`));
       return;
     }
 
-    console.log(`  ${chalk.dim('Current:')} v${currentVersion}`);
-    console.log(`  ${chalk.dim('Latest:')}  v${latest}`);
+    console.log(`  ${pc.dim('Current:')} v${currentVersion}`);
+    console.log(`  ${pc.dim('Latest:')}  v${latest}`);
     console.log();
 
     // 3. Snapshot which tools are currently configured
@@ -44,7 +44,7 @@ export const updateCommand = new Command('update')
 
     // 4. Remove MCP config from all configured tools
     if (configuredTools.length > 0) {
-      console.log(chalk.dim('  Removing MCP configs from configured tools...'));
+      console.log(pc.dim('  Removing MCP configs from configured tools...'));
       for (const tool of configuredTools) {
         try {
           tool.remove();
@@ -57,25 +57,25 @@ export const updateCommand = new Command('update')
     }
 
     // 5. Kill old daemon
-    console.log(chalk.dim('  Stopping current daemon...'));
+    console.log(pc.dim('  Stopping current daemon...'));
     await killDaemon();
 
     // 6. Spawn new daemon with --prefer-online to force fresh npm fetch
-    console.log(chalk.dim('  Starting updated daemon...'));
+    console.log(pc.dim('  Starting updated daemon...'));
     const daemonOk = await ensureDaemon();
 
     if (!daemonOk) {
-      console.log(chalk.red('  ✗ Failed to start updated daemon'));
-      console.log(chalk.dim('    Try running in foreground to debug:'));
-      console.log(chalk.dim(`    npx -y --prefer-online @devness/useai@latest daemon --port ${DAEMON_PORT}`));
+      console.log(pc.red('  ✗ Failed to start updated daemon'));
+      console.log(pc.dim('    Try running in foreground to debug:'));
+      console.log(pc.dim(`    npx -y --prefer-online @devness/useai@latest daemon --port ${DAEMON_PORT}`));
 
       // Still reinstall tools in stdio mode so the user isn't left broken
       if (configuredTools.length > 0) {
-        console.log(chalk.dim('\n  Reinstalling MCP configs (stdio fallback)...'));
+        console.log(pc.dim('\n  Reinstalling MCP configs (stdio fallback)...'));
         for (const tool of configuredTools) {
           try {
             tool.install();
-            console.log(success(`  ✓ ${tool.name} → ${chalk.dim('stdio')}`));
+            console.log(success(`  ✓ ${tool.name} → ${pc.dim('stdio')}`));
           } catch {
             console.log(error(`  ✗ ${tool.name}`));
           }
@@ -88,19 +88,19 @@ export const updateCommand = new Command('update')
     const newHealth = await fetchDaemonHealth();
     const newVersion = (newHealth?.['version'] as string) ?? 'unknown';
 
-    console.log(chalk.green(`\n  ✓ Daemon updated: v${currentVersion} → v${newVersion}`));
+    console.log(pc.green(`\n  ✓ Daemon updated: v${currentVersion} → v${newVersion}`));
 
     // 8. Reinstall MCP configs on the same tools with latest version
     if (configuredTools.length > 0) {
-      console.log(chalk.dim('\n  Reinstalling MCP configs...'));
+      console.log(pc.dim('\n  Reinstalling MCP configs...'));
       for (const tool of configuredTools) {
         try {
           if (tool.supportsUrl) {
             tool.installHttp();
-            console.log(success(`  ✓ ${tool.name} → ${chalk.dim('HTTP (daemon)')}`));
+            console.log(success(`  ✓ ${tool.name} → ${pc.dim('HTTP (daemon)')}`));
           } else {
             tool.install();
-            console.log(success(`  ✓ ${tool.name} → ${chalk.dim('stdio')}`));
+            console.log(success(`  ✓ ${tool.name} → ${pc.dim('stdio')}`));
           }
         } catch {
           console.log(error(`  ✗ ${tool.name}`));
@@ -116,6 +116,6 @@ export const updateCommand = new Command('update')
       }
     } catch { /* ignore */ }
 
-    console.log(`\n  Done! UseAI updated to v${newVersion} in ${chalk.bold(String(configuredTools.length))} tool${configuredTools.length === 1 ? '' : 's'}.\n`);
-    console.log(chalk.dim(`  Dashboard: http://127.0.0.1:${DAEMON_PORT}/dashboard`));
+    console.log(`\n  Done! UseAI updated to v${newVersion} in ${pc.bold(String(configuredTools.length))} tool${configuredTools.length === 1 ? '' : 's'}.\n`);
+    console.log(pc.dim(`  Dashboard: http://127.0.0.1:${DAEMON_PORT}/dashboard`));
   });

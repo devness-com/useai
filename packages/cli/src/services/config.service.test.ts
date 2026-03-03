@@ -4,85 +4,72 @@ import { getConfig, saveConfig, updateConfig } from './config.service';
 vi.mock('@useai/shared/utils', () => ({
   readJson: vi.fn(),
   writeJson: vi.fn(),
+  migrateConfig: vi.fn((raw: Record<string, unknown>) => raw),
 }));
 
 vi.mock('@useai/shared/constants', () => ({
   CONFIG_FILE: '/mock/path/config.json',
-  DEFAULT_CONFIG: {
-    enabled: true,
-    api_url: 'https://api.useai.dev',
-  },
-  DEFAULT_SYNC_INTERVAL_HOURS: 24,
 }));
 
-import { readJson, writeJson } from '@useai/shared/utils';
+import { readJson, writeJson, migrateConfig } from '@useai/shared/utils';
 import { CONFIG_FILE } from '@useai/shared/constants';
 
 const mockedReadJson = vi.mocked(readJson);
 const mockedWriteJson = vi.mocked(writeJson);
+const mockedMigrateConfig = vi.mocked(migrateConfig);
 
 describe('config.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: migrateConfig just passes through
+    mockedMigrateConfig.mockImplementation((raw: any) => raw);
   });
 
   describe('getConfig', () => {
-    it('returns default config when no config file exists', () => {
-      const defaultConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+    it('returns migrated config from readJson', () => {
+      const rawConfig = {
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 6 },
       };
-      mockedReadJson.mockReturnValue(defaultConfig);
+      mockedReadJson.mockReturnValue(rawConfig);
+      mockedMigrateConfig.mockReturnValue(rawConfig);
 
       const result = getConfig();
 
-      expect(mockedReadJson).toHaveBeenCalledWith(CONFIG_FILE, expect.objectContaining({
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
-      }));
-      expect(result).toEqual(defaultConfig);
+      expect(mockedReadJson).toHaveBeenCalledWith(CONFIG_FILE, {});
+      expect(mockedMigrateConfig).toHaveBeenCalledWith(rawConfig);
+      expect(result).toEqual(rawConfig);
     });
 
-    it('returns stored config when config file exists with custom values', () => {
-      const storedConfig = {
-        enabled: false,
-        api_url: 'https://custom.api.dev',
-        sync_interval_hours: 12,
-      };
-      mockedReadJson.mockReturnValue(storedConfig);
-
-      const result = getConfig();
-
-      expect(result).toEqual(storedConfig);
-      expect(result.sync_interval_hours).toBe(12);
-      expect((result as any).enabled).toBe(false);
-    });
-
-    it('passes the CONFIG_FILE path and default config to readJson', () => {
-      mockedReadJson.mockReturnValue({
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
-      });
+    it('passes empty object as default to readJson', () => {
+      mockedReadJson.mockReturnValue({});
 
       getConfig();
 
-      expect(mockedReadJson).toHaveBeenCalledTimes(1);
-      expect(mockedReadJson.mock.calls[0]![0]).toBe('/mock/path/config.json');
-      expect(mockedReadJson.mock.calls[0]![1]).toEqual(expect.objectContaining({
-        sync_interval_hours: 24,
-      }));
+      expect(mockedReadJson).toHaveBeenCalledWith('/mock/path/config.json', {});
+    });
+
+    it('calls migrateConfig on the raw data from readJson', () => {
+      const raw = { old_field: true };
+      const migrated = {
+        capture: { milestones: true },
+        sync: { enabled: false },
+      };
+      mockedReadJson.mockReturnValue(raw);
+      mockedMigrateConfig.mockReturnValue(migrated as any);
+
+      const result = getConfig();
+
+      expect(mockedMigrateConfig).toHaveBeenCalledWith(raw);
+      expect(result).toEqual(migrated);
     });
   });
 
   describe('saveConfig', () => {
     it('writes config to the CONFIG_FILE path', () => {
       const config = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' as const },
+        sync: { enabled: true, interval_hours: 6 },
       };
 
       saveConfig(config as any);
@@ -93,10 +80,8 @@ describe('config.service', () => {
 
     it('writes config with custom values', () => {
       const customConfig = {
-        enabled: false,
-        api_url: 'https://staging.api.dev',
-        sync_interval_hours: 6,
-        extra_field: 'custom_value',
+        capture: { milestones: false, prompt: false, evaluation: true, evaluation_reasons: 'none' as const },
+        sync: { enabled: false, interval_hours: 12 },
       };
 
       saveConfig(customConfig as any);
@@ -106,9 +91,8 @@ describe('config.service', () => {
 
     it('calls writeJson exactly once per invocation', () => {
       const config = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 48,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' as const },
+        sync: { enabled: true, interval_hours: 48 },
       };
 
       saveConfig(config as any);
@@ -121,84 +105,77 @@ describe('config.service', () => {
   describe('updateConfig', () => {
     it('merges partial updates with existing config', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
-      const result = updateConfig({ sync_interval_hours: 12 } as any);
+      const result = updateConfig({ evaluation_framework: 'raw' } as any);
 
       expect(result).toEqual({
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 12,
+        ...existingConfig,
+        evaluation_framework: 'raw',
       });
     });
 
     it('saves the merged config to disk', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
-      updateConfig({ enabled: false } as any);
+      updateConfig({ evaluation_framework: 'space' } as any);
 
       expect(mockedWriteJson).toHaveBeenCalledWith('/mock/path/config.json', {
-        enabled: false,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        ...existingConfig,
+        evaluation_framework: 'space',
       });
     });
 
     it('returns the fully merged config object', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
       const result = updateConfig({
-        api_url: 'https://new-api.useai.dev',
-        sync_interval_hours: 48,
+        evaluation_framework: 'raw',
+        last_sync_at: '2026-01-01',
       } as any);
 
-      expect((result as any).api_url).toBe('https://new-api.useai.dev');
-      expect(result.sync_interval_hours).toBe(48);
-      expect((result as any).enabled).toBe(true);
+      expect((result as any).evaluation_framework).toBe('raw');
+      expect((result as any).last_sync_at).toBe('2026-01-01');
+      expect((result as any).capture.milestones).toBe(true);
     });
 
     it('overrides existing values when updates contain the same keys', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
+        evaluation_framework: 'space',
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
       const result = updateConfig({
-        enabled: false,
-        api_url: 'https://override.api.dev',
-        sync_interval_hours: 1,
+        evaluation_framework: 'raw',
       } as any);
 
-      expect(result).toEqual({
-        enabled: false,
-        api_url: 'https://override.api.dev',
-        sync_interval_hours: 1,
-      });
+      expect((result as any).evaluation_framework).toBe('raw');
     });
 
     it('handles empty updates object by returning existing config unchanged', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
       const result = updateConfig({});
 
@@ -207,33 +184,32 @@ describe('config.service', () => {
     });
 
     it('reads the current config before applying updates', () => {
-      mockedReadJson.mockReturnValue({
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
-      });
+      const existingConfig = {
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
+      };
+      mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
-      updateConfig({ sync_interval_hours: 6 } as any);
+      updateConfig({ evaluation_framework: 'raw' } as any);
 
       expect(mockedReadJson).toHaveBeenCalledBefore(mockedWriteJson);
     });
 
     it('preserves fields not included in the partial update', () => {
       const existingConfig = {
-        enabled: true,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
-        custom_setting: 'preserved_value',
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
+        last_sync_at: '2026-01-01',
       };
       mockedReadJson.mockReturnValue(existingConfig);
+      mockedMigrateConfig.mockReturnValue(existingConfig as any);
 
-      const result = updateConfig({ enabled: false } as any);
+      const result = updateConfig({ evaluation_framework: 'raw' } as any);
 
       expect(result).toEqual({
-        enabled: false,
-        api_url: 'https://api.useai.dev',
-        sync_interval_hours: 24,
-        custom_setting: 'preserved_value',
+        ...existingConfig,
+        evaluation_framework: 'raw',
       });
     });
   });

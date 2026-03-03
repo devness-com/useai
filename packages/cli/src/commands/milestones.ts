@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { readJson, formatDuration } from '@useai/shared/utils';
 import { MILESTONES_FILE } from '@useai/shared/constants';
 import type { Milestone } from '@useai/shared/types';
@@ -20,12 +20,12 @@ export const milestonesCommand = new Command('milestones')
 
     for (const m of milestones) {
       const status = m.published
-        ? chalk.green('published')
-        : chalk.yellow('local');
+        ? pc.green('published')
+        : pc.yellow('local');
 
       const displayTitle = m.private_title ?? m.title;
       console.log(
-        `\n  ${chalk.bold(displayTitle)}  ${status}`,
+        `\n  ${pc.bold(displayTitle)}  ${status}`,
       );
       console.log(
         table([
@@ -38,11 +38,11 @@ export const milestonesCommand = new Command('milestones')
 
       if (opts.verbose) {
         const verboseRows: [string, string][] = [
-          ['ID', chalk.dim(m.id)],
-          ['Session', chalk.dim(m.session_id)],
+          ['ID', pc.dim(m.id)],
+          ['Session', pc.dim(m.session_id)],
           ['Client', m.client],
           ['Languages', m.languages.join(', ') || 'none'],
-          ['Chain hash', chalk.dim(m.chain_hash.slice(0, 16) + '...')],
+          ['Chain hash', pc.dim(m.chain_hash.slice(0, 16) + '...')],
           ['Published at', m.published_at ?? 'n/a'],
         ];
         if (m.private_title) {

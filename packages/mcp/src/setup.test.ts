@@ -2,18 +2,43 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
 // ── Mock external dependencies ────────────────────────────────────────────────
 
-vi.mock('@inquirer/prompts', () => ({
-  checkbox: vi.fn(),
+vi.mock('picocolors', () => ({
+  default: {
+    bold: (s: string) => s,
+    green: (s: string) => s,
+    red: (s: string) => s,
+    dim: (s: string) => s,
+    cyan: (s: string) => s,
+    yellow: (s: string) => s,
+    bgCyan: (s: string) => s,
+    black: (s: string) => s,
+  },
 }));
 
-vi.mock('chalk', () => {
-  const passthrough = (s: string) => s;
-  const chainable: any = new Proxy(passthrough, {
-    get: () => chainable,
-    apply: (_target: any, _thisArg: any, args: any[]) => args[0],
-  });
-  return { default: chainable };
+const { mockClack, mockSpinnerStart, mockSpinnerStop } = vi.hoisted(() => {
+  const mockSpinnerStart = vi.fn();
+  const mockSpinnerStop = vi.fn();
+  const mockClack = {
+    intro: vi.fn(),
+    outro: vi.fn(),
+    cancel: vi.fn(),
+    spinner: vi.fn(() => ({ start: mockSpinnerStart, stop: mockSpinnerStop })),
+    multiselect: vi.fn(),
+    confirm: vi.fn(),
+    note: vi.fn(),
+    isCancel: vi.fn().mockReturnValue(false),
+    log: {
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      message: vi.fn(),
+    },
+  };
+  return { mockClack, mockSpinnerStart, mockSpinnerStop };
 });
+
+vi.mock('@clack/prompts', () => mockClack);
 
 vi.mock('@useai/shared', () => ({
   DAEMON_PORT: 9999,
@@ -30,7 +55,6 @@ vi.mock('@useai/shared', () => ({
 }));
 
 const { mockToolA, mockToolB, allMockTools } = vi.hoisted(() => {
-  const _vi = { fn: () => Object.assign((() => {}) as any, { mockReturnValue: (v: any) => Object.assign((() => v) as any, { mockReturnValue: (v2: any) => (() => v2) }) }) };
   return {
     mockToolA: {
       id: 'claude',
@@ -85,8 +109,35 @@ import {
 
 let consoleSpy: Mock;
 
+/** Collect output from console.log AND all @clack/prompts mock functions. */
 function capturedOutput(): string {
-  return (consoleSpy as Mock).mock.calls.map((c: any[]) => c.join(' ')).join('\n');
+  const parts: string[] = [];
+
+  // console.log calls
+  parts.push(...(consoleSpy as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  // p.log.* calls
+  for (const fn of [mockClack.log.info, mockClack.log.success, mockClack.log.warn, mockClack.log.error, mockClack.log.message]) {
+    parts.push(...(fn as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+  }
+
+  // p.note calls (content + title)
+  parts.push(...(mockClack.note as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  // p.outro calls
+  parts.push(...(mockClack.outro as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  // p.cancel calls
+  parts.push(...(mockClack.cancel as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  // p.intro calls
+  parts.push(...(mockClack.intro as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  // spinner start/stop calls
+  parts.push(...(mockSpinnerStart as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+  parts.push(...(mockSpinnerStop as Mock).mock.calls.map((c: any[]) => c.join(' ')));
+
+  return parts.join('\n');
 }
 
 beforeEach(() => {
@@ -103,6 +154,13 @@ beforeEach(() => {
   (killDaemon as Mock).mockResolvedValue(undefined);
   (detectPlatform as Mock).mockReturnValue('launchd');
   (isAutostartInstalled as Mock).mockReturnValue(false);
+
+  // Default: confirm proceeds
+  (mockClack.confirm as Mock).mockResolvedValue(true);
+  // Default: multiselect returns all tool ids
+  (mockClack.multiselect as Mock).mockResolvedValue(['claude', 'cursor']);
+  // Default: isCancel returns false
+  (mockClack.isCancel as Mock).mockReturnValue(false);
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -157,8 +215,8 @@ describe('runSetup', () => {
       expect(output).toContain('AI Tool MCP Status');
       expect(output).toContain('Claude Code');
       expect(output).toContain('Configured');
-      expect(output).toContain('Cursor');
-      expect(output).toContain('Not found');
+      // Cursor is not detected, so it should NOT appear in the status output
+      expect(output).not.toContain('Cursor');
       // Should NOT have triggered any install flow
       expect(ensureDaemon).not.toHaveBeenCalled();
       expect(mockToolA.install).not.toHaveBeenCalled();
@@ -287,10 +345,10 @@ describe('runSetup', () => {
       await runSetup(['-y']);
 
       expect(ensureDaemon).toHaveBeenCalled();
-      // Tool A supports URL → installHttp
+      // Tool A supports URL -> installHttp
       expect(mockToolA.installHttp).toHaveBeenCalled();
       expect(mockToolA.install).not.toHaveBeenCalled();
-      // Tool B does NOT support URL → stdio fallback
+      // Tool B does NOT support URL -> stdio fallback
       expect(mockToolB.install).toHaveBeenCalled();
       expect(mockToolB.installHttp).not.toHaveBeenCalled();
     });
@@ -385,7 +443,7 @@ describe('runSetup', () => {
       await runSetup(['-y']);
 
       const output = capturedOutput();
-      expect(output).toContain('Done!');
+      // p.outro contains 'daemon mode'
       expect(output).toContain('daemon mode');
     });
 
@@ -398,7 +456,7 @@ describe('runSetup', () => {
       expect(output).toContain('Could not start daemon');
       expect(output).toContain('foreground');
       // Should NOT print done summary or install any tools
-      expect(output).not.toContain('Done!');
+      expect(output).not.toContain('daemon mode');
       expect(mockToolA.install).not.toHaveBeenCalled();
       expect(mockToolA.installHttp).not.toHaveBeenCalled();
     });
@@ -668,10 +726,10 @@ describe('runSetup', () => {
     });
   });
 
-  // ── Stdio explicit install shows update status ────────────────────────────
+  // ── Stdio explicit install shows tool names in results ────────────────────
 
   describe('--stdio with explicit tool names', () => {
-    it('shows "(updated)" for tools that were already configured', async () => {
+    it('configures and shows tool name in grouped results for already-configured tools', async () => {
       (resolveTools as Mock).mockReturnValue({
         matched: [mockToolA],
         unmatched: [],
@@ -682,10 +740,10 @@ describe('runSetup', () => {
 
       expect(mockToolA.install).toHaveBeenCalled();
       const output = capturedOutput();
-      expect(output).toContain('updated');
+      expect(output).toContain('Claude Code');
     });
 
-    it('shows config path for newly configured tools', async () => {
+    it('shows tool name in grouped results for newly configured tools', async () => {
       (resolveTools as Mock).mockReturnValue({
         matched: [mockToolA],
         unmatched: [],

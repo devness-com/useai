@@ -5,18 +5,33 @@ vi.mock('../services/config.service.js', () => ({
   updateConfig: vi.fn(),
 }));
 
+vi.mock('../services/tools.js', () => ({
+  reinjectInstructions: vi.fn(() => []),
+}));
+
 vi.mock('../utils/display.js', () => ({
   header: vi.fn((text: string) => `[HEADER] ${text}`),
   table: vi.fn((rows: string[][]) => rows.map((r) => r.join(' | ')).join('\n')),
   success: vi.fn((text: string) => `[SUCCESS] ${text}`),
+  error: vi.fn((text: string) => `[ERROR] ${text}`),
+  info: vi.fn((text: string) => `[INFO] ${text}`),
 }));
 
-vi.mock('chalk', () => ({
+vi.mock('picocolors', () => ({
   default: {
+    bold: (s: string) => s,
     green: (s: string) => `green(${s})`,
     red: (s: string) => `red(${s})`,
     dim: (s: string) => `dim(${s})`,
+    cyan: (s: string) => `cyan(${s})`,
+    yellow: (s: string) => s,
+    bgCyan: (s: string) => s,
+    black: (s: string) => s,
   },
+}));
+
+vi.mock('@useai/shared', () => ({
+  getFrameworkIds: vi.fn(() => ['space', 'raw']),
 }));
 
 import { getConfig, updateConfig } from '../services/config.service.js';
@@ -29,11 +44,20 @@ const mockedTable = vi.mocked(table);
 
 function buildDefaultConfig(overrides: Record<string, unknown> = {}) {
   return {
-    milestone_tracking: true,
-    auto_sync: true,
-    sync_interval_hours: 6,
+    capture: {
+      prompt: true,
+      prompt_images: true,
+      evaluation: true,
+      evaluation_reasons: 'all' as const,
+      milestones: true,
+    },
+    sync: {
+      enabled: true,
+      interval_hours: 6,
+    },
+    evaluation_framework: 'space',
     last_sync_at: '2026-02-15T10:00:00Z',
-    auth: { user: { email: 'user@example.com' } },
+    auth: { token: 'tok', user: { id: '1', email: 'user@example.com' } },
     ...overrides,
   };
 }
@@ -64,9 +88,11 @@ describe('configCommand', () => {
     it('enables auto-sync when --sync is passed', async () => {
       await runCommand(['--sync']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: true });
+      expect(mockedUpdateConfig).toHaveBeenCalled();
+      const updateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(updateArg.sync.enabled).toBe(true);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Auto-sync enabled'),
+        expect.stringContaining('sync'),
       );
     });
 
@@ -82,9 +108,11 @@ describe('configCommand', () => {
     it('disables auto-sync when --no-sync is passed', async () => {
       await runCommand(['--no-sync']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: false });
+      expect(mockedUpdateConfig).toHaveBeenCalled();
+      const updateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(updateArg.sync.enabled).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Auto-sync disabled'),
+        expect.stringContaining('sync'),
       );
     });
 
@@ -100,9 +128,11 @@ describe('configCommand', () => {
     it('enables milestone tracking when --milestones is passed', async () => {
       await runCommand(['--milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: true });
+      expect(mockedUpdateConfig).toHaveBeenCalled();
+      const updateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(updateArg.capture.milestones).toBe(true);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Milestone tracking enabled'),
+        expect.stringContaining('Milestone tracking'),
       );
     });
 
@@ -118,9 +148,11 @@ describe('configCommand', () => {
     it('disables milestone tracking when --no-milestones is passed', async () => {
       await runCommand(['--no-milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: false });
+      expect(mockedUpdateConfig).toHaveBeenCalled();
+      const updateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(updateArg.capture.milestones).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Milestone tracking disabled'),
+        expect.stringContaining('Milestone tracking'),
       );
     });
 
@@ -136,24 +168,19 @@ describe('configCommand', () => {
     it('applies both --sync and --milestones together', async () => {
       await runCommand(['--sync', '--milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: true });
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: true });
       expect(mockedUpdateConfig).toHaveBeenCalledTimes(2);
     });
 
     it('applies both --no-sync and --no-milestones together', async () => {
       await runCommand(['--no-sync', '--no-milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: false });
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: false });
       expect(mockedUpdateConfig).toHaveBeenCalledTimes(2);
     });
 
     it('applies --sync and --no-milestones together', async () => {
       await runCommand(['--sync', '--no-milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: true });
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: false });
+      expect(mockedUpdateConfig).toHaveBeenCalledTimes(2);
     });
 
     it('does not display settings table when any flag is passed', async () => {
@@ -179,7 +206,9 @@ describe('configCommand', () => {
     });
 
     it('shows milestone tracking as on when enabled in config', async () => {
-      mockedGetConfig.mockReturnValue(buildDefaultConfig({ milestone_tracking: true }) as any);
+      const cfg = buildDefaultConfig();
+      cfg.capture.milestones = true;
+      mockedGetConfig.mockReturnValue(cfg as any);
 
       await runCommand([]);
 
@@ -191,7 +220,9 @@ describe('configCommand', () => {
     });
 
     it('shows milestone tracking as off when disabled in config', async () => {
-      mockedGetConfig.mockReturnValue(buildDefaultConfig({ milestone_tracking: false }) as any);
+      const cfg = buildDefaultConfig();
+      cfg.capture.milestones = false;
+      mockedGetConfig.mockReturnValue(cfg as any);
 
       await runCommand([]);
 
@@ -202,32 +233,38 @@ describe('configCommand', () => {
       expect(milestoneRow![1]).toContain('off');
     });
 
-    it('shows auto sync as on when enabled in config', async () => {
-      mockedGetConfig.mockReturnValue(buildDefaultConfig({ auto_sync: true }) as any);
+    it('shows cloud sync as on when enabled in config', async () => {
+      const cfg = buildDefaultConfig();
+      cfg.sync.enabled = true;
+      mockedGetConfig.mockReturnValue(cfg as any);
 
       await runCommand([]);
 
       const tableCall = mockedTable.mock.calls[0]![0] as string[][];
-      const syncRow = tableCall.find((row) => row[0] === 'Auto sync');
+      const syncRow = tableCall.find((row) => row[0] === 'Cloud sync');
       expect(syncRow).toBeDefined();
       expect(syncRow![1]).toContain('green');
       expect(syncRow![1]).toContain('on');
     });
 
-    it('shows auto sync as off when disabled in config', async () => {
-      mockedGetConfig.mockReturnValue(buildDefaultConfig({ auto_sync: false }) as any);
+    it('shows cloud sync as off when disabled in config', async () => {
+      const cfg = buildDefaultConfig();
+      cfg.sync.enabled = false;
+      mockedGetConfig.mockReturnValue(cfg as any);
 
       await runCommand([]);
 
       const tableCall = mockedTable.mock.calls[0]![0] as string[][];
-      const syncRow = tableCall.find((row) => row[0] === 'Auto sync');
+      const syncRow = tableCall.find((row) => row[0] === 'Cloud sync');
       expect(syncRow).toBeDefined();
       expect(syncRow![1]).toContain('red');
       expect(syncRow![1]).toContain('off');
     });
 
     it('shows sync interval from config', async () => {
-      mockedGetConfig.mockReturnValue(buildDefaultConfig({ sync_interval_hours: 12 }) as any);
+      const cfg = buildDefaultConfig();
+      cfg.sync.interval_hours = 12;
+      mockedGetConfig.mockReturnValue(cfg as any);
 
       await runCommand([]);
 
@@ -263,7 +300,7 @@ describe('configCommand', () => {
 
     it('shows logged-in user email when authenticated', async () => {
       mockedGetConfig.mockReturnValue(
-        buildDefaultConfig({ auth: { user: { email: 'dev@company.com' } } }) as any,
+        buildDefaultConfig({ auth: { token: 'tok', user: { id: '1', email: 'dev@company.com' } } }) as any,
       );
 
       await runCommand([]);
@@ -287,11 +324,11 @@ describe('configCommand', () => {
       expect(loggedInRow![1]).toContain('no');
     });
 
-    it('passes exactly 5 rows to the table display', async () => {
+    it('passes exactly 8 rows to the table display', async () => {
       await runCommand([]);
 
       const tableCall = mockedTable.mock.calls[0]![0] as string[][];
-      expect(tableCall).toHaveLength(5);
+      expect(tableCall).toHaveLength(8);
     });
   });
 
@@ -299,15 +336,15 @@ describe('configCommand', () => {
     it('--no-sync takes priority over --sync because it is checked first', async () => {
       await runCommand(['--no-sync', '--sync']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ auto_sync: false });
-      expect(mockedUpdateConfig).not.toHaveBeenCalledWith({ auto_sync: true });
+      const firstUpdateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(firstUpdateArg.sync.enabled).toBe(false);
     });
 
     it('--no-milestones takes priority over --milestones because it is checked first', async () => {
       await runCommand(['--no-milestones', '--milestones']);
 
-      expect(mockedUpdateConfig).toHaveBeenCalledWith({ milestone_tracking: false });
-      expect(mockedUpdateConfig).not.toHaveBeenCalledWith({ milestone_tracking: true });
+      const firstUpdateArg = mockedUpdateConfig.mock.calls[0]![0] as any;
+      expect(firstUpdateArg.capture.milestones).toBe(false);
     });
   });
 

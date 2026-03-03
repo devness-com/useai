@@ -105,7 +105,7 @@ describe('TOML format handlers (Codex)', () => {
   });
 
   describe('install (installToml)', () => {
-    test('creates config with mcp_servers.useai when file does not exist', () => {
+    test('creates config with mcp_servers.UseAI when file does not exist', () => {
       mockExistsSync.mockReturnValue(false);
 
       codex.install();
@@ -114,13 +114,14 @@ describe('TOML format handlers (Codex)', () => {
         expect.stringContaining('.codex'),
         { recursive: true },
       );
-      expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+      // install writes config file + instructions file
+      expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
 
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseToml(writtenContent);
       const servers = parsed['mcp_servers'] as Record<string, unknown>;
       expect(servers).toBeDefined();
-      const useai = servers['useai'] as Record<string, unknown>;
+      const useai = servers['UseAI'] as Record<string, unknown>;
       expect(useai['command']).toBe('npx');
       expect(useai['args']).toEqual(['-y', '@devness/useai@latest']);
     });
@@ -137,7 +138,7 @@ describe('TOML format handlers (Codex)', () => {
       expect((parsed['general'] as Record<string, unknown>)['editor']).toBe('vim');
       const servers = parsed['mcp_servers'] as Record<string, unknown>;
       expect(servers['existing']).toBeDefined();
-      expect(servers['useai']).toBeDefined();
+      expect(servers['UseAI']).toBeDefined();
     });
 
     test('overwrites existing useai entry when reinstalling', () => {
@@ -150,7 +151,7 @@ describe('TOML format handlers (Codex)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseToml(writtenContent);
       const servers = parsed['mcp_servers'] as Record<string, unknown>;
-      const useai = servers['useai'] as Record<string, unknown>;
+      const useai = servers['UseAI'] as Record<string, unknown>;
       expect(useai['command']).toBe('npx');
       expect(useai['args']).toEqual(['-y', '@devness/useai@latest']);
     });
@@ -165,7 +166,7 @@ describe('TOML format handlers (Codex)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseToml(writtenContent);
       const servers = parsed['mcp_servers'] as Record<string, unknown>;
-      expect(servers['useai']).toBeDefined();
+      expect(servers['UseAI']).toBeDefined();
     });
 
     test('written file ends with a newline', () => {
@@ -187,13 +188,17 @@ describe('TOML format handlers (Codex)', () => {
       expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
 
-    test('does nothing when config has no mcp_servers section', () => {
+    test('does not modify config when config has no mcp_servers section', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(`[general]\neditor = "vim"\n`);
 
       codex.remove();
 
-      expect(mockWriteFileSync).not.toHaveBeenCalled();
+      // Config file should not be written (but instructions cleanup may happen)
+      const configWrites = mockWriteFileSync.mock.calls.filter(
+        (call) => String(call[0]) === codex.getConfigPath(),
+      );
+      expect(configWrites).toHaveLength(0);
     });
 
     test('removes useai and keeps other servers', () => {
@@ -214,7 +219,7 @@ describe('TOML format handlers (Codex)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseToml(writtenContent);
       const servers = parsed['mcp_servers'] as Record<string, unknown>;
-      expect(servers['useai']).toBeUndefined();
+      expect(servers['UseAI']).toBeUndefined();
       expect(servers['other']).toBeDefined();
     });
 
@@ -341,7 +346,7 @@ describe('YAML format handlers (Goose)', () => {
   });
 
   describe('install (installYaml)', () => {
-    test('creates config with extensions.useai when file does not exist', () => {
+    test('creates config with extensions.UseAI when file does not exist', () => {
       mockExistsSync.mockReturnValue(false);
 
       goose.install();
@@ -350,17 +355,18 @@ describe('YAML format handlers (Goose)', () => {
         expect.stringContaining('goose'),
         { recursive: true },
       );
-      expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+      // install writes config file + instructions file
+      expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
 
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseYaml(writtenContent) as Record<string, unknown>;
       const extensions = parsed['extensions'] as Record<string, Record<string, unknown>>;
       expect(extensions).toBeDefined();
-      expect(extensions['useai']!['name']).toBe('useai');
-      expect(extensions['useai']!['cmd']).toBe('npx');
-      expect(extensions['useai']!['args']).toEqual(['-y', '@devness/useai@latest']);
-      expect(extensions['useai']!['enabled']).toBe(true);
-      expect(extensions['useai']!['type']).toBe('stdio');
+      expect(extensions['UseAI']!['name']).toBe('UseAI');
+      expect(extensions['UseAI']!['cmd']).toBe('npx');
+      expect(extensions['UseAI']!['args']).toEqual(['-y', '@devness/useai@latest']);
+      expect(extensions['UseAI']!['enabled']).toBe(true);
+      expect(extensions['UseAI']!['type']).toBe('stdio');
     });
 
     test('preserves existing config entries when installing', () => {
@@ -384,7 +390,7 @@ describe('YAML format handlers (Goose)', () => {
       expect(parsed['model']).toBe('gpt-4');
       const extensions = parsed['extensions'] as Record<string, Record<string, unknown>>;
       expect(extensions['existing-ext']).toBeDefined();
-      expect(extensions['useai']).toBeDefined();
+      expect(extensions['UseAI']).toBeDefined();
     });
 
     test('overwrites existing useai entry when reinstalling', () => {
@@ -403,9 +409,9 @@ describe('YAML format handlers (Goose)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseYaml(writtenContent) as Record<string, unknown>;
       const extensions = parsed['extensions'] as Record<string, Record<string, unknown>>;
-      expect(extensions['useai']!['name']).toBe('useai');
-      expect(extensions['useai']!['cmd']).toBe('npx');
-      expect(extensions['useai']!['enabled']).toBe(true);
+      expect(extensions['UseAI']!['name']).toBe('UseAI');
+      expect(extensions['UseAI']!['cmd']).toBe('npx');
+      expect(extensions['UseAI']!['enabled']).toBe(true);
     });
 
     test('creates extensions section when config has none', () => {
@@ -418,7 +424,7 @@ describe('YAML format handlers (Goose)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseYaml(writtenContent) as Record<string, unknown>;
       const extensions = parsed['extensions'] as Record<string, Record<string, unknown>>;
-      expect(extensions['useai']).toBeDefined();
+      expect(extensions['UseAI']).toBeDefined();
     });
 
     test('useai entry has all required Goose extension fields', () => {
@@ -428,7 +434,7 @@ describe('YAML format handlers (Goose)', () => {
 
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseYaml(writtenContent) as Record<string, unknown>;
-      const useai = (parsed['extensions'] as Record<string, Record<string, unknown>>)['useai'];
+      const useai = (parsed['extensions'] as Record<string, Record<string, unknown>>)['UseAI'];
       expect(Object.keys(useai!).sort()).toEqual(['args', 'cmd', 'enabled', 'name', 'type']);
     });
   });
@@ -442,13 +448,17 @@ describe('YAML format handlers (Goose)', () => {
       expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
 
-    test('does nothing when config has no extensions section', () => {
+    test('does not modify config when config has no extensions section', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue('provider: openai\nmodel: gpt-4\n');
 
       goose.remove();
 
-      expect(mockWriteFileSync).not.toHaveBeenCalled();
+      // Config file should not be written (but instructions cleanup may happen)
+      const configWrites = mockWriteFileSync.mock.calls.filter(
+        (call) => String(call[0]) === goose.getConfigPath(),
+      );
+      expect(configWrites).toHaveLength(0);
     });
 
     test('removes useai and keeps other extensions', () => {
@@ -475,7 +485,7 @@ describe('YAML format handlers (Goose)', () => {
       const writtenContent = mockWriteFileSync.mock.calls[0]![1] as string;
       const parsed = parseYaml(writtenContent) as Record<string, unknown>;
       const extensions = parsed['extensions'] as Record<string, Record<string, unknown>>;
-      expect(extensions['useai']).toBeUndefined();
+      expect(extensions['UseAI']).toBeUndefined();
       expect(extensions['other-ext']).toBeDefined();
     });
 

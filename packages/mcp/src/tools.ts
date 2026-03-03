@@ -326,7 +326,7 @@ const extraTools: AiTool[] = [
     name: 'Copilot CLI',
     configFormat: 'standard',
     configPath: join(home, '.copilot', 'mcp-config.json'),
-    detect: () => hasBinary('copilot') || existsSync(join(home, '.copilot')),
+    detect: () => existsSync(join(home, '.copilot')) || hasBinary('copilot'),
     manualHint: 'No global instructions file — add UseAI instructions to your project-level agent rules.',
   }),
   createExtraTool({
@@ -355,7 +355,7 @@ const extraTools: AiTool[] = [
     name: 'Crush',
     configFormat: 'crush',
     configPath: join(home, '.config', 'crush', 'crush.json'),
-    detect: () => hasBinary('crush') || existsSync(join(home, '.config', 'crush')),
+    detect: () => existsSync(join(home, '.config', 'crush')) || hasBinary('crush'),
     manualHint: 'No global instructions file — add UseAI instructions to your project-level .crush.json.',
   }),
 ];

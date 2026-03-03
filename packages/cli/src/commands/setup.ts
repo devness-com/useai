@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { checkbox } from '@inquirer/prompts';
-import chalk from 'chalk';
+import * as p from '@clack/prompts';
+import pc from 'picocolors';
 import {
   DAEMON_PORT,
   ensureDaemon,
@@ -13,12 +13,9 @@ import {
   removeClaudeCodeHooks,
 } from '@useai/shared';
 import { AI_TOOLS, MCP_HTTP_URL, USEAI_INSTRUCTIONS_TEXT, resolveTools, type AiTool } from '../services/tools.js';
-import { header, success, error, info } from '../utils/display.js';
+import { shortenPath } from '../utils/display.js';
 
-function shortenPath(p: string): string {
-  const home = process.env['HOME'] ?? '';
-  return home && p.startsWith(home) ? p.replace(home, '~') : p;
-}
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function showManualHints(installedTools: AiTool[]): void {
   const hints = installedTools
@@ -27,65 +24,101 @@ function showManualHints(installedTools: AiTool[]): void {
 
   if (hints.length === 0) return;
 
-  console.log(chalk.yellow(`\n  ⚠ Manual setup needed for ${hints.length} tool${hints.length === 1 ? '' : 's'}:\n`));
-  for (const { name, hint } of hints) {
-    console.log(`  ${chalk.bold(name)}: ${hint}`);
-  }
-  console.log();
-  for (const line of USEAI_INSTRUCTIONS_TEXT.split('\n')) {
-    console.log(`  ${line}`);
-  }
-  console.log();
+  const lines = hints.map(({ name, hint }) => `${pc.bold(name)}: ${hint}`);
+  lines.push('', ...USEAI_INSTRUCTIONS_TEXT.split('\n'));
+  p.note(lines.join('\n'), `Manual setup needed for ${hints.length} tool${hints.length === 1 ? '' : 's'}`);
 }
 
 function showStatus(tools: AiTool[]): void {
-  console.log(header('AI Tool MCP Status'));
-
-  // Only show tools that are actually installed on this system
   const detected = tools.filter((t) => t.detect());
 
   if (detected.length === 0) {
-    console.log(chalk.dim('  No supported AI tools detected on this system.'));
-    console.log();
+    p.log.warn('No supported AI tools detected on this system.');
     return;
   }
 
-  const rows: string[] = [];
   const nameWidth = Math.max(...detected.map((t) => t.name.length));
-  const statusWidth = 16;
-
-  for (const tool of detected) {
+  const lines = detected.map((tool) => {
     const name = tool.name.padEnd(nameWidth);
-
+    const path = pc.dim(shortenPath(tool.getConfigPath()));
     if (tool.isConfigured()) {
-      rows.push(
-        `  ${name}  ${chalk.green('✓ Configured'.padEnd(statusWidth))}  ${chalk.dim(shortenPath(tool.getConfigPath()))}`,
-      );
-    } else {
-      rows.push(
-        `  ${name}  ${chalk.yellow('✗ Not set up'.padEnd(statusWidth))}  ${chalk.dim(shortenPath(tool.getConfigPath()))}`,
-      );
+      return `${name}  ${pc.green('✓ Configured')}    ${path}`;
+    }
+    return `${name}  ${pc.yellow('✗ Not set up')}    ${path}`;
+  });
+
+  p.note(lines.join('\n'), 'AI Tool MCP Status');
+}
+
+// ── Result types for grouped display ─────────────────────────────────────────
+
+interface InstallResult {
+  tool: AiTool;
+  ok: boolean;
+  mode: 'http' | 'stdio';
+  error?: string;
+}
+
+function configureToolAndCollect(tool: AiTool, useDaemon: boolean): InstallResult {
+  try {
+    if (useDaemon && tool.supportsUrl) {
+      tool.installHttp();
+      return { tool, ok: true, mode: 'http' };
+    }
+    tool.install();
+    return { tool, ok: true, mode: 'stdio' };
+  } catch (e) {
+    return { tool, ok: false, mode: 'stdio', error: (e as Error).message };
+  }
+}
+
+function showGroupedResults(results: InstallResult[]): void {
+  const httpOk = results.filter((r) => r.ok && r.mode === 'http');
+  const stdioOk = results.filter((r) => r.ok && r.mode === 'stdio');
+  const failed = results.filter((r) => !r.ok);
+
+  if (httpOk.length > 0) {
+    p.log.success(`HTTP (daemon): ${httpOk.map((r) => r.tool.name).join(', ')}`);
+  }
+  if (stdioOk.length > 0) {
+    p.log.success(`stdio: ${stdioOk.map((r) => r.tool.name).join(', ')}`);
+  }
+  if (failed.length > 0) {
+    for (const r of failed) {
+      p.log.error(`${r.tool.name} — ${r.error}`);
     }
   }
-
-  console.log(rows.join('\n'));
-  console.log();
 }
 
 // ── Daemon-first install (default) ────────────────────────────────────────────
 
 async function daemonInstallFlow(tools: AiTool[], explicit: boolean): Promise<void> {
+  p.intro(pc.bgCyan(pc.black(' useai ')));
+
   // 1. Ensure daemon is running
-  console.log(info('Ensuring UseAI daemon is running...'));
+  const s = p.spinner();
+  s.start('Starting UseAI daemon...');
   const daemonOk = await ensureDaemon();
 
   let useDaemon = true;
   if (daemonOk) {
-    console.log(success(`✓ Daemon running on port ${DAEMON_PORT}`));
+    s.stop(`Daemon running on port ${DAEMON_PORT}`);
   } else {
     useDaemon = false;
-    console.log(error('✗ Could not start daemon — falling back to stdio config'));
-    console.log(info(`(Run with --foreground to debug: npx @devness/useai@latest daemon --port ${DAEMON_PORT})`));
+    s.stop('Could not start daemon — falling back to stdio config');
+    p.note(
+      [
+        'Check if the port is in use:',
+        `  lsof -i :${DAEMON_PORT}`,
+        '',
+        'Run in foreground to debug:',
+        `  npx @devness/useai daemon --port ${DAEMON_PORT}`,
+        '',
+        'For containers/CI, use stdio mode:',
+        '  npx @devness/useai mcp --stdio',
+      ].join('\n'),
+      'Troubleshooting',
+    );
   }
 
   // 2. Install auto-start (only if daemon is working)
@@ -94,9 +127,9 @@ async function daemonInstallFlow(tools: AiTool[], explicit: boolean): Promise<vo
     if (platform !== 'unsupported') {
       try {
         installAutostart();
-        console.log(success(`✓ Auto-start service installed (${platform})`));
+        p.log.success(`Auto-start service installed (${platform})`);
       } catch {
-        console.log(chalk.yellow(`  ⚠ Could not install auto-start service`));
+        p.log.warn('Could not install auto-start service');
       }
     }
   }
@@ -105,130 +138,128 @@ async function daemonInstallFlow(tools: AiTool[], explicit: boolean): Promise<vo
   const targetTools = explicit ? tools : tools.filter((t) => t.detect());
 
   if (targetTools.length === 0) {
-    console.log(error('\n  No AI tools detected on this machine.'));
+    p.log.error('No AI tools detected on this machine.');
+    p.outro('Setup complete.');
     return;
   }
 
-  let configuredCount = 0;
-  console.log();
+  // Collect results
+  const results: InstallResult[] = [];
   for (const tool of targetTools) {
-    try {
-      if (useDaemon && tool.supportsUrl) {
-        tool.installHttp();
-        console.log(success(`✓ ${tool.name.padEnd(18)} → ${chalk.dim('HTTP (daemon)')}`));
-      } else if (useDaemon && !tool.supportsUrl) {
-        tool.install();
-        console.log(success(`✓ ${tool.name.padEnd(18)} → ${chalk.dim('stdio (no URL support)')}`));
-      } else {
-        tool.install();
-        console.log(success(`✓ ${tool.name.padEnd(18)} → ${chalk.dim('stdio')}`));
-      }
-      configuredCount++;
-    } catch (e) {
-      console.log(error(`✗ ${tool.name.padEnd(18)} — ${(e as Error).message}`));
-    }
+    results.push(configureToolAndCollect(tool, useDaemon));
   }
 
-  // 4. Install Claude Code hooks (UserPromptSubmit + Stop + SessionEnd)
+  showGroupedResults(results);
+
+  // 4. Install Claude Code hooks
   try {
     const hooksInstalled = installClaudeCodeHooks();
     if (hooksInstalled) {
-      console.log(success('✓ Claude Code hooks installed (UserPromptSubmit + Stop + SessionEnd)'));
+      p.log.success('Claude Code hooks installed (UserPromptSubmit + Stop + SessionEnd)');
     }
   } catch {
-    console.log(chalk.yellow('  ⚠ Could not install Claude Code hooks'));
+    p.log.warn('Could not install Claude Code hooks');
   }
 
   showManualHints(targetTools);
 
+  const configuredCount = results.filter((r) => r.ok).length;
   const mode = useDaemon ? 'daemon mode' : 'stdio mode';
-  console.log(`\n  Done! UseAI configured in ${chalk.bold(String(configuredCount))} tool${configuredCount === 1 ? '' : 's'} (${mode}).\n`);
+  const dashboard = useDaemon ? `\n  Dashboard → ${pc.cyan(`http://127.0.0.1:${DAEMON_PORT}/dashboard`)}` : '';
+  p.outro(`UseAI configured in ${pc.bold(String(configuredCount))} tool${configuredCount === 1 ? '' : 's'} (${mode}).${dashboard}`);
 }
 
 // ── Stdio-only install (legacy) ───────────────────────────────────────────────
 
 async function stdioInstallFlow(tools: AiTool[], autoYes: boolean, explicit: boolean): Promise<void> {
+  p.intro(pc.bgCyan(pc.black(' useai ')));
+
   if (explicit) {
-    console.log();
+    const results: InstallResult[] = [];
     for (const tool of tools) {
-      try {
-        const wasConfigured = tool.isConfigured();
-        tool.install();
-        if (wasConfigured) {
-          console.log(success(`✓ ${tool.name.padEnd(18)}   ${chalk.dim('(updated)')}`));
-        } else {
-          console.log(success(`✓ ${tool.name.padEnd(18)} → ${chalk.dim(shortenPath(tool.getConfigPath()))}`));
-        }
-      } catch (err) {
-        console.log(error(`✗ ${tool.name.padEnd(18)} — ${(err as Error).message}`));
-      }
+      results.push(configureToolAndCollect(tool, false));
     }
+    showGroupedResults(results);
     showManualHints(tools);
-    console.log();
+    p.outro('Setup complete.');
     return;
   }
 
-  console.log(info('Scanning for AI tools...\n'));
-
+  const s = p.spinner();
+  s.start('Scanning for AI tools...');
   const detected = tools.filter((t) => t.detect());
+  s.stop(`Found ${detected.length} AI tool${detected.length === 1 ? '' : 's'}`);
+
   if (detected.length === 0) {
-    console.log(error('No AI tools detected on this machine.'));
+    p.log.error('No AI tools detected on this machine.');
+    p.outro('Setup complete.');
     return;
   }
 
   const alreadyConfigured = detected.filter((t) => t.isConfigured());
   const unconfigured = detected.filter((t) => !t.isConfigured());
 
-  console.log(`  Found ${chalk.bold(String(detected.length))} AI tool${detected.length === 1 ? '' : 's'} on this machine:\n`);
-
-  for (const tool of alreadyConfigured) {
-    console.log(chalk.green(`  ✅ ${tool.name}`) + chalk.dim('  (already configured)'));
-  }
-  for (const tool of unconfigured) {
-    console.log(chalk.dim(`  ☐  ${tool.name}`));
-  }
-  console.log();
+  // Show detected tools summary
+  const toolLines = [
+    ...alreadyConfigured.map((t) => `${pc.green('✓')} ${t.name} ${pc.dim('(already configured)')}`),
+    ...unconfigured.map((t) => `${pc.dim('○')} ${t.name}`),
+  ];
+  p.note(toolLines.join('\n'), `${detected.length} AI tool${detected.length === 1 ? '' : 's'} detected`);
 
   if (unconfigured.length === 0) {
-    console.log(success('All detected tools are already configured.'));
+    p.log.success('All detected tools are already configured.');
+    p.outro('Nothing to do.');
     return;
   }
 
+  // Select tools to configure
   let toInstall: AiTool[];
   if (autoYes) {
     toInstall = unconfigured;
   } else {
-    let selected: string[];
-    try {
-      selected = await checkbox({
-        message: 'Select tools to configure:',
-        choices: unconfigured.map((t) => ({
-          name: t.name,
-          value: t.id,
-          checked: true,
-        })),
-      });
-    } catch {
-      console.log('\n');
+    const selected = await p.multiselect({
+      message: `Select tools to configure ${pc.dim('(space to toggle)')}`,
+      options: unconfigured.map((t) => ({
+        value: t.id,
+        label: t.name,
+        hint: shortenPath(t.getConfigPath()),
+      })),
+      initialValues: unconfigured.map((t) => t.id),
+      required: true,
+    });
+
+    if (p.isCancel(selected)) {
+      p.cancel('Setup cancelled.');
       return;
     }
-    toInstall = unconfigured.filter((t) => selected.includes(t.id));
+    toInstall = unconfigured.filter((t) => (selected as string[]).includes(t.id));
   }
 
   if (toInstall.length === 0) {
-    console.log(info('No tools selected.'));
+    p.log.info('No tools selected.');
+    p.outro('Setup complete.');
     return;
   }
 
-  console.log(`\n  Configuring ${toInstall.length} tool${toInstall.length === 1 ? '' : 's'}...\n`);
+  // Pre-install summary
+  p.note(
+    [
+      `Tools:  ${toInstall.map((t) => t.name).join(', ')}`,
+      `Mode:   stdio`,
+    ].join('\n'),
+    'Installation Summary',
+  );
 
+  const shouldProceed = await p.confirm({ message: 'Proceed with installation?' });
+  if (p.isCancel(shouldProceed) || !shouldProceed) {
+    p.cancel('Setup cancelled.');
+    return;
+  }
+
+  // Configure
+  const results: InstallResult[] = [];
   for (const tool of toInstall) {
-    try {
-      tool.install();
-      console.log(success(`✓ ${tool.name.padEnd(18)} → ${chalk.dim(shortenPath(tool.getConfigPath()))}`));
-    } catch (err) {
-      console.log(error(`✗ ${tool.name.padEnd(18)} — ${(err as Error).message}`));
-    }
+    results.push(configureToolAndCollect(tool, false));
   }
 
   // Re-run install on already-configured tools to ensure instructions are injected
@@ -236,14 +267,18 @@ async function stdioInstallFlow(tools: AiTool[], autoYes: boolean, explicit: boo
     try { tool.install(); } catch { /* ignore */ }
   }
 
+  showGroupedResults(results);
   showManualHints([...toInstall, ...alreadyConfigured]);
 
-  console.log(`\n  Done! UseAI MCP server configured in ${chalk.bold(String(toInstall.length))} tool${toInstall.length === 1 ? '' : 's'}.\n`);
+  const configuredCount = results.filter((r) => r.ok).length;
+  p.outro(`UseAI configured in ${pc.bold(String(configuredCount))} tool${configuredCount === 1 ? '' : 's'} (stdio mode).`);
 }
 
 // ── Full remove flow (tools + daemon + autostart) ─────────────────────────────
 
 async function fullRemoveFlow(tools: AiTool[], autoYes: boolean, explicit: boolean): Promise<void> {
+  p.intro(pc.bgCyan(pc.black(' useai ')));
+
   // 1. Remove tool configs
   if (explicit) {
     const toRemove = tools.filter((t) => {
@@ -254,18 +289,15 @@ async function fullRemoveFlow(tools: AiTool[], autoYes: boolean, explicit: boole
     });
 
     for (const tool of notConfigured) {
-      console.log(info(`${tool.name} is not configured — skipping.`));
+      p.log.info(`${tool.name} is not configured — skipping.`);
     }
 
-    if (toRemove.length > 0) {
-      console.log();
-      for (const tool of toRemove) {
-        try {
-          tool.remove();
-          console.log(success(`✓ Removed from ${tool.name}`));
-        } catch (err) {
-          console.log(error(`✗ ${tool.name} — ${(err as Error).message}`));
-        }
+    for (const tool of toRemove) {
+      try {
+        tool.remove();
+        p.log.success(`Removed from ${tool.name}`);
+      } catch (err) {
+        p.log.error(`${tool.name} — ${(err as Error).message}`);
       }
     }
   } else {
@@ -274,41 +306,39 @@ async function fullRemoveFlow(tools: AiTool[], autoYes: boolean, explicit: boole
     });
 
     if (configured.length === 0) {
-      console.log(info('UseAI is not configured in any AI tools.'));
+      p.log.info('UseAI is not configured in any AI tools.');
     } else {
-      console.log(`\n  Found UseAI configured in ${chalk.bold(String(configured.length))} tool${configured.length === 1 ? '' : 's'}:\n`);
-
       let toRemove: AiTool[];
       if (autoYes) {
         toRemove = configured;
       } else {
-        let selected: string[];
-        try {
-          selected = await checkbox({
-            message: 'Select tools to remove UseAI from:',
-            choices: configured.map((t) => ({
-              name: t.name,
-              value: t.id,
-              checked: true,
-            })),
-          });
-        } catch {
-          console.log('\n');
+        const selected = await p.multiselect({
+          message: `Select tools to remove UseAI from ${pc.dim('(space to toggle)')}`,
+          options: configured.map((t) => ({
+            value: t.id,
+            label: t.name,
+            hint: shortenPath(t.getConfigPath()),
+          })),
+          initialValues: configured.map((t) => t.id),
+          required: true,
+        });
+
+        if (p.isCancel(selected)) {
+          p.cancel('Removal cancelled.');
           return;
         }
-        toRemove = configured.filter((t) => selected.includes(t.id));
+        toRemove = configured.filter((t) => (selected as string[]).includes(t.id));
       }
 
       if (toRemove.length === 0) {
-        console.log(info('No tools selected.'));
+        p.log.info('No tools selected.');
       } else {
-        console.log(`\n  Removing from ${toRemove.length} tool${toRemove.length === 1 ? '' : 's'}...\n`);
         for (const tool of toRemove) {
           try {
             tool.remove();
-            console.log(success(`✓ Removed from ${tool.name}`));
+            p.log.success(`Removed from ${tool.name}`);
           } catch (err) {
-            console.log(error(`✗ ${tool.name} — ${(err as Error).message}`));
+            p.log.error(`${tool.name} — ${(err as Error).message}`);
           }
         }
       }
@@ -324,31 +354,30 @@ async function fullRemoveFlow(tools: AiTool[], autoYes: boolean, explicit: boole
     // 2. Remove Claude Code hooks
     try {
       removeClaudeCodeHooks();
-      console.log(success('✓ Claude Code hooks removed'));
+      p.log.success('Claude Code hooks removed');
     } catch { /* ignore */ }
 
     // 3. Stop daemon
-    console.log();
     try {
       await killDaemon();
-      console.log(success('✓ Daemon stopped'));
+      p.log.success('Daemon stopped');
     } catch {
-      console.log(info('Daemon was not running'));
+      p.log.info('Daemon was not running');
     }
 
     // 4. Remove autostart
     if (isAutostartInstalled()) {
       try {
         removeAutostart();
-        console.log(success('✓ Auto-start service removed'));
+        p.log.success('Auto-start service removed');
       } catch {
-        console.log(error('✗ Failed to remove auto-start service'));
+        p.log.error('Failed to remove auto-start service');
       }
     }
 
-    console.log(info('\nDone! UseAI fully removed.\n'));
+    p.outro('UseAI fully removed.');
   } else {
-    console.log(info('\nDone! Other tools still configured — daemon and hooks kept running.\n'));
+    p.outro('Other tools still configured — daemon and hooks kept running.');
   }
 }
 
@@ -366,8 +395,8 @@ export const mcpCommand = new Command('mcp')
     if (explicit) {
       const { matched, unmatched } = resolveTools(toolNames);
       if (unmatched.length > 0) {
-        console.log(error(`Unknown tool${unmatched.length === 1 ? '' : 's'}: ${unmatched.join(', ')}`));
-        console.log(info(`Available: ${AI_TOOLS.map((t) => t.id).join(', ')}`));
+        p.log.error(`Unknown tool${unmatched.length === 1 ? '' : 's'}: ${unmatched.join(', ')}`);
+        p.log.info(`Available: ${AI_TOOLS.map((t) => t.id).join(', ')}`);
         return;
       }
       tools = matched;

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { formatDuration } from '@useai/shared/utils';
 import { getStats } from '../services/stats.service.js';
 import { header, table, info } from '../utils/display.js';
@@ -18,9 +18,9 @@ export const statsCommand = new Command('stats')
 
     console.log(
       table([
-        ['Total time', chalk.bold(formatDuration(Math.round(stats.totalHours * 3600)))],
-        ['Sessions', chalk.bold(String(stats.totalSessions))],
-        ['Current streak', chalk.bold(`${stats.currentStreak} day${stats.currentStreak !== 1 ? 's' : ''}`)],
+        ['Total time', pc.bold(formatDuration(Math.round(stats.totalHours * 3600)))],
+        ['Sessions', pc.bold(String(stats.totalSessions))],
+        ['Current streak', pc.bold(`${stats.currentStreak} day${stats.currentStreak !== 1 ? 's' : ''}`)],
       ]),
     );
 

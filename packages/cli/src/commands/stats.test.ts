@@ -24,10 +24,18 @@ vi.mock('@useai/shared/utils', () => ({
   }),
 }));
 
-vi.mock('chalk', () => {
-  const bold = (s: string) => s;
-  return { default: { bold } };
-});
+vi.mock('picocolors', () => ({
+  default: {
+    bold: (s: string) => s,
+    green: (s: string) => s,
+    red: (s: string) => s,
+    dim: (s: string) => s,
+    cyan: (s: string) => s,
+    yellow: (s: string) => s,
+    bgCyan: (s: string) => s,
+    black: (s: string) => s,
+  },
+}));
 
 import { getStats } from '../services/stats.service.js';
 import { header, table, info } from '../utils/display.js';
@@ -50,11 +58,13 @@ describe('statsCommand', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    logSpy.mockRestore();
   });
 
   async function runCommand() {

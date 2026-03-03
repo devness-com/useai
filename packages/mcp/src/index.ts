@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import pc from 'picocolors';
+
 export {};
 
 let command = process.argv[2];
@@ -30,16 +32,15 @@ if (!command && process.stdin.isTTY) {
 
 // Update mode: check for new version, remove MCP configs, restart daemon, reinstall configs
 if (command === 'update') {
-  const { default: chalk } = await import('chalk');
   const { fetchLatestVersion, fetchDaemonHealth, killDaemon, ensureDaemon, installClaudeCodeHooks, VERSION } =
     await import('@useai/shared');
   const { AI_TOOLS } = await import('./tools.js');
 
-  console.log(chalk.dim('  Checking for updates...'));
+  console.log(pc.dim('  Checking for updates...'));
 
   const latest = await fetchLatestVersion();
   if (!latest) {
-    console.log(chalk.red('  ✗ Could not reach npm registry'));
+    console.log(pc.red('  ✗ Could not reach npm registry'));
     process.exit(1);
   }
 
@@ -47,12 +48,12 @@ if (command === 'update') {
   const runningVersion = (healthBefore?.version as string) ?? VERSION;
 
   if (runningVersion === latest && VERSION === latest) {
-    console.log(chalk.green(`  ✓ Already up to date (v${latest})`));
+    console.log(pc.green(`  ✓ Already up to date (v${latest})`));
     process.exit(0);
   }
 
-  console.log(`  ${chalk.dim('Current:')} v${runningVersion}`);
-  console.log(`  ${chalk.dim('Latest:')}  v${latest}`);
+  console.log(`  ${pc.dim('Current:')} v${runningVersion}`);
+  console.log(`  ${pc.dim('Latest:')}  v${latest}`);
   console.log();
 
   // 1. Snapshot which tools are currently configured
@@ -62,24 +63,24 @@ if (command === 'update') {
 
   // 2. Remove MCP config from all configured tools
   if (configuredTools.length > 0) {
-    console.log(chalk.dim('  Removing MCP configs from configured tools...'));
+    console.log(pc.dim('  Removing MCP configs from configured tools...'));
     for (const tool of configuredTools) {
       try {
         tool.remove();
-        console.log(chalk.dim(`  ↻ ${tool.name}`));
+        console.log(pc.dim(`  ↻ ${tool.name}`));
       } catch {
-        console.log(chalk.red(`  ✗ Failed to remove ${tool.name}`));
+        console.log(pc.red(`  ✗ Failed to remove ${tool.name}`));
       }
     }
     console.log();
   }
 
   // 3. Kill old daemon
-  console.log(chalk.dim('  Stopping daemon...'));
+  console.log(pc.dim('  Stopping daemon...'));
   await killDaemon();
 
   // 4. Clear npx cache to force fresh fetch
-  console.log(chalk.dim('  Clearing npx cache...'));
+  console.log(pc.dim('  Clearing npx cache...'));
   const { execSync } = await import('node:child_process');
   try {
     execSync('npm cache clean --force', { stdio: 'ignore', timeout: 15000 });
@@ -88,36 +89,36 @@ if (command === 'update') {
   }
 
   // 5. Start updated daemon
-  console.log(chalk.dim('  Starting updated daemon...'));
+  console.log(pc.dim('  Starting updated daemon...'));
   const daemonOk = await ensureDaemon({ preferOnline: true });
 
   if (!daemonOk) {
-    console.log(chalk.red('  ✗ Failed to start updated daemon'));
+    console.log(pc.red('  ✗ Failed to start updated daemon'));
     console.log();
-    console.log(chalk.bold('  To debug, run the daemon in foreground mode:'));
-    console.log(chalk.cyan('    npx @devness/useai daemon --port 19200'));
+    console.log(pc.bold('  To debug, run the daemon in foreground mode:'));
+    console.log(pc.cyan('    npx @devness/useai daemon --port 19200'));
     process.exit(1);
   }
 
   // 6. Verify new version
   const healthAfter = await fetchDaemonHealth();
   const newVersion = (healthAfter?.version as string) ?? 'unknown';
-  console.log(chalk.green(`\n  ✓ Daemon updated: v${runningVersion} → v${newVersion}`));
+  console.log(pc.green(`\n  ✓ Daemon updated: v${runningVersion} → v${newVersion}`));
 
   // 7. Reinstall MCP configs on the same tools
   if (configuredTools.length > 0) {
-    console.log(chalk.dim('\n  Reinstalling MCP configs...'));
+    console.log(pc.dim('\n  Reinstalling MCP configs...'));
     for (const tool of configuredTools) {
       try {
         if (tool.supportsUrl) {
           tool.installHttp();
-          console.log(chalk.green(`  ✓ ${tool.name} → ${chalk.dim('HTTP (daemon)')}`));
+          console.log(pc.green(`  ✓ ${tool.name} → ${pc.dim('HTTP (daemon)')}`));
         } else {
           tool.install();
-          console.log(chalk.green(`  ✓ ${tool.name} → ${chalk.dim('stdio')}`));
+          console.log(pc.green(`  ✓ ${tool.name} → ${pc.dim('stdio')}`));
         }
       } catch {
-        console.log(chalk.red(`  ✗ ${tool.name}`));
+        console.log(pc.red(`  ✗ ${tool.name}`));
       }
     }
   }
@@ -126,12 +127,12 @@ if (command === 'update') {
   try {
     const hooksInstalled = installClaudeCodeHooks();
     if (hooksInstalled) {
-      console.log(chalk.green('  ✓ Claude Code hooks reinstalled'));
+      console.log(pc.green('  ✓ Claude Code hooks reinstalled'));
     }
   } catch { /* ignore */ }
 
-  console.log(`\n  Done! UseAI updated to v${newVersion} in ${chalk.bold(String(configuredTools.length))} tool${configuredTools.length === 1 ? '' : 's'}.`);
-  console.log(chalk.dim(`  Dashboard: http://127.0.0.1:19200/dashboard\n`));
+  console.log(`\n  Done! UseAI updated to v${newVersion} in ${pc.bold(String(configuredTools.length))} tool${configuredTools.length === 1 ? '' : 's'}.`);
+  console.log(pc.dim(`  Dashboard: http://127.0.0.1:19200/dashboard\n`));
   process.exit(0);
 }
 

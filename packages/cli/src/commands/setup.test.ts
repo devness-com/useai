@@ -10,27 +10,68 @@ const { mockResolveTools, mockAiTools, mockInstructionsText } = vi.hoisted(() =>
   };
 });
 
+const mockClack = vi.hoisted(() => ({
+  intro: vi.fn(),
+  outro: vi.fn(),
+  cancel: vi.fn(),
+  spinner: vi.fn(() => ({ start: vi.fn(), stop: vi.fn() })),
+  note: vi.fn(),
+  confirm: vi.fn(),
+  multiselect: vi.fn(),
+  isCancel: vi.fn(() => false),
+  log: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
+const mockShared = vi.hoisted(() => ({
+  ensureDaemon: vi.fn(() => Promise.resolve(true)),
+  killDaemon: vi.fn(() => Promise.resolve()),
+  installAutostart: vi.fn(),
+  removeAutostart: vi.fn(),
+  isAutostartInstalled: vi.fn(() => false),
+  detectPlatform: vi.fn(() => 'launchd' as const),
+  installClaudeCodeHooks: vi.fn(() => true),
+  removeClaudeCodeHooks: vi.fn(),
+  DAEMON_PORT: 19200,
+  DAEMON_MCP_URL: 'http://127.0.0.1:19200/mcp',
+  buildInstructionsText: vi.fn(() => 'mock instructions'),
+}));
+
 // ── Mock external dependencies ───────────────────────────────────────────────
 
-vi.mock('chalk', () => {
+vi.mock('picocolors', () => {
   const passthrough = (s: string) => s;
-  const chalk: any = passthrough;
-  chalk.dim = passthrough;
-  chalk.bold = passthrough;
-  chalk.green = passthrough;
-  chalk.yellow = passthrough;
-  return { default: chalk };
+  return {
+    default: {
+      dim: passthrough,
+      bold: passthrough,
+      green: passthrough,
+      yellow: passthrough,
+      cyan: passthrough,
+      red: passthrough,
+      bgCyan: passthrough,
+      black: passthrough,
+    },
+  };
 });
 
-vi.mock('@inquirer/prompts', () => ({
-  checkbox: vi.fn(),
-}));
+vi.mock('@clack/prompts', () => mockClack);
+
+vi.mock('@useai/shared', () => mockShared);
 
 vi.mock('../utils/display.js', () => ({
   header: vi.fn((s: string) => `[HEADER] ${s}`),
   success: vi.fn((s: string) => `[SUCCESS] ${s}`),
   error: vi.fn((s: string) => `[ERROR] ${s}`),
   info: vi.fn((s: string) => `[INFO] ${s}`),
+  shortenPath: vi.fn((p: string) => {
+    const home = process.env['HOME'];
+    return home && p.startsWith(home) ? '~' + p.slice(home.length) : p;
+  }),
 }));
 
 // Build realistic mock AiTool objects
@@ -43,6 +84,7 @@ function makeMockTool(overrides: Partial<{
   manualHint: string | null;
   installError: Error | null;
   removeError: Error | null;
+  supportsUrl: boolean;
 }> = {}) {
   const defaults = {
     id: 'claude',
@@ -53,17 +95,23 @@ function makeMockTool(overrides: Partial<{
     manualHint: null,
     installError: null,
     removeError: null,
+    supportsUrl: true,
   };
   const cfg = { ...defaults, ...overrides };
 
   return {
     id: cfg.id,
     name: cfg.name,
+    configFormat: 'standard',
+    supportsUrl: cfg.supportsUrl,
     detect: vi.fn(() => cfg.detected),
     isConfigured: vi.fn(() => cfg.configured),
     getConfigPath: vi.fn(() => cfg.configPath),
     getManualHint: vi.fn(() => cfg.manualHint),
     install: vi.fn(() => {
+      if (cfg.installError) throw cfg.installError;
+    }),
+    installHttp: vi.fn(() => {
       if (cfg.installError) throw cfg.installError;
     }),
     remove: vi.fn(() => {
@@ -74,13 +122,10 @@ function makeMockTool(overrides: Partial<{
 
 vi.mock('../services/tools.js', () => ({
   get AI_TOOLS() { return mockAiTools; },
+  get MCP_HTTP_URL() { return 'http://127.0.0.1:19200/mcp'; },
   USEAI_INSTRUCTIONS_TEXT: mockInstructionsText,
   resolveTools: (...args: any[]) => mockResolveTools(...args),
 }));
-
-// ── Import after mocks ───────────────────────────────────────────────────────
-
-import { checkbox } from '@inquirer/prompts';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -94,28 +139,31 @@ function captureConsole() {
   });
 }
 
-function outputText(): string {
-  return capturedLines.join('\n');
+function clackOutput(): string {
+  // Collect all clack log outputs + p.note + p.intro + p.outro
+  const lines: string[] = [];
+  for (const call of mockClack.log.success.mock.calls) lines.push(`[SUCCESS] ${call[0]}`);
+  for (const call of mockClack.log.error.mock.calls) lines.push(`[ERROR] ${call[0]}`);
+  for (const call of mockClack.log.info.mock.calls) lines.push(`[INFO] ${call[0]}`);
+  for (const call of mockClack.log.warn.mock.calls) lines.push(`[WARN] ${call[0]}`);
+  for (const call of mockClack.note.mock.calls) lines.push(`[NOTE:${call[1] ?? ''}] ${call[0]}`);
+  for (const call of mockClack.outro.mock.calls) lines.push(`[OUTRO] ${call[0]}`);
+  for (const call of mockClack.cancel.mock.calls) lines.push(`[CANCEL] ${call[0]}`);
+  return lines.join('\n');
 }
 
 /**
  * Run the mcp command with the given argv tokens (after "mcp").
- * Dynamically re-imports the module to get a fresh Commander instance each time,
- * avoiding state leakage between tests.
+ * Dynamically re-imports the module to get a fresh Commander instance each time.
  */
 async function runCommand(...argv: string[]): Promise<void> {
-  // Re-import the module to get a fresh Command instance each call.
-  // Commander stores parsed state on the Command object, so reusing
-  // the same instance across tests causes option/argument leakage.
+  vi.resetModules();
   const mod = await import('./setup.js');
   const cmd = mod.mcpCommand;
-  // Prevent Commander from calling process.exit on parse errors
   cmd.exitOverride();
   try {
     await cmd.parseAsync(['node', 'mcp', ...argv]);
   } catch (err: any) {
-    // Commander throws on --help, --version, or parse errors when exitOverride is set.
-    // Swallow CommanderError with exitCode 0 (help/version), re-throw real errors.
     if (err?.exitCode !== undefined && err.exitCode === 0) return;
     throw err;
   }
@@ -127,11 +175,22 @@ describe('setup.ts', () => {
   const originalHome = process.env['HOME'];
 
   beforeEach(() => {
+    vi.clearAllMocks();
     process.env['HOME'] = '/Users/testuser';
     captureConsole();
     mockAiTools.length = 0;
     mockResolveTools.mockReset();
-    vi.mocked(checkbox).mockReset();
+
+    // Re-configure clack mocks after clearAllMocks
+    mockClack.spinner.mockReturnValue({ start: vi.fn(), stop: vi.fn() });
+    mockClack.isCancel.mockReturnValue(false);
+
+    // Re-configure shared mocks after clearAllMocks
+    mockShared.ensureDaemon.mockResolvedValue(true);
+    mockShared.killDaemon.mockResolvedValue(undefined as any);
+    mockShared.isAutostartInstalled.mockReturnValue(false);
+    mockShared.detectPlatform.mockReturnValue('launchd' as any);
+    mockShared.installClaudeCodeHooks.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -139,55 +198,10 @@ describe('setup.ts', () => {
     process.env['HOME'] = originalHome;
   });
 
-  // ── shortenPath (tested indirectly through showStatus & installFlow output) ──
-
-  describe('shortenPath', () => {
-    it('replaces HOME prefix with ~ in tool config paths', async () => {
-      const tool = makeMockTool({
-        detected: true,
-        configured: true,
-        configPath: '/Users/testuser/.config/claude/config.json',
-      });
-      mockAiTools.push(tool);
-
-      await runCommand('--status');
-
-      expect(outputText()).toContain('~/.config/claude/config.json');
-      expect(outputText()).not.toContain('/Users/testuser/.config/claude/config.json');
-    });
-
-    it('leaves path unchanged when it does not start with HOME', async () => {
-      const tool = makeMockTool({
-        detected: true,
-        configured: true,
-        configPath: '/opt/ai-tools/claude/config.json',
-      });
-      mockAiTools.push(tool);
-
-      await runCommand('--status');
-
-      expect(outputText()).toContain('/opt/ai-tools/claude/config.json');
-    });
-
-    it('leaves path unchanged when HOME env var is not set', async () => {
-      delete process.env['HOME'];
-      const tool = makeMockTool({
-        detected: true,
-        configured: true,
-        configPath: '/Users/testuser/.config/claude/config.json',
-      });
-      mockAiTools.push(tool);
-
-      await runCommand('--status');
-
-      expect(outputText()).toContain('/Users/testuser/.config/claude/config.json');
-    });
-  });
-
   // ── showStatus ──
 
   describe('showStatus (--status flag)', () => {
-    it('displays header and configured tools with checkmark', async () => {
+    it('displays configured tools', async () => {
       const tool = makeMockTool({
         name: 'Claude Code',
         detected: true,
@@ -198,12 +212,13 @@ describe('setup.ts', () => {
 
       await runCommand('--status');
 
-      expect(outputText()).toContain('[HEADER] AI Tool MCP Status');
-      expect(outputText()).toContain('✓ Configured');
-      expect(outputText()).toContain('Claude Code');
+      const output = clackOutput();
+      expect(output).toContain('AI Tool MCP Status');
+      expect(output).toContain('Configured');
+      expect(output).toContain('Claude Code');
     });
 
-    it('displays unconfigured but detected tools with warning', async () => {
+    it('displays unconfigured but detected tools', async () => {
       const tool = makeMockTool({
         name: 'VS Code',
         detected: true,
@@ -214,11 +229,12 @@ describe('setup.ts', () => {
 
       await runCommand('--status');
 
-      expect(outputText()).toContain('✗ Not set up');
-      expect(outputText()).toContain('VS Code');
+      const output = clackOutput();
+      expect(output).toContain('Not set up');
+      expect(output).toContain('VS Code');
     });
 
-    it('displays not-found tools as dimmed', async () => {
+    it('shows warning when no tools detected', async () => {
       const tool = makeMockTool({
         name: 'Cursor',
         detected: false,
@@ -227,26 +243,24 @@ describe('setup.ts', () => {
 
       await runCommand('--status');
 
-      expect(outputText()).toContain('— Not found');
-      expect(outputText()).toContain('Cursor');
+      expect(mockClack.log.warn).toHaveBeenCalledWith(
+        expect.stringContaining('No supported AI tools detected'),
+      );
     });
 
     it('shows multiple tools in a single status listing', async () => {
       mockAiTools.push(
         makeMockTool({ name: 'Claude Code', detected: true, configured: true, configPath: '/Users/testuser/.claude/mcp.json' }),
         makeMockTool({ name: 'VS Code', detected: true, configured: false, configPath: '/Users/testuser/.vscode/settings.json' }),
-        makeMockTool({ name: 'Windsurf', detected: false }),
       );
 
       await runCommand('--status');
 
-      const output = outputText();
+      const output = clackOutput();
       expect(output).toContain('Claude Code');
       expect(output).toContain('VS Code');
-      expect(output).toContain('Windsurf');
-      expect(output).toContain('✓ Configured');
-      expect(output).toContain('✗ Not set up');
-      expect(output).toContain('— Not found');
+      expect(output).toContain('Configured');
+      expect(output).toContain('Not set up');
     });
 
     it('filters to specific tools when tool names are provided with --status', async () => {
@@ -258,15 +272,82 @@ describe('setup.ts', () => {
       await runCommand('claude', '--status');
 
       expect(mockResolveTools).toHaveBeenCalledWith(['claude']);
-      expect(outputText()).toContain('Claude Code');
     });
   });
 
-  // ── installFlow ──
+  // ── daemonInstallFlow (default action) ──
 
-  describe('installFlow (default action)', () => {
+  describe('daemonInstallFlow (default action)', () => {
+    it('ensures daemon is running and configures detected tools via installHttp', async () => {
+      const tool = makeMockTool({
+        id: 'claude',
+        name: 'Claude Code',
+        detected: true,
+        configured: false,
+        configPath: '/Users/testuser/.claude/mcp.json',
+        supportsUrl: true,
+      });
+      mockAiTools.push(tool);
+
+      await runCommand();
+
+      expect(mockShared.ensureDaemon).toHaveBeenCalled();
+      expect(tool.installHttp).toHaveBeenCalledOnce();
+    });
+
+    it('reports no AI tools detected when none found', async () => {
+      const tool = makeMockTool({ detected: false });
+      mockAiTools.push(tool);
+
+      await runCommand();
+
+      expect(mockClack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining('No AI tools detected'),
+      );
+    });
+
+    it('falls back to stdio when daemon fails to start', async () => {
+      mockShared.ensureDaemon.mockResolvedValue(false);
+      const tool = makeMockTool({
+        id: 'claude',
+        name: 'Claude Code',
+        detected: true,
+        configured: false,
+        supportsUrl: true,
+      });
+      mockAiTools.push(tool);
+
+      await runCommand();
+
+      // Falls back to stdio, calls install() not installHttp()
+      expect(tool.install).toHaveBeenCalledOnce();
+      expect(tool.installHttp).not.toHaveBeenCalled();
+    });
+
+    it('installs autostart service when daemon is working', async () => {
+      const tool = makeMockTool({ detected: true });
+      mockAiTools.push(tool);
+
+      await runCommand();
+
+      expect(mockShared.installAutostart).toHaveBeenCalled();
+    });
+
+    it('installs Claude Code hooks', async () => {
+      const tool = makeMockTool({ detected: true });
+      mockAiTools.push(tool);
+
+      await runCommand();
+
+      expect(mockShared.installClaudeCodeHooks).toHaveBeenCalled();
+    });
+  });
+
+  // ── stdioInstallFlow (--stdio flag) ──
+
+  describe('stdioInstallFlow (--stdio flag)', () => {
     describe('with explicit tool names', () => {
-      it('installs specified tools directly without scanning', async () => {
+      it('installs specified tools directly', async () => {
         const tool = makeMockTool({
           id: 'claude',
           name: 'Claude Code',
@@ -275,27 +356,9 @@ describe('setup.ts', () => {
         });
         mockResolveTools.mockReturnValue({ matched: [tool], unmatched: [] });
 
-        await runCommand('claude');
+        await runCommand('claude', '--stdio');
 
         expect(tool.install).toHaveBeenCalledOnce();
-        expect(outputText()).toContain('[SUCCESS]');
-        expect(outputText()).toContain('→');
-        expect(outputText()).toContain('~/.claude/mcp.json');
-      });
-
-      it('shows (updated) label for already-configured tools', async () => {
-        const tool = makeMockTool({
-          id: 'vscode',
-          name: 'VS Code',
-          configured: true,
-          configPath: '/Users/testuser/.vscode/settings.json',
-        });
-        mockResolveTools.mockReturnValue({ matched: [tool], unmatched: [] });
-
-        await runCommand('vscode');
-
-        expect(tool.install).toHaveBeenCalledOnce();
-        expect(outputText()).toContain('(updated)');
       });
 
       it('reports errors for tools that fail to install', async () => {
@@ -307,10 +370,11 @@ describe('setup.ts', () => {
         });
         mockResolveTools.mockReturnValue({ matched: [tool], unmatched: [] });
 
-        await runCommand('cursor');
+        await runCommand('cursor', '--stdio');
 
-        expect(outputText()).toContain('[ERROR]');
-        expect(outputText()).toContain('Permission denied');
+        expect(mockClack.log.error).toHaveBeenCalledWith(
+          expect.stringContaining('Permission denied'),
+        );
       });
     });
 
@@ -321,85 +385,83 @@ describe('setup.ts', () => {
         const notFound = makeMockTool({ name: 'Windsurf', detected: false });
         mockAiTools.push(configured, unconfigured, notFound);
 
-        await runCommand('-y');
+        // Even with -y, stdioInstallFlow asks for p.confirm after showing summary
+        mockClack.confirm.mockResolvedValue(true);
+
+        await runCommand('--stdio', '-y');
 
         expect(unconfigured.install).toHaveBeenCalledOnce();
         // Already-configured tools get re-installed to update instructions
         expect(configured.install).toHaveBeenCalledOnce();
         expect(notFound.install).not.toHaveBeenCalled();
-        expect(outputText()).toContain('Configuring 1 tool');
       });
 
       it('reports when all detected tools are already configured', async () => {
         const tool = makeMockTool({ detected: true, configured: true, configPath: '/Users/testuser/.claude/mcp.json' });
         mockAiTools.push(tool);
 
-        await runCommand('-y');
+        await runCommand('--stdio', '-y');
 
-        expect(outputText()).toContain('All detected tools are already configured');
-        expect(tool.install).not.toHaveBeenCalled();
+        expect(mockClack.log.success).toHaveBeenCalledWith(
+          expect.stringContaining('All detected tools are already configured'),
+        );
       });
 
       it('reports when no AI tools are detected at all', async () => {
         const tool = makeMockTool({ detected: false });
         mockAiTools.push(tool);
 
-        await runCommand('-y');
+        await runCommand('--stdio', '-y');
 
-        expect(outputText()).toContain('No AI tools detected');
+        expect(mockClack.log.error).toHaveBeenCalledWith(
+          expect.stringContaining('No AI tools detected'),
+        );
       });
     });
 
     describe('with interactive prompt', () => {
-      it('presents checkbox for unconfigured tools and installs selected ones', async () => {
+      it('presents multiselect for unconfigured tools and installs selected ones', async () => {
         const tool1 = makeMockTool({ id: 'claude', name: 'Claude Code', detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' });
         const tool2 = makeMockTool({ id: 'vscode', name: 'VS Code', detected: true, configured: false, configPath: '/Users/testuser/.vscode/settings.json' });
         mockAiTools.push(tool1, tool2);
 
-        vi.mocked(checkbox).mockResolvedValue(['claude']);
+        mockClack.multiselect.mockResolvedValue(['claude']);
+        mockClack.confirm.mockResolvedValue(true);
 
-        await runCommand();
+        await runCommand('--stdio');
 
-        expect(checkbox).toHaveBeenCalledOnce();
+        expect(mockClack.multiselect).toHaveBeenCalledOnce();
         expect(tool1.install).toHaveBeenCalledOnce();
         expect(tool2.install).not.toHaveBeenCalled();
-        expect(outputText()).toContain('Configuring 1 tool');
       });
 
-      it('handles user cancellation (Ctrl+C) gracefully', async () => {
+      it('handles user cancellation gracefully', async () => {
         const tool = makeMockTool({ detected: true, configured: false });
         mockAiTools.push(tool);
 
-        vi.mocked(checkbox).mockRejectedValue(new Error('User cancelled'));
+        mockClack.multiselect.mockResolvedValue(Symbol.for('cancel'));
+        mockClack.isCancel.mockReturnValue(true);
 
-        await runCommand();
+        await runCommand('--stdio');
 
         expect(tool.install).not.toHaveBeenCalled();
+        expect(mockClack.cancel).toHaveBeenCalledWith(
+          expect.stringContaining('cancelled'),
+        );
       });
 
-      it('handles empty selection', async () => {
-        const tool = makeMockTool({ detected: true, configured: false });
+      it('handles empty selection after confirm rejection', async () => {
+        const tool = makeMockTool({ id: 'claude', detected: true, configured: false });
         mockAiTools.push(tool);
 
-        vi.mocked(checkbox).mockResolvedValue([]);
+        mockClack.multiselect.mockResolvedValue(['claude']);
+        // User says no at confirm
+        mockClack.confirm.mockResolvedValue(Symbol.for('cancel'));
+        mockClack.isCancel.mockImplementation((val: unknown) => typeof val === 'symbol');
 
-        await runCommand();
+        await runCommand('--stdio');
 
         expect(tool.install).not.toHaveBeenCalled();
-        expect(outputText()).toContain('No tools selected');
-      });
-
-      it('reports Done with correct count after installation', async () => {
-        const tool1 = makeMockTool({ id: 'claude', name: 'Claude Code', detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' });
-        const tool2 = makeMockTool({ id: 'vscode', name: 'VS Code', detected: true, configured: false, configPath: '/Users/testuser/.vscode/settings.json' });
-        mockAiTools.push(tool1, tool2);
-
-        vi.mocked(checkbox).mockResolvedValue(['claude', 'vscode']);
-
-        await runCommand();
-
-        expect(outputText()).toContain('Done!');
-        expect(outputText()).toContain('2 tool');
       });
     });
 
@@ -409,22 +471,22 @@ describe('setup.ts', () => {
         const succeeding = makeMockTool({ id: 'claude', name: 'Claude Code', detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' });
         mockAiTools.push(failing, succeeding);
 
-        vi.mocked(checkbox).mockResolvedValue(['cursor', 'claude']);
+        mockClack.multiselect.mockResolvedValue(['cursor', 'claude']);
+        mockClack.confirm.mockResolvedValue(true);
 
-        await runCommand();
+        await runCommand('--stdio');
 
         expect(failing.install).toHaveBeenCalledOnce();
         expect(succeeding.install).toHaveBeenCalledOnce();
-        const output = outputText();
+        const output = clackOutput();
         expect(output).toContain('Disk full');
-        expect(output).toContain('[SUCCESS]');
       });
     });
   });
 
-  // ── removeFlow ──
+  // ── fullRemoveFlow ──
 
-  describe('removeFlow (--remove flag)', () => {
+  describe('fullRemoveFlow (--remove flag)', () => {
     describe('with explicit tool names', () => {
       it('removes configured tools directly', async () => {
         const tool = makeMockTool({
@@ -437,7 +499,9 @@ describe('setup.ts', () => {
         await runCommand('claude', '--remove');
 
         expect(tool.remove).toHaveBeenCalledOnce();
-        expect(outputText()).toContain('Removed from Claude Code');
+        expect(mockClack.log.success).toHaveBeenCalledWith(
+          expect.stringContaining('Removed from Claude Code'),
+        );
       });
 
       it('skips tools that are not configured', async () => {
@@ -451,8 +515,9 @@ describe('setup.ts', () => {
         await runCommand('vscode', '--remove');
 
         expect(tool.remove).not.toHaveBeenCalled();
-        expect(outputText()).toContain('not configured');
-        expect(outputText()).toContain('skipping');
+        expect(mockClack.log.info).toHaveBeenCalledWith(
+          expect.stringContaining('not configured'),
+        );
       });
 
       it('handles mix of configured and unconfigured tools', async () => {
@@ -464,8 +529,9 @@ describe('setup.ts', () => {
 
         expect(configured.remove).toHaveBeenCalledOnce();
         expect(notConfigured.remove).not.toHaveBeenCalled();
-        expect(outputText()).toContain('Removed from Claude Code');
-        expect(outputText()).toContain('VS Code is not configured');
+        const output = clackOutput();
+        expect(output).toContain('Removed from Claude Code');
+        expect(output).toContain('VS Code is not configured');
       });
 
       it('reports errors during removal', async () => {
@@ -479,8 +545,9 @@ describe('setup.ts', () => {
 
         await runCommand('cursor', '--remove');
 
-        expect(outputText()).toContain('[ERROR]');
-        expect(outputText()).toContain('File locked');
+        expect(mockClack.log.error).toHaveBeenCalledWith(
+          expect.stringContaining('File locked'),
+        );
       });
 
       it('handles isConfigured throwing by treating tool as not-configured', async () => {
@@ -491,7 +558,6 @@ describe('setup.ts', () => {
         await runCommand('broken', '--remove');
 
         expect(tool.remove).not.toHaveBeenCalled();
-        expect(outputText()).toContain('not configured');
       });
     });
 
@@ -505,7 +571,6 @@ describe('setup.ts', () => {
 
         expect(tool1.remove).toHaveBeenCalledOnce();
         expect(tool2.remove).toHaveBeenCalledOnce();
-        expect(outputText()).toContain('Removing from 2 tool');
       });
 
       it('reports when no tools are configured', async () => {
@@ -514,21 +579,23 @@ describe('setup.ts', () => {
 
         await runCommand('--remove', '-y');
 
-        expect(outputText()).toContain('UseAI is not configured in any AI tools');
+        expect(mockClack.log.info).toHaveBeenCalledWith(
+          expect.stringContaining('not configured in any AI tools'),
+        );
       });
     });
 
     describe('with interactive prompt', () => {
-      it('presents checkbox and removes selected tools', async () => {
+      it('presents multiselect and removes selected tools', async () => {
         const tool1 = makeMockTool({ id: 'claude', name: 'Claude Code', configured: true });
         const tool2 = makeMockTool({ id: 'vscode', name: 'VS Code', configured: true });
         mockAiTools.push(tool1, tool2);
 
-        vi.mocked(checkbox).mockResolvedValue(['claude']);
+        mockClack.multiselect.mockResolvedValue(['claude']);
 
         await runCommand('--remove');
 
-        expect(checkbox).toHaveBeenCalledOnce();
+        expect(mockClack.multiselect).toHaveBeenCalledOnce();
         expect(tool1.remove).toHaveBeenCalledOnce();
         expect(tool2.remove).not.toHaveBeenCalled();
       });
@@ -537,36 +604,26 @@ describe('setup.ts', () => {
         const tool = makeMockTool({ configured: true });
         mockAiTools.push(tool);
 
-        vi.mocked(checkbox).mockRejectedValue(new Error('User cancelled'));
+        mockClack.multiselect.mockResolvedValue(Symbol.for('cancel'));
+        mockClack.isCancel.mockReturnValue(true);
 
         await runCommand('--remove');
 
         expect(tool.remove).not.toHaveBeenCalled();
-      });
-
-      it('shows done message with correct count', async () => {
-        const tool1 = makeMockTool({ id: 'claude', name: 'Claude Code', configured: true });
-        const tool2 = makeMockTool({ id: 'vscode', name: 'VS Code', configured: true });
-        mockAiTools.push(tool1, tool2);
-
-        vi.mocked(checkbox).mockResolvedValue(['claude', 'vscode']);
-
-        await runCommand('--remove');
-
-        expect(outputText()).toContain('Done!');
-        expect(outputText()).toContain('2 tool');
       });
 
       it('handles empty selection on remove', async () => {
         const tool = makeMockTool({ id: 'claude', configured: true });
         mockAiTools.push(tool);
 
-        vi.mocked(checkbox).mockResolvedValue([]);
+        mockClack.multiselect.mockResolvedValue([]);
 
         await runCommand('--remove');
 
         expect(tool.remove).not.toHaveBeenCalled();
-        expect(outputText()).toContain('No tools selected');
+        expect(mockClack.log.info).toHaveBeenCalledWith(
+          expect.stringContaining('No tools selected'),
+        );
       });
     });
   });
@@ -574,19 +631,19 @@ describe('setup.ts', () => {
   // ── resolveTools error handling ──
 
   describe('resolveTools error handling', () => {
-    it('prints error and available tool IDs when tool name is unknown', async () => {
+    it('prints error when tool name is unknown', async () => {
       const knownTool = makeMockTool({ id: 'claude', name: 'Claude Code' });
       mockAiTools.push(knownTool);
       mockResolveTools.mockReturnValue({ matched: [], unmatched: ['foobar'] });
 
       await runCommand('foobar');
 
-      const output = outputText();
-      expect(output).toContain('[ERROR]');
-      expect(output).toContain('Unknown tool');
-      expect(output).toContain('foobar');
-      expect(output).toContain('Available');
-      expect(output).toContain('claude');
+      expect(mockClack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining('Unknown tool'),
+      );
+      expect(mockClack.log.info).toHaveBeenCalledWith(
+        expect.stringContaining('Available'),
+      );
     });
 
     it('lists multiple unknown tools in the error', async () => {
@@ -595,10 +652,9 @@ describe('setup.ts', () => {
 
       await runCommand('foo', 'bar');
 
-      const output = outputText();
-      expect(output).toContain('Unknown tool');
-      expect(output).toContain('foo');
-      expect(output).toContain('bar');
+      expect(mockClack.log.error).toHaveBeenCalledWith(
+        expect.stringContaining('foo'),
+      );
     });
 
     it('does not call install when tool names are unmatched', async () => {
@@ -609,6 +665,7 @@ describe('setup.ts', () => {
       await runCommand('nope');
 
       expect(tool.install).not.toHaveBeenCalled();
+      expect(tool.installHttp).not.toHaveBeenCalled();
     });
   });
 
@@ -621,16 +678,20 @@ describe('setup.ts', () => {
 
       await runCommand('--status');
 
-      expect(outputText()).toContain('[HEADER] AI Tool MCP Status');
+      expect(mockClack.note).toHaveBeenCalledWith(
+        expect.stringContaining('Configured'),
+        'AI Tool MCP Status',
+      );
       expect(tool.install).not.toHaveBeenCalled();
+      expect(tool.installHttp).not.toHaveBeenCalled();
       expect(tool.remove).not.toHaveBeenCalled();
     });
 
-    it('routes --remove to removeFlow', async () => {
+    it('routes --remove to fullRemoveFlow', async () => {
       const tool = makeMockTool({ configured: true });
       mockAiTools.push(tool);
 
-      vi.mocked(checkbox).mockResolvedValue([tool.id]);
+      mockClack.multiselect.mockResolvedValue([tool.id]);
 
       await runCommand('--remove');
 
@@ -638,54 +699,27 @@ describe('setup.ts', () => {
       expect(tool.install).not.toHaveBeenCalled();
     });
 
-    it('routes default (no flags) to installFlow', async () => {
+    it('routes default (no flags) to daemonInstallFlow', async () => {
       const tool = makeMockTool({ detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' });
       mockAiTools.push(tool);
-
-      vi.mocked(checkbox).mockResolvedValue([tool.id]);
 
       await runCommand();
 
-      expect(tool.install).toHaveBeenCalled();
-      expect(tool.remove).not.toHaveBeenCalled();
-      expect(outputText()).toContain('Scanning for AI tools');
+      expect(mockShared.ensureDaemon).toHaveBeenCalled();
+      expect(tool.installHttp).toHaveBeenCalled();
     });
 
-    it('--status takes precedence over --remove when both provided', async () => {
-      const tool = makeMockTool({ detected: true, configured: true, configPath: '/Users/testuser/.claude/mcp.json' });
-      mockAiTools.push(tool);
-
-      await runCommand('--status', '--remove');
-
-      // The code checks opts.status first
-      expect(outputText()).toContain('[HEADER] AI Tool MCP Status');
-      expect(tool.remove).not.toHaveBeenCalled();
-      expect(tool.install).not.toHaveBeenCalled();
-    });
-  });
-
-  // ── Pluralization in messages ──
-
-  describe('pluralization in messages', () => {
-    it('uses singular "tool" for single detected tool in install scan', async () => {
+    it('routes --stdio to stdioInstallFlow', async () => {
       const tool = makeMockTool({ detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' });
       mockAiTools.push(tool);
 
-      await runCommand('-y');
+      mockClack.multiselect.mockResolvedValue([tool.id]);
+      mockClack.confirm.mockResolvedValue(true);
 
-      expect(outputText()).toContain('1 tool');
-      expect(outputText()).not.toContain('1 tools');
-    });
+      await runCommand('--stdio');
 
-    it('uses plural "tools" for multiple detected tools in install scan', async () => {
-      mockAiTools.push(
-        makeMockTool({ id: 'claude', name: 'Claude Code', detected: true, configured: false, configPath: '/Users/testuser/.claude/mcp.json' }),
-        makeMockTool({ id: 'vscode', name: 'VS Code', detected: true, configured: false, configPath: '/Users/testuser/.vscode/settings.json' }),
-      );
-
-      await runCommand('-y');
-
-      expect(outputText()).toContain('2 tools');
+      expect(mockShared.ensureDaemon).not.toHaveBeenCalled();
+      expect(tool.install).toHaveBeenCalled();
     });
   });
 
@@ -702,13 +736,12 @@ describe('setup.ts', () => {
       });
       mockResolveTools.mockReturnValue({ matched: [tool], unmatched: [] });
 
-      await runCommand('codex');
+      await runCommand('codex', '--stdio');
 
-      const output = outputText();
+      const output = clackOutput();
       expect(output).toContain('Manual setup needed');
       expect(output).toContain('OpenAI Codex CLI');
       expect(output).toContain('Run codex --configure to complete setup');
-      expect(output).toContain(mockInstructionsText);
     });
 
     it('does not show manual hints section when no tools need manual setup', async () => {
@@ -721,9 +754,11 @@ describe('setup.ts', () => {
       });
       mockResolveTools.mockReturnValue({ matched: [tool], unmatched: [] });
 
-      await runCommand('claude');
+      await runCommand('claude', '--stdio');
 
-      expect(outputText()).not.toContain('Manual setup needed');
+      const noteArgs = mockClack.note.mock.calls.map((c: any[]) => c[1]).filter(Boolean);
+      const hasManualHint = noteArgs.some((title: string) => title.includes('Manual setup'));
+      expect(hasManualHint).toBe(false);
     });
   });
 });

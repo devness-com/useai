@@ -27,7 +27,7 @@ vi.mock('@useai/shared/constants', () => ({
   DATA_DIR: '/mock/useai/data',
 }));
 
-vi.mock('chalk', () => {
+vi.mock('picocolors', () => {
   const identity = (s: string) => s;
   return {
     default: {
@@ -35,6 +35,10 @@ vi.mock('chalk', () => {
       dim: identity,
       green: identity,
       red: identity,
+      cyan: identity,
+      yellow: identity,
+      bgCyan: identity,
+      black: identity,
     },
   };
 });
@@ -48,7 +52,7 @@ vi.mock('../utils/display.js', () => ({
   table: vi.fn((rows: [string, string][]) =>
     rows.map(([k, v]) => `${k}: ${v}`).join('\n'),
   ),
-  info: vi.fn((msg: string) => `ℹ ${msg}`),
+  info: vi.fn((msg: string) => `i ${msg}`),
 }));
 
 // Now import after mocks are set up
@@ -106,7 +110,7 @@ describe('formatBytes', () => {
     });
 
     it('rounds to one decimal place in KB', () => {
-      // 1025 bytes = 1.0009765625 KB → rounds to 1.0
+      // 1025 bytes = 1.0009765625 KB -> rounds to 1.0
       expect(formatBytes(1025)).toBe('1.0 KB');
     });
 
@@ -232,9 +236,9 @@ describe('statusCommand', () => {
       sessions = [],
       milestones = [],
       config = {
-        milestone_tracking: true,
-        auto_sync: true,
-        sync_interval_hours: 24,
+        capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+        sync: { enabled: true, interval_hours: 24 },
+        evaluation_framework: 'space',
         last_sync_at: null,
         auth: null,
       },
@@ -288,7 +292,7 @@ describe('statusCommand', () => {
 
       const output = getAllOutput();
       expect(output).toContain('Total tracked time');
-      // formatDuration(5400) → "1h 30m"
+      // formatDuration(5400) -> "1h 30m"
       expect(output).toContain('1h 30m');
     });
 
@@ -381,9 +385,8 @@ describe('statusCommand', () => {
     it('shows milestone tracking as on when enabled', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: false,
-          sync_interval_hours: 12,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: false, interval_hours: 12 },
           last_sync_at: null,
           auth: null,
         },
@@ -398,9 +401,8 @@ describe('statusCommand', () => {
     it('shows milestone tracking as off when disabled', () => {
       setupMocks({
         config: {
-          milestone_tracking: false,
-          auto_sync: true,
-          sync_interval_hours: 24,
+          capture: { milestones: false, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 24 },
           last_sync_at: null,
           auth: null,
         },
@@ -412,12 +414,11 @@ describe('statusCommand', () => {
       expect(output).toContain('off');
     });
 
-    it('shows auto sync state correctly', () => {
+    it('shows cloud sync state correctly', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: false,
-          sync_interval_hours: 6,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: false, interval_hours: 6 },
           last_sync_at: null,
           auth: null,
         },
@@ -425,16 +426,15 @@ describe('statusCommand', () => {
       statusCommand.parse([], { from: 'user' });
 
       const output = getAllOutput();
-      expect(output).toContain('Auto sync');
+      expect(output).toContain('Cloud sync');
       expect(output).toContain('off');
     });
 
     it('displays sync interval in hours', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: true,
-          sync_interval_hours: 12,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 12 },
           last_sync_at: null,
           auth: null,
         },
@@ -447,9 +447,8 @@ describe('statusCommand', () => {
     it('displays last sync timestamp when available', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: true,
-          sync_interval_hours: 24,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 24 },
           last_sync_at: '2025-12-15T08:30:00Z',
           auth: null,
         },
@@ -462,9 +461,8 @@ describe('statusCommand', () => {
     it('displays "never" when last sync is null', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: true,
-          sync_interval_hours: 24,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 24 },
           last_sync_at: null,
           auth: null,
         },
@@ -477,11 +475,10 @@ describe('statusCommand', () => {
     it('displays user email when authenticated', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: true,
-          sync_interval_hours: 24,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 24 },
           last_sync_at: null,
-          auth: { user: { email: 'developer@example.com' } },
+          auth: { token: 'tok', user: { id: '1', email: 'developer@example.com' } },
         },
       });
       statusCommand.parse([], { from: 'user' });
@@ -492,9 +489,8 @@ describe('statusCommand', () => {
     it('displays "no" when not authenticated', () => {
       setupMocks({
         config: {
-          milestone_tracking: true,
-          auto_sync: true,
-          sync_interval_hours: 24,
+          capture: { milestones: true, prompt: true, evaluation: true, evaluation_reasons: 'all' },
+          sync: { enabled: true, interval_hours: 24 },
           last_sync_at: null,
           auth: null,
         },
@@ -520,23 +516,23 @@ describe('statusCommand', () => {
   });
 
   describe('privacy section', () => {
-    it('displays privacy disclaimer about no code capture', () => {
+    it('displays privacy note about prompts stored locally', () => {
       setupMocks({});
       statusCommand.parse([], { from: 'user' });
 
       const output = getAllOutput();
       expect(output).toContain(
-        'useai NEVER captures code, file contents, prompts, or responses.',
+        'Prompts are stored locally only',
       );
     });
 
-    it('displays what data types are recorded', () => {
+    it('displays sync configuration guidance', () => {
       setupMocks({});
       statusCommand.parse([], { from: 'user' });
 
       const output = getAllOutput();
       expect(output).toContain(
-        'Only durations, tool names, languages, and task types are recorded.',
+        'sync.include',
       );
     });
   });
