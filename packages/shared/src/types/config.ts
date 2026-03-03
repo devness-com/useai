@@ -10,7 +10,7 @@ export interface CaptureConfig {
 
 export interface SyncConfig {
   enabled: boolean;                   // default: false
-  interval_hours: number;             // default: 3
+  interval_hours: number;             // default: 1
 }
 
 export interface LocalConfig {
@@ -33,4 +33,10 @@ export interface UseaiConfig extends LocalConfig {
     };
   };
   last_sync_at?: string;
+}
+
+export type UserMode = 'local' | 'cloud';
+
+export function getUserMode(config: UseaiConfig): UserMode {
+  return config.auth?.token ? 'cloud' : 'local';
 }

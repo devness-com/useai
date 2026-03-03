@@ -113,6 +113,7 @@ export interface Milestone {
 }
 
 export interface LocalConfig {
+  mode: 'local' | 'cloud';
   authenticated: boolean;
   email: string | null;
   username: string | null;
@@ -306,6 +307,7 @@ export function deleteMilestone(milestoneId: string): Promise<{ deleted: boolean
 // ── Config (full) ─────────────────────────────────────────────────────────────
 
 export interface FullConfig {
+  mode: 'local' | 'cloud';
   capture: {
     prompt: boolean;
     prompt_images: boolean;

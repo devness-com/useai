@@ -152,6 +152,7 @@ export function handleLocalConfig(_req: IncomingMessage, res: ServerResponse): v
     const config = migrateConfig(raw) as UseaiConfig;
 
     json(res, 200, {
+      mode: config.auth?.token ? 'cloud' : 'local',
       authenticated: !!config.auth?.token,
       email: config.auth?.user?.email ?? null,
       username: config.auth?.user?.username ?? null,
@@ -169,6 +170,7 @@ export function handleLocalConfigFull(_req: IncomingMessage, res: ServerResponse
     const config = migrateConfig(raw) as UseaiConfig;
 
     json(res, 200, {
+      mode: config.auth?.token ? 'cloud' : 'local',
       capture: config.capture,
       sync: config.sync,
       evaluation_framework: config.evaluation_framework ?? 'space',

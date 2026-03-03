@@ -10,6 +10,7 @@ import {
 } from '@useai/shared/constants';
 import { formatDuration } from '@useai/shared/utils';
 import type { SessionSeal, Milestone } from '@useai/shared/types';
+import { getUserMode } from '@useai/shared/types';
 import { getConfig } from '../services/config.service.js';
 import { header, table, info } from '../utils/display.js';
 
@@ -67,15 +68,20 @@ export const statusCommand = new Command('status')
 
     console.log(header('Settings'));
 
+    const mode = getUserMode(config);
+    const modeDisplay = mode === 'cloud'
+      ? pc.green('Cloud') + pc.dim(` · @${config.auth!.user.username ?? config.auth!.user.email}`)
+      : pc.cyan('Local');
+
     console.log(
       table([
+        ['Mode', modeDisplay],
         ['Milestone tracking', config.capture.milestones ? pc.green('on') : pc.red('off')],
         ['Prompt capture', config.capture.prompt ? pc.green('on') : pc.red('off')],
         ['Eval reasons', config.capture.evaluation_reasons],
         ['Cloud sync', config.sync.enabled ? pc.green('on') : pc.red('off')],
         ['Sync interval', `${config.sync.interval_hours}h`],
         ['Last sync', config.last_sync_at ?? pc.dim('never')],
-        ['Logged in', config.auth ? pc.green(config.auth.user.email) : pc.dim('no')],
       ]),
     );
 

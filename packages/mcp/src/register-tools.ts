@@ -23,7 +23,7 @@ import {
   generateSessionId,
   isValidSessionSeal,
 } from '@useai/shared';
-import type { SessionSeal, SessionEvaluation, Milestone, LocalConfig } from '@useai/shared';
+import type { SessionSeal, SessionEvaluation, Milestone, UseaiConfig } from '@useai/shared';
 import { getFramework, migrateConfig } from '@useai/shared';
 import { filterEvaluationReasons } from '@useai/shared';
 import type { SessionState } from './session-state.js';
@@ -45,7 +45,7 @@ function coerceJsonString<T extends z.ZodTypeAny>(schema: T): z.ZodType<z.infer<
   }, schema) as z.ZodType<z.infer<T>>;
 }
 
-function getConfig(): LocalConfig {
+function getConfig(): UseaiConfig {
   const raw = readJson<Record<string, unknown>>(CONFIG_FILE, {});
   return migrateConfig(raw);
 }
@@ -398,7 +398,8 @@ export function registerTools(server: McpServer, session: SessionState, opts?: R
       writeMcpMapping(session.mcpSessionId, session.sessionId);
 
       const childSuffix = parentSessionId ? ` · child of ${parentSessionId.slice(0, 8)}` : '';
-      const responseText = `useai session started — ${session.sessionTaskType} on ${session.clientName} · ${session.sessionId.slice(0, 8)} · conv ${session.conversationId.slice(0, 8)}#${session.conversationIndex}${childSuffix} · ${session.signingAvailable ? 'signed' : 'unsigned'}`;
+      const mode = config.auth?.token ? 'cloud' : 'local';
+      const responseText = `useai session started — ${session.sessionTaskType} on ${session.clientName} · ${session.sessionId.slice(0, 8)} · conv ${session.conversationId.slice(0, 8)}#${session.conversationIndex}${childSuffix} · ${session.signingAvailable ? 'signed' : 'unsigned'} · ${mode}`;
 
       return {
         content: [

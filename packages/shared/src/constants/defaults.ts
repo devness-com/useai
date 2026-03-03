@@ -9,7 +9,7 @@ export const DEFAULT_CAPTURE_CONFIG: CaptureConfig = {
 };
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
-  enabled: true,
+  enabled: false,
   interval_hours: 1,
 };
 

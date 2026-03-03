@@ -57,6 +57,12 @@ export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
   // Strip removed sync.include from old configs
   delete (config.sync as any).include;
 
+  // Ensure sync.enabled is coherent with auth state
+  // (prior default was true, which made no sense without auth)
+  if (config.sync.enabled && !config.auth?.token) {
+    config.sync.enabled = false;
+  }
+
   // Default evaluation_framework
   if (!config.evaluation_framework) {
     config.evaluation_framework = 'space';

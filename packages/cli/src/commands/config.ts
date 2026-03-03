@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import pc from 'picocolors';
 import { getFrameworkIds } from '@useai/shared';
+import { getUserMode } from '@useai/shared/types';
 import { getConfig, updateConfig } from '../services/config.service.js';
 import { reinjectInstructions } from '../services/tools.js';
 import { header, table, success, error, info } from '../utils/display.js';
@@ -65,9 +66,15 @@ export const configCommand = new Command('config')
     const config = getConfig();
 
     if (!changed) {
+      const mode = getUserMode(config);
+      const modeDisplay = mode === 'cloud'
+        ? pc.green('Cloud') + pc.dim(` · @${config.auth!.user.username ?? config.auth!.user.email}`)
+        : pc.cyan('Local');
+
       console.log(header('Current Settings'));
       console.log(
         table([
+          ['Mode', modeDisplay],
           ['Milestone tracking', config.capture.milestones ? pc.green('on') : pc.red('off')],
           ['Prompt capture', config.capture.prompt ? pc.green('on') : pc.red('off')],
           ['Eval reasons', config.capture.evaluation_reasons],
@@ -75,7 +82,6 @@ export const configCommand = new Command('config')
           ['Eval framework', pc.cyan(config.evaluation_framework ?? 'space')],
           ['Sync interval', `${config.sync.interval_hours}h`],
           ['Last sync', config.last_sync_at ?? pc.dim('never')],
-          ['Logged in', config.auth ? pc.green(config.auth.user.email) : pc.dim('no')],
         ]),
       );
       console.log('');
