@@ -70,6 +70,7 @@ interface ActiveSession {
   server: McpServer;
   session: SessionState;
   idleTimer: ReturnType<typeof setTimeout>;
+  pingInterval: ReturnType<typeof setInterval>;
 }
 
 // ── Session Store ──────────────────────────────────────────────────────────────
@@ -296,6 +297,7 @@ function pruneZombieMcpConnections(): void {
     const active = sessions.get(sid);
     if (active) {
       clearTimeout(active.idleTimer);
+      clearInterval(active.pingInterval);
       try { active.transport.close(); } catch { /* ignore */ }
       sessions.delete(sid);
     }
@@ -508,6 +510,7 @@ async function cleanupSession(sessionId: string): Promise<void> {
   if (!active) return;
 
   clearTimeout(active.idleTimer);
+  clearInterval(active.pingInterval);
   autoSealSession(active);
 
   // Seal any orphaned parent sessions on the stack
@@ -1396,11 +1399,16 @@ export async function startDaemon(port?: number): Promise<void> {
                 await cleanupSession(newSid);
               }, IDLE_TIMEOUT_MS);
 
+              const pingInterval = setInterval(() => {
+                mcpServer.server.ping().catch(() => clearInterval(pingInterval));
+              }, 2 * 60 * 1000);
+
               sessions.set(newSid, {
                 transport,
                 server: mcpServer,
                 session: sessionState,
                 idleTimer,
+                pingInterval,
               });
             },
           });
@@ -1410,6 +1418,7 @@ export async function startDaemon(port?: number): Promise<void> {
             if (closedSid && sessions.has(closedSid)) {
               const active = sessions.get(closedSid)!;
               clearTimeout(active.idleTimer);
+              clearInterval(active.pingInterval);
               autoSealSession(active);
               // Seal any orphaned parent sessions on the stack
               while (active.session.parentStateStack.length > 0) {
@@ -1477,6 +1486,7 @@ export async function startDaemon(port?: number): Promise<void> {
         // Delete from map BEFORE closing transport to prevent the onclose
         // callback from auto-sealing the session.
         clearTimeout(active.idleTimer);
+        clearInterval(active.pingInterval);
         sessions.delete(sid);
         try { await active.transport.close(); } catch { /* ignore */ }
       } else {
