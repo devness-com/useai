@@ -95,10 +95,21 @@ export function computeStats(sessions: SessionSeal[], milestones: Milestone[] = 
     for (const s of sessions) {
       const sStart = parseTimestamp(s.started_at);
       const sEnd = parseTimestamp(s.ended_at);
+
+      // Cap effective end to started_at + duration_seconds when wall-clock span
+      // is much larger than the actual active duration. Prevents sessions that
+      // were paused overnight (parent stack) from inflating USER TIME.
+      const durationMs = (s.duration_seconds ?? 0) * 1000;
+      const wallClockMs = sEnd - sStart;
+      const gapThresholdMs = 10 * 60 * 1000; // 10 min buffer
+      const effectiveEnd = durationMs > 0 && wallClockMs > durationMs + gapThresholdMs
+        ? sStart + durationMs
+        : sEnd;
+
       if (sStart < minStart) minStart = sStart;
-      if (sEnd > maxEnd) maxEnd = sEnd;
+      if (effectiveEnd > maxEnd) maxEnd = effectiveEnd;
       events.push({ time: sStart, delta: 1 });
-      events.push({ time: sEnd, delta: -1 });
+      events.push({ time: effectiveEnd, delta: -1 });
     }
 
     actualSpanHours = (maxEnd - minStart) / 3600000;

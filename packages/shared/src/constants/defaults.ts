@@ -11,6 +11,8 @@ export const DEFAULT_CAPTURE_CONFIG: CaptureConfig = {
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   enabled: false,
   interval_hours: 1,
+  include_stats: true,
+  include_details: true,
 };
 
 export const DEFAULT_CONFIG: LocalConfig = {

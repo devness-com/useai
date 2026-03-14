@@ -51,6 +51,8 @@ export function migrateConfig(raw: Record<string, unknown>): UseaiConfig {
     config.sync = {
       enabled: s.enabled ?? DEFAULT_SYNC_CONFIG.enabled,
       interval_hours: s.interval_hours ?? DEFAULT_SYNC_CONFIG.interval_hours,
+      include_stats: s.include_stats ?? DEFAULT_SYNC_CONFIG.include_stats,
+      include_details: s.include_details ?? DEFAULT_SYNC_CONFIG.include_details,
     };
   }
 

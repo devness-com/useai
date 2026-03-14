@@ -203,6 +203,8 @@ export async function handleLocalConfigUpdate(req: IncomingMessage, res: ServerR
       const syncUpdate = body.sync as Record<string, unknown>;
       if (syncUpdate.enabled !== undefined) config.sync.enabled = syncUpdate.enabled as boolean;
       if (syncUpdate.interval_hours !== undefined) config.sync.interval_hours = syncUpdate.interval_hours as number;
+      if (syncUpdate.include_stats !== undefined) config.sync.include_stats = syncUpdate.include_stats as boolean;
+      if (syncUpdate.include_details !== undefined) config.sync.include_details = syncUpdate.include_details as boolean;
     }
 
     writeJson(CONFIG_FILE, config);
@@ -281,13 +283,17 @@ export async function performSync(): Promise<{ success: boolean; last_sync_at?: 
       }
     }
 
+    const stripDetails = !config.sync.include_details;
     const payload = {
       date,
       total_seconds: totalSeconds,
       clients,
       task_types: taskTypes,
       languages,
-      sessions: daySessions.map(({ prompt, prompt_images, ...rest }) => rest),
+      sessions: daySessions.map(({ prompt, prompt_images, title, private_title, project, ...rest }) => {
+        if (stripDetails) return rest;
+        return { ...rest, title, private_title, project };
+      }),
       sync_signature: '',
     };
 
@@ -303,35 +309,37 @@ export async function performSync(): Promise<{ success: boolean; last_sync_at?: 
     }
   }
 
-  // Publish milestones
-  const MILESTONE_CHUNK = 50;
-  const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
+  // Publish milestones (skip when details are excluded)
+  if (config.sync.include_details) {
+    const MILESTONE_CHUNK = 50;
+    const allMilestones = readJson<Milestone[]>(MILESTONES_FILE, []);
 
-  // Only send milestones that haven't been published yet
-  const unpublished = allMilestones.filter(m => !m.published && m.title && m.category);
+    // Only send milestones that haven't been published yet
+    const unpublished = allMilestones.filter(m => !m.published && m.title && m.category);
 
-  if (unpublished.length > 0) {
-    for (let i = 0; i < unpublished.length; i += MILESTONE_CHUNK) {
-      const chunk = unpublished.slice(i, i + MILESTONE_CHUNK);
-      const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ milestones: chunk }),
-      });
+    if (unpublished.length > 0) {
+      for (let i = 0; i < unpublished.length; i += MILESTONE_CHUNK) {
+        const chunk = unpublished.slice(i, i + MILESTONE_CHUNK);
+        const milestonesRes = await fetch(`${USEAI_API}/api/publish`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ milestones: chunk }),
+        });
 
-      if (!milestonesRes.ok) {
-        const errBody = await milestonesRes.text();
-        return { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` };
+        if (!milestonesRes.ok) {
+          const errBody = await milestonesRes.text();
+          return { success: false, error: `Milestones publish failed (chunk ${Math.floor(i / MILESTONE_CHUNK) + 1}): ${milestonesRes.status} ${errBody}` };
+        }
       }
-    }
 
-    // Mark all synced milestones as published locally
-    const sentIds = new Set(unpublished.map(m => m.id));
-    const now = new Date().toISOString();
-    const updated = allMilestones.map(m =>
-      sentIds.has(m.id) ? { ...m, published: true, published_at: now } : m,
-    );
-    writeJson(MILESTONES_FILE, updated);
+      // Mark all synced milestones as published locally
+      const sentIds = new Set(unpublished.map(m => m.id));
+      const now = new Date().toISOString();
+      const updated = allMilestones.map(m =>
+        sentIds.has(m.id) ? { ...m, published: true, published_at: now } : m,
+      );
+      writeJson(MILESTONES_FILE, updated);
+    }
   }
 
   // Update last_sync_at

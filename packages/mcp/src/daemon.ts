@@ -82,7 +82,8 @@ let daemonSigningKey: KeyObject | null = null;
 // ── Orphan Recovery ─────────────────────────────────────────────────────────────
 
 const ORPHAN_SWEEP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
-const MCP_STALE_CONNECTION_MS = 60 * 60 * 1000; // 1 hour — prune zombie MCP connections
+const MCP_STALE_CONNECTION_MS = 60 * 60 * 1000; // 1 hour — clean up parentStateStack on zombie MCP connections
+const MCP_TRANSPORT_EXPIRY_MS = 8 * 60 * 60 * 1000; // 8 hours — actually close abandoned MCP transports
 
 /** Get the set of UseAI session IDs that are currently active in memory. */
 function getActiveUseaiSessionIds(): Set<string> {
@@ -264,35 +265,54 @@ function sealOrphanedSessions(): void {
 }
 
 /**
- * Prune zombie MCP connections that have no active UseAI session and haven't
- * had any activity for over 1 hour. Without this, StreamableHTTP connections
- * (which lack a persistent socket to detect client departure) accumulate
- * indefinitely and their parentStateStack entries block orphan sweep.
+ * Prune zombie MCP connections in two phases:
+ *
+ * Phase 1 (1 hour idle): Clean up parentStateStack to unblock orphan sweep,
+ *   but KEEP the transport alive. This prevents AI tools (Claude Code, Cursor,
+ *   etc.) from losing MCP tools mid-session — most clients do not reconnect
+ *   after receiving a 404 for a stale session ID (e.g. Claude Code's /clear
+ *   only clears conversation context, not MCP connections).
+ *
+ * Phase 2 (8 hours idle): Actually close the transport and remove from the
+ *   sessions map. At this point the connection is truly abandoned.
  */
 function pruneZombieMcpConnections(): void {
   const now = Date.now();
-  const toDelete: string[] = [];
+  const toClose: string[] = [];
+  let stacksCleaned = 0;
 
   for (const [sid, active] of sessions) {
     // Keep connections that have an active UseAI session (recordCount > 0)
     if (active.session.sessionRecordCount > 0) continue;
 
-    // Check last activity time — if the session was recently active, keep it
     const idleMs = now - active.session.lastActivityTime;
-    if (idleMs < MCP_STALE_CONNECTION_MS) continue;
 
-    // Seal any orphaned parent sessions still on the stack before pruning
-    while (active.session.parentStateStack.length > 0) {
-      active.session.restoreParentState();
-      if (active.session.sessionRecordCount > 0 && !isSessionAlreadySealed(active.session)) {
-        autoSealSession(active);
+    // Phase 2: truly abandoned — close transport after 8 hours
+    if (idleMs >= MCP_TRANSPORT_EXPIRY_MS) {
+      // Seal any orphaned parent sessions before closing
+      while (active.session.parentStateStack.length > 0) {
+        active.session.restoreParentState();
+        if (active.session.sessionRecordCount > 0 && !isSessionAlreadySealed(active.session)) {
+          autoSealSession(active);
+        }
       }
+      toClose.push(sid);
+      continue;
     }
 
-    toDelete.push(sid);
+    // Phase 1: idle >1 hour — clean up parentStateStack but keep transport alive
+    if (idleMs >= MCP_STALE_CONNECTION_MS && active.session.parentStateStack.length > 0) {
+      while (active.session.parentStateStack.length > 0) {
+        active.session.restoreParentState();
+        if (active.session.sessionRecordCount > 0 && !isSessionAlreadySealed(active.session)) {
+          autoSealSession(active);
+        }
+      }
+      stacksCleaned++;
+    }
   }
 
-  for (const sid of toDelete) {
+  for (const sid of toClose) {
     const active = sessions.get(sid);
     if (active) {
       clearTimeout(active.idleTimer);
@@ -301,8 +321,11 @@ function pruneZombieMcpConnections(): void {
     }
   }
 
-  if (toDelete.length > 0) {
-    console.log(`Pruned ${toDelete.length} zombie MCP connection${toDelete.length === 1 ? '' : 's'}`);
+  if (toClose.length > 0) {
+    console.log(`Closed ${toClose.length} abandoned MCP transport${toClose.length === 1 ? '' : 's'} (idle >8h)`);
+  }
+  if (stacksCleaned > 0) {
+    console.log(`Cleaned parentStateStack on ${stacksCleaned} idle MCP connection${stacksCleaned === 1 ? '' : 's'}`);
   }
 }
 
@@ -822,8 +845,10 @@ function recoverEndSession(
   const taskType = (args['task_type'] as string) ?? (startData['task_type'] as string) ?? 'coding';
   const languages = (args['languages'] as string[]) ?? [];
   const filesTouched = (args['files_touched_count'] as number) ?? 0;
-  const milestonesInput = args['milestones'] as Array<{ title: string; private_title?: string; category: string; complexity?: string }> | undefined;
-  const evaluation = args['evaluation'] as SessionEvaluation | undefined;
+  const rawMilestones = args['milestones'];
+  const milestonesInput = (typeof rawMilestones === 'string' ? JSON.parse(rawMilestones) : rawMilestones) as Array<{ title: string; private_title?: string; category: string; complexity?: string }> | undefined;
+  const rawEval = args['evaluation'];
+  const evaluation = (typeof rawEval === 'string' ? JSON.parse(rawEval) : rawEval) as SessionEvaluation | undefined;
 
   // For already-sealed sessions, extract the duration from the existing seal
   // rather than recalculating with Date.now() (which inflates idle time).

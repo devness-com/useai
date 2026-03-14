@@ -51,7 +51,9 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 function computeAvgScore(ev: SessionEvaluation): number {
-  return (ev.prompt_quality + ev.context_provided + ev.scope_quality + ev.independence_level) / 4;
+  const parsed = typeof ev === 'string' ? JSON.parse(ev) as SessionEvaluation : ev;
+  const vals = [parsed.prompt_quality, parsed.context_provided, parsed.scope_quality, parsed.independence_level].filter(v => typeof v === 'number');
+  return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
 }
 
 function scoreColorClass(score: number): string {

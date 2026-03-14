@@ -318,6 +318,8 @@ export interface FullConfig {
   sync: {
     enabled: boolean;
     interval_hours: number;
+    include_stats: boolean;
+    include_details: boolean;
   };
   evaluation_framework: string;
   authenticated: boolean;

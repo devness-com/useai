@@ -11,6 +11,8 @@ export interface CaptureConfig {
 export interface SyncConfig {
   enabled: boolean;                   // default: false
   interval_hours: number;             // default: 1
+  include_stats: boolean;             // default: true — aggregate stats (public profile)
+  include_details: boolean;           // default: true — titles & milestones (private)
 }
 
 export interface LocalConfig {

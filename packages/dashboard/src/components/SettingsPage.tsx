@@ -260,6 +260,18 @@ export function SettingsPage() {
 
           {draft.sync.enabled && (
             <>
+              <SettingToggle
+                label="Sync my stats"
+                description="Hours, languages, streaks — publicly visible on your profile"
+                checked={draft.sync.include_stats}
+                onChange={(v) => setSync({ include_stats: v })}
+              />
+              <SettingToggle
+                label="Sync titles & milestones"
+                description="Session titles and milestones — private, only visible to you"
+                checked={draft.sync.include_details}
+                onChange={(v) => setSync({ include_details: v })}
+              />
               <SettingSelect
                 label="Sync interval"
                 description="How often to sync data"
@@ -276,7 +288,6 @@ export function SettingsPage() {
                 ]}
                 onChange={(v) => setSync({ interval_hours: Number(v) })}
               />
-
             </>
           )}
         </div>

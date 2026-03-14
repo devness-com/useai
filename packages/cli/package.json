@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai-cli",
-  "version": "0.8.10",
+  "version": "0.8.16",
   "description": "CLI tool for useai.dev — stats, sync, publish your AI development workflow",
   "author": "nabeelkausari",
   "license": "AGPL-3.0-only",

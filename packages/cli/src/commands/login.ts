@@ -250,7 +250,7 @@ export const loginCommand = new Command('login')
             username,
           },
         },
-        sync: { enabled: true, interval_hours: config.sync.interval_hours },
+        sync: { enabled: true, interval_hours: config.sync.interval_hours, include_stats: true, include_details: true },
       });
 
       console.log('');
@@ -282,7 +282,7 @@ export const logoutCommand = new Command('logout')
     const email = config.auth.user.email;
     updateConfig({
       auth: undefined,
-      sync: { enabled: false, interval_hours: config.sync.interval_hours },
+      sync: { enabled: false, interval_hours: config.sync.interval_hours, include_stats: config.sync.include_stats, include_details: config.sync.include_details },
     } as any);
     console.log(pc.green(`  ✓ Logged out from ${email}`));
     console.log(pc.dim('  Local Mode — your data stays on this device.'));

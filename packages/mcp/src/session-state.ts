@@ -198,7 +198,9 @@ export class SessionState {
   }
 
   getSessionDuration(): number {
-    return Math.round((Date.now() - this.sessionStartTime - this.childPausedMs) / 1000);
+    // Clamp to 0: parallel child sessions can inflate childPausedMs beyond
+    // actual elapsed time (stack-based model double-counts overlapping children).
+    return Math.max(0, Math.round((Date.now() - this.sessionStartTime - this.childPausedMs) / 1000));
   }
 
   /**
@@ -206,7 +208,9 @@ export class SessionState {
    * Used by auto-seal to avoid counting idle timeout as active time.
    */
   getActiveDuration(): number {
-    return Math.round((this.lastActivityTime - this.sessionStartTime - this.childPausedMs) / 1000);
+    // Clamp to 0: parallel child sessions can inflate childPausedMs beyond
+    // actual elapsed time (stack-based model double-counts overlapping children).
+    return Math.max(0, Math.round((this.lastActivityTime - this.sessionStartTime - this.childPausedMs) / 1000));
   }
 
   /** Backward-compatible getter: returns the top of the parent stack (most recent parent), or null. */
@@ -261,8 +265,12 @@ export class SessionState {
     this.sessionId = p.sessionId;
     this.sessionStartTime = p.sessionStartTime;
     this.lastActivityTime = p.lastActivityTime;
-    // Accumulate the time spent in the child session so it's excluded from parent duration
-    this.childPausedMs = p.childPausedMs + (Date.now() - p.pausedAt);
+    // Accumulate the time spent in the child session so it's excluded from parent duration.
+    // Cap at total elapsed time to prevent negative durations when parallel children
+    // inflate the counter (stack model double-counts overlapping child sessions).
+    const rawPausedMs = p.childPausedMs + (Date.now() - p.pausedAt);
+    const maxPausedMs = Date.now() - p.sessionStartTime;
+    this.childPausedMs = Math.min(rawPausedMs, maxPausedMs);
     this.heartbeatCount = p.heartbeatCount;
     this.sessionRecordCount = p.sessionRecordCount;
     this.chainTipHash = p.chainTipHash;

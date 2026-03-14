@@ -98,11 +98,17 @@ function reconcileSession(
   const fixed = { ...indexEntry };
 
   for (const field of RECONCILE_FIELDS) {
-    const chainValue = chainSeal[field];
+    let chainValue = chainSeal[field];
     const indexValue = indexEntry[field];
 
     // Skip if chain doesn't have this field (e.g. session_score not computed yet)
     if (chainValue === undefined || chainValue === null) continue;
+
+    // Clamp negative durations to 0: parallel child sessions can produce
+    // negative duration_seconds in auto-sealed chain records (childPausedMs overflow).
+    if (field === 'duration_seconds' && typeof chainValue === 'number' && chainValue < 0) {
+      chainValue = 0;
+    }
 
     if (chainValue !== indexValue) {
       (fixed as Record<string, unknown>)[field] = chainValue;
