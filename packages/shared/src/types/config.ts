@@ -1,8 +1,8 @@
 export type EvaluationReasonsLevel = 'all' | 'below_perfect' | 'none';
 
 export interface CaptureConfig {
-  prompt: boolean;                    // default: true
-  prompt_images: boolean;             // default: true (descriptions only)
+  prompt: boolean;                    // default: false
+  prompt_images: boolean;             // default: false (descriptions only)
   evaluation: boolean;                // default: true
   evaluation_reasons: EvaluationReasonsLevel; // default: 'all'
   milestones: boolean;                // default: true

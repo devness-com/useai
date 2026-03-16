@@ -1,8 +1,8 @@
 import type { CaptureConfig, SyncConfig, LocalConfig } from '../types/config.js';
 
 export const DEFAULT_CAPTURE_CONFIG: CaptureConfig = {
-  prompt: true,
-  prompt_images: true,
+  prompt: false,
+  prompt_images: false,
   evaluation: true,
   evaluation_reasons: 'all',
   milestones: true,

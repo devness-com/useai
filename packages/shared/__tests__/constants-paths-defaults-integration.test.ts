@@ -95,9 +95,9 @@ describe('Default config constants consistency', () => {
     expect(DEFAULT_SYNC_CONFIG.enabled).toBe(true);
   });
 
-  it('capture defaults are all enabled', () => {
-    expect(DEFAULT_CAPTURE_CONFIG.prompt).toBe(true);
-    expect(DEFAULT_CAPTURE_CONFIG.prompt_images).toBe(true);
+  it('capture defaults are correct', () => {
+    expect(DEFAULT_CAPTURE_CONFIG.prompt).toBe(false);
+    expect(DEFAULT_CAPTURE_CONFIG.prompt_images).toBe(false);
     expect(DEFAULT_CAPTURE_CONFIG.evaluation).toBe(true);
     expect(DEFAULT_CAPTURE_CONFIG.milestones).toBe(true);
     expect(DEFAULT_CAPTURE_CONFIG.evaluation_reasons).toBe('all');

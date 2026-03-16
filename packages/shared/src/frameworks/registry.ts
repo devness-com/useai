@@ -30,7 +30,7 @@ export function buildInstructionsText(frameworkId?: string, opts?: BuildInstruct
   const frameworkOpts: InstructionTextOpts = {
     evaluationReasons: opts?.evaluationReasons,
   };
-  const promptInstruction = opts?.capturePrompt !== false
+  const promptInstruction = opts?.capturePrompt === true
     ? ', `prompt` (the user\'s full verbatim prompt text)'
     : '';
   return [

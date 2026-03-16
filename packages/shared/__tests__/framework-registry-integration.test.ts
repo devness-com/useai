@@ -103,14 +103,14 @@ describe('Framework registry integration', () => {
       expect(text).toContain('prompt_quality');
     });
 
-    it('includes prompt capture instruction by default', () => {
+    it('omits prompt capture instruction by default', () => {
       const text = buildInstructionsText('raw');
-      expect(text).toContain('prompt');
+      expect(text).not.toContain("user's full verbatim prompt text");
     });
 
-    it('omits prompt capture instruction when capturePrompt is false', () => {
-      const text = buildInstructionsText('raw', { capturePrompt: false });
-      expect(text).not.toContain("user's full verbatim prompt text");
+    it('includes prompt capture instruction when capturePrompt is true', () => {
+      const text = buildInstructionsText('raw', { capturePrompt: true });
+      expect(text).toContain("user's full verbatim prompt text");
     });
 
     it('includes reasons instructions based on evaluationReasons level', () => {
