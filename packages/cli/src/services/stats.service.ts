@@ -43,19 +43,26 @@ export function getStats(): AggregatedStats {
   };
 }
 
+function toLocalDateStr(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function calculateStreak(sessions: SessionSeal[]): number {
   if (sessions.length === 0) return 0;
 
   const days = new Set<string>();
   for (const s of sessions) {
-    days.add(s.started_at.slice(0, 10));
+    if (s.started_at) days.add(toLocalDateStr(new Date(s.started_at)));
   }
 
   const sorted = [...days].sort().reverse();
   if (sorted.length === 0) return 0;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const today = toLocalDateStr(new Date());
+  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000));
 
   // Streak must include today or yesterday
   if (sorted[0] !== today && sorted[0] !== yesterday) return 0;

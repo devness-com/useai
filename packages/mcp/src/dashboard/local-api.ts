@@ -304,7 +304,9 @@ export async function performSync(eventType: 'sync' | 'auto_sync' = 'sync'): Pro
 
   for (const s of sessions) {
     if (!s.started_at) continue;
-    const date = s.started_at.slice(0, 10);
+    // Use local timezone date so synced daily buckets match the user's local calendar
+    const d = new Date(s.started_at);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const arr = byDate.get(date);
     if (arr) arr.push(s);
     else byDate.set(date, [s]);

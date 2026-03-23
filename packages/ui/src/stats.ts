@@ -169,19 +169,27 @@ export function computeStats(sessions: SessionSeal[], milestones: Milestone[] = 
   };
 }
 
+/** Get local date string (YYYY-MM-DD) from a Date object */
+export function toLocalDateStr(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function calculateStreak(sessions: SessionSeal[]): number {
   if (sessions.length === 0) return 0;
 
   const days = new Set<string>();
   for (const s of sessions) {
-    if (s.started_at) days.add(s.started_at.slice(0, 10));
+    if (s.started_at) days.add(toLocalDateStr(new Date(s.started_at)));
   }
 
   const sorted = [...days].sort().reverse();
   if (sorted.length === 0) return 0;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const today = toLocalDateStr(new Date());
+  const yesterday = toLocalDateStr(new Date(Date.now() - 86400000));
 
   if (sorted[0] !== today && sorted[0] !== yesterday) return 0;
 
@@ -461,11 +469,11 @@ export function getDailyActivity(sessions: SessionSeal[], days: number): { date:
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = toLocalDateStr(d);
 
     let seconds = 0;
     for (const s of sessions) {
-      const sDate = s.started_at?.slice(0, 10);
+      const sDate = s.started_at ? toLocalDateStr(new Date(s.started_at)) : null;
       if (sDate && sDate === dateStr) {
         seconds += s.duration_seconds;
       }
