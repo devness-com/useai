@@ -47,12 +47,13 @@ export function runUpdate(): void {
   // The autostart launcher pins a specific version (no @latest), so an
   // upgrade must rewrite the launcher with the new version baked in.
   // Spawn the freshly-installed CLI so the launcher gets the new __VERSION__.
+  // `useai start --boot` is now the unified install-autostart entrypoint.
   if (wasAutostartEnabled) {
     try {
-      execSync("useai daemon autostart install", { stdio: "inherit" });
+      execSync("useai start --boot", { stdio: "inherit" });
     } catch {
       // Non-fatal — the global install succeeded; user can run
-      // `useai daemon autostart install` manually if this hook fails.
+      // `useai start --boot` manually if this hook fails.
     }
   }
 
