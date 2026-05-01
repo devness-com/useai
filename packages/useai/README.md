@@ -25,10 +25,13 @@ UseAI is a local-first [MCP server](https://modelcontextprotocol.io/) that recor
 ## Quick Start
 
 ```bash
-npx @devness/useai
+npm install -g @devness/useai
+useai setup
 ```
 
-This installs the MCP server and configures it for your AI tools automatically.
+This installs the MCP server globally and configures it for your AI tools automatically.
+
+<sub>Or run once without installing: `npx @devness/useai`</sub>
 
 ### Manual Setup
 
