@@ -8,6 +8,7 @@ import {
   globalSessionRegistry,
 } from "../core/prompt-context.js";
 import { coerceJsonString } from "../core/coerce.js";
+import { incrementActiveSessions } from "../daemon/core/active-sessions.js";
 
 export function registerStartTool(server: McpServer, ctx: PromptContext): void {
   server.registerTool(
@@ -98,6 +99,11 @@ export function registerStartTool(server: McpServer, ctx: PromptContext): void {
         ctx.concurrentChildren.set(child.promptId, child);
         globalSessionRegistry.set(child.promptId, child);
 
+        // Concurrent child counts as an active session for the auto-updater's
+        // idle gate — we don't want to restart the daemon while any session
+        // is in flight, regardless of nesting depth.
+        incrementActiveSessions();
+
         return {
           content: [
             {
@@ -125,6 +131,10 @@ export function registerStartTool(server: McpServer, ctx: PromptContext): void {
       ctx.model = model ?? null;
       ctx.prompt = prompt ?? null;
       ctx.promptImages = prompt_images ?? null;
+
+      // Root session is now active — bumps the auto-updater's idle gate so
+      // the daemon won't try to self-restart while work is in progress.
+      incrementActiveSessions();
 
       return {
         content: [

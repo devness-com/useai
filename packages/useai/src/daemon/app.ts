@@ -10,6 +10,11 @@ import {
   DAEMON_HOST,
   DAEMON_PID_FILE,
 } from "@devness/useai-storage/paths";
+import {
+  installCrashHandlers,
+  runBootRollbackCheck,
+  startAutoUpdater,
+} from "./core/auto-updater.js";
 // import { startSyncScheduler } from "./sync-scheduler.js";
 
 function writePidFile(): void {
@@ -95,6 +100,15 @@ export async function startDaemon(): Promise<void> {
   writePidFile();
   installSignalHandlers();
 
+  // Catch any fatal so the supervisor can respawn us — and the new boot
+  // can decide whether the previous self-update should be rolled back.
+  installCrashHandlers();
+
+  // After the PID file is in place but BEFORE the HTTP server starts:
+  // inspect any pending probation record and roll back if the previous
+  // self-update is showing crash-loop symptoms.
+  runBootRollbackCheck();
+
   // Start background sync scheduler
   // startSyncScheduler();
 
@@ -113,6 +127,13 @@ export async function startDaemon(): Promise<void> {
       `useai daemon: bound on ${actualPort} but failed to persist port to config: ${(err as Error).message}`,
     );
   }
+
+  // Fire-and-forget: schedule the auto-update loop. Never blocks
+  // daemon startup. First check fires after a 5-minute warm-up.
+  // Placed AFTER listenWithRetry resolves, so the server is already
+  // serving by the time the schedule kicks off — equivalent to the
+  // serve(...) callback timing.
+  startAutoUpdater();
 }
 
 /**
