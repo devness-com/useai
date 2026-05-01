@@ -102,7 +102,7 @@ interface SealedChainData {
  * Parse a single sealed UUID.jsonl chain file.
  * Extracts the session seal and milestones.
  */
-function parseSealedChain(file: string, raw: string): SealedChainData | null {
+export function parseSealedChain(file: string, raw: string): SealedChainData | null {
   const lines = raw.trim().split("\n").filter(Boolean);
 
   let sessionId: string | undefined;

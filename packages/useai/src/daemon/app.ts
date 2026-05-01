@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { writeFileSync, unlinkSync, existsSync } from "node:fs";
 import { createApp } from "./core/router.js";
-import { ensureDir } from "@devness/useai-storage";
+import { ensureDir, migrateV1IfNeeded } from "@devness/useai-storage";
 import {
   DATA_DIR,
   DAEMON_PORT,
@@ -44,6 +44,25 @@ function installSignalHandlers(): void {
 
 export async function startDaemon(): Promise<void> {
   await ensureDir(DATA_DIR);
+
+  // One-time migration: convert legacy v1 UUID-named sealed sessions into
+  // v3 date-bucketed jsonl files. Idempotent — re-runs are a no-op.
+  try {
+    const result = await migrateV1IfNeeded();
+    if (result.migrated > 0) {
+      console.log(
+        `migrating ${result.migrated} v1 sessions → date buckets, archiving originals to sealed.v1-archive/`,
+      );
+    }
+    if (result.warnings > 0) {
+      console.warn(
+        `v1 migration: ${result.warnings} source file(s) could not be parsed, see ~/.useai/data/.migrate-v1-warnings.log`,
+      );
+    }
+  } catch (err) {
+    // Migration failure must not block the daemon — the v1 reader still works.
+    console.error("v1 migration failed (non-fatal):", err);
+  }
 
   writePidFile();
   installSignalHandlers();
