@@ -18,6 +18,14 @@ import {
   getAutostartPlatform,
 } from "../../daemon/core/autostart.js";
 
+// Injected by tsup at bundle time from packages/useai/package.json. We pin
+// stdio MCP entries to *this* version so a future bad publish on npm cannot
+// break tools that were configured during this setup. Same defense as the
+// autostart launcher.
+declare const __VERSION__: string | undefined;
+const VERSION =
+  typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
+
 export async function runSetup(
   opts: { yes?: boolean; refresh?: boolean } = {},
 ): Promise<void> {
@@ -65,7 +73,7 @@ export async function runSetup(
 
   let installedCount = 0;
   for (const id of selected) {
-    const res = await installTool(id);
+    const res = await installTool(id, VERSION);
     if (res.success) {
       p.log.success(res.message);
       installedCount++;

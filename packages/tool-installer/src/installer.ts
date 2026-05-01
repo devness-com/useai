@@ -10,12 +10,30 @@ export interface ToolInstallResult {
   message: string;
 }
 
-const MCP_ENTRY = {
+const HTTP_ENTRY = {
   type: "http",
   url: `${DAEMON_URL}/mcp`,
 } as const;
 
-export async function installTool(toolId: string): Promise<ToolInstallResult> {
+/**
+ * Build the stdio MCP entry for a given useai version. We pin the version
+ * (no `@latest`, no `--prefer-online`) for the same reason the autostart
+ * launcher does: a future bad publish on npm cannot break stdio-configured
+ * tools that have already been set up. Users move to a new version by
+ * running `useai update`, which re-runs setup and rewrites these entries.
+ */
+function stdioEntry(version: string) {
+  return {
+    type: "stdio",
+    command: "npx",
+    args: ["-y", `@devness/useai@${version}`, "mcp"],
+  } as const;
+}
+
+export async function installTool(
+  toolId: string,
+  version: string = "latest",
+): Promise<ToolInstallResult> {
   const config = getToolConfig(toolId);
   if (!config) {
     return { success: false, toolId, message: `Unknown tool: ${toolId}` };
@@ -25,7 +43,9 @@ export async function installTool(toolId: string): Promise<ToolInstallResult> {
     const existing = await readConfig(config.configPath, config.configFormat);
     const servers = (existing[config.mcpKey] as Record<string, unknown>) ?? {};
 
-    servers["useai"] = MCP_ENTRY;
+    servers["useai"] = config.transport === "stdio"
+      ? stdioEntry(version)
+      : HTTP_ENTRY;
     existing[config.mcpKey] = servers;
 
     await writeConfig(config.configPath, existing, config.configFormat);
@@ -37,7 +57,7 @@ export async function installTool(toolId: string): Promise<ToolInstallResult> {
     return {
       success: true,
       toolId,
-      message: `Installed useai MCP server for ${config.name}`,
+      message: `Installed useai MCP server for ${config.name} (${config.transport})`,
     };
   } catch (err) {
     return {
