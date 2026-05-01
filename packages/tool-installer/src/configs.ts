@@ -9,6 +9,22 @@ export interface ToolConfig {
   configPath: string;
   configFormat: ConfigFormat;
   mcpKey: string;
+  /**
+   * Which MCP transport to write into the tool's config.
+   *
+   * - "http": tool's MCP server entry points at the daemon's HTTP endpoint
+   *   (`http://127.0.0.1:19200/mcp`). Single shared daemon, lower overhead,
+   *   visible in `useai daemon status`. Use for tools that support
+   *   Streamable HTTP MCP.
+   * - "stdio": tool's MCP server entry spawns `npx ... useai mcp` per session.
+   *   Universal compatibility — every MCP client speaks stdio — but the
+   *   tool runs its own copy of useai instead of going through the daemon.
+   *   Use as the safe default for tools whose HTTP support is uncertain
+   *   or known to be missing.
+   *
+   * When in doubt, prefer "stdio" — it always works.
+   */
+  transport: "http" | "stdio";
   instructionsPath?: string;
   instructionsMethod?: "append" | "create";
   detect: () => boolean;
@@ -24,6 +40,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".claude.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, ".claude", "CLAUDE.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".claude")),
@@ -34,6 +51,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(APP_SUPPORT, "Claude", "claude_desktop_config.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(APP_SUPPORT, "Claude")),
   },
   cursor: {
@@ -42,6 +60,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".cursor", "mcp.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, ".cursor", "rules", "useai.mdc"),
     instructionsMethod: "create",
     detect: () => existsSync(join(HOME, ".cursor")),
@@ -52,6 +71,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".codeium", "windsurf", "mcp_config.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, ".codeium", "windsurf", "memories", "global_rules.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".codeium", "windsurf")),
@@ -62,6 +82,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".vscode", "mcp.json"),
     configFormat: "json",
     mcpKey: "servers",
+    transport: "http",
     instructionsPath: join(APP_SUPPORT, "Code", "User", "prompts", "useai.instructions.md"),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code")),
@@ -72,6 +93,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".vscode-insiders", "mcp.json"),
     configFormat: "json",
     mcpKey: "servers",
+    transport: "http",
     instructionsPath: join(APP_SUPPORT, "Code - Insiders", "User", "prompts", "useai.instructions.md"),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code - Insiders")),
@@ -82,6 +104,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".gemini", "settings.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, ".gemini", "GEMINI.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".gemini")),
@@ -92,6 +115,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "gh-copilot", "mcp.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(HOME, ".config", "gh-copilot")),
   },
   codex: {
@@ -100,6 +124,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".codex", "config.toml"),
     configFormat: "toml",
     mcpKey: "mcp_servers",
+    transport: "http",
     instructionsPath: join(HOME, ".codex", "AGENTS.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".codex")),
@@ -110,6 +135,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".trae", "mcp.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "stdio",
     detect: () => existsSync(join(HOME, ".trae")),
   },
   "kilo-code": {
@@ -118,6 +144,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, APP_SUPPORT, "Code", "User", "globalStorage", "kilocode.kilo-code", "settings", "mcp_settings.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "kilocode.kilo-code")),
   },
   crush: {
@@ -126,6 +153,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "crush", "mcp.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(HOME, ".config", "crush")),
   },
   antigravity: {
@@ -134,6 +162,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "antigravity", "config.yaml"),
     configFormat: "yaml",
     mcpKey: "mcpServers",
+    transport: "stdio",
     detect: () => existsSync(join(HOME, ".config", "antigravity")),
   },
   goose: {
@@ -142,6 +171,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "goose", "config.yaml"),
     configFormat: "yaml",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(HOME, ".config", "goose")),
   },
   cline: {
@@ -150,6 +180,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, "Documents", "Cline", "Rules", "useai.md"),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "saoudrizwan.claude-dev")),
@@ -160,6 +191,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     instructionsPath: join(HOME, ".roo", "rules", "useai.md"),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline")),
@@ -170,6 +202,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "opencode", "config.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "stdio",
     instructionsPath: join(HOME, ".config", "opencode", "AGENTS.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".config", "opencode")),
@@ -180,6 +213,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".aider.conf.yml"),
     configFormat: "yaml",
     mcpKey: "mcpServers",
+    transport: "stdio",
     detect: () => existsSync(join(HOME, ".aider.conf.yml")),
   },
   continue: {
@@ -188,6 +222,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".continue", "config.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "stdio",
     detect: () => existsSync(join(HOME, ".continue")),
   },
   zed: {
@@ -196,6 +231,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(HOME, ".config", "zed", "mcp.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "http",
     detect: () => existsSync(join(HOME, ".config", "zed")),
   },
   cody: {
@@ -204,6 +240,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "sourcegraph.cody-ai", "settings", "mcp_settings.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
+    transport: "stdio",
     detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "sourcegraph.cody-ai")),
   },
 };
