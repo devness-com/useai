@@ -1,9 +1,9 @@
 import type { Command } from "commander";
-import { stopDaemonProcess, getDaemonStatus } from "../../services/daemon.service.js";
-import { success, fail, dim } from "../../utils/display.js";
+import { stopDaemonProcess, getDaemonStatus } from "../services/daemon.service.js";
+import { success, fail, dim } from "../utils/display.js";
 
-export function registerDaemonStop(daemon: Command): void {
-  daemon
+export function registerStop(program: Command): void {
+  program
     .command("stop")
     .description("Stop the daemon")
     .action(async () => {

@@ -6,17 +6,23 @@ import {
   isToolConfigured,
   installTool,
   getAllToolConfigs,
+  removeTool,
+  removeClaudeCodeHooks,
+  isClaudeCodeHooksInstalled,
 } from "@devness/useai-tool-installer";
 import { DAEMON_URL } from "@devness/useai-storage/paths";
 import {
   getDaemonStatus,
   startDaemonProcess,
+  stopDaemonProcess,
   waitForDaemonReady,
 } from "../services/daemon.service.js";
 import {
   installAutostart,
   getAutostartPlatform,
+  isAutostartEnabled,
 } from "../../daemon/core/autostart.js";
+import { disableAutostart } from "./lib/autostart.js";
 
 // Injected by tsup at bundle time from packages/useai/package.json. We pin
 // stdio MCP entries to *this* version so a future bad publish on npm cannot
@@ -26,9 +32,19 @@ declare const __VERSION__: string | undefined;
 const VERSION =
   typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
 
-export async function runSetup(
-  opts: { yes?: boolean; refresh?: boolean } = {},
-): Promise<void> {
+export interface SetupOptions {
+  yes?: boolean;
+  refresh?: boolean;
+  remove?: boolean;
+  keepDaemon?: boolean;
+}
+
+export async function runSetup(opts: SetupOptions = {}): Promise<void> {
+  if (opts.remove) {
+    await runRemove(opts);
+    return;
+  }
+
   console.log();
   p.intro(pc.bold(opts.refresh ? "  useai setup (refresh)" : "  useai setup"));
 
@@ -121,7 +137,7 @@ export async function runSetup(
           waitSpin.stop(`Daemon ready at ${DAEMON_URL}`);
         } else {
           waitSpin.stop("Daemon is still starting in the background");
-          p.log.info(`Run \`useai daemon status\` in a few seconds to confirm.`);
+          p.log.info(`Run \`useai status\` in a few seconds to confirm.`);
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -133,14 +149,90 @@ export async function runSetup(
   p.outro(pc.green("  Done! Restart your AI tool and useai will track every session."));
 }
 
+/**
+ * `useai setup --remove` — undo what `useai setup` did.
+ *
+ * By default this is the inverse of setup: remove every AI tool integration,
+ * remove Claude Code hooks, disable autostart, and stop the running daemon.
+ * Pass `--keep-daemon` to skip the daemon teardown when the user wants to
+ * keep the local dashboard alive (e.g. for `useai status` or `useai sync`).
+ */
+async function runRemove(opts: SetupOptions): Promise<void> {
+  console.log();
+  p.intro(pc.bold("  useai setup --remove"));
+
+  const configured = getAllToolConfigs().filter((c) => isToolConfigured(c.id));
+  const hooksInstalled = isClaudeCodeHooksInstalled();
+  const autostartActive = isAutostartEnabled();
+  const daemonStatus = await getDaemonStatus();
+
+  if (
+    configured.length === 0 &&
+    !hooksInstalled &&
+    !autostartActive &&
+    !daemonStatus.running
+  ) {
+    p.log.info("Nothing to remove — useai is already uninstalled.");
+    p.outro("");
+    return;
+  }
+
+  let toRemove = configured.map((c) => c.id);
+  if (!opts.yes && configured.length > 0) {
+    const choices = configured.map((c) => ({ value: c.id, label: c.name }));
+    const result  = await p.multiselect({
+      message: "Select tools to remove from",
+      options: choices,
+      initialValues: toRemove,
+    });
+    if (p.isCancel(result)) { p.cancel("Cancelled."); return; }
+    toRemove = result as string[];
+  }
+
+  for (const id of toRemove) {
+    const res = await removeTool(id);
+    if (res.success) p.log.success(res.message);
+    else             p.log.error(res.message);
+  }
+
+  if (hooksInstalled) {
+    removeClaudeCodeHooks();
+    p.log.success("Claude Code hooks removed");
+  }
+
+  if (!opts.keepDaemon) {
+    if (autostartActive) {
+      // disableAutostart prints its own success/fail line.
+      disableAutostart();
+    }
+    if (daemonStatus.running) {
+      const stopped = stopDaemonProcess();
+      if (stopped) p.log.success("Daemon stopped");
+      else         p.log.warn("Could not stop daemon — no PID file found");
+    }
+  } else {
+    p.log.info("--keep-daemon set: leaving daemon running and autostart untouched.");
+  }
+
+  p.outro(pc.green("  Removed."));
+}
+
 export function registerSetup(program: Command): void {
   program
     .command("setup")
-    .description("Install useai in your AI tools")
+    .description("Configure useai in your AI tools (use --remove to undo)")
     .option("-y, --yes", "Auto-confirm without prompts")
     .option(
       "--refresh",
       "Re-install MCP configs and instructions in every detected tool (used by `useai update`)",
     )
-    .action((opts: { yes?: boolean; refresh?: boolean }) => runSetup(opts));
+    .option(
+      "--remove",
+      "Remove useai from your AI tools, stop the daemon, and disable autostart",
+    )
+    .option(
+      "--keep-daemon",
+      "With --remove: keep the daemon running and leave autostart in place",
+    )
+    .action((opts: SetupOptions) => runSetup(opts));
 }

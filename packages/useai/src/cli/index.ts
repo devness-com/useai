@@ -1,30 +1,36 @@
+import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { Command } from "commander";
 
 import { startDaemon } from "../daemon/app.js";
+import { DAEMON_URL, KEYSTORE_FILE } from "@devness/useai-storage/paths";
 
 // Injected by tsup at bundle time from packages/useai/package.json.
 declare const __VERSION__: string;
 
 import { registerSetup, runSetup } from "./commands/setup.js";
-import { registerUninstall }       from "./commands/uninstall.js";
 import { registerMcp }              from "./commands/mcp.js";
 
 import { registerStats }      from "./commands/stats.js";
 import { registerStatus }     from "./commands/status.js";
 import { registerExport }     from "./commands/export.js";
-import { registerServe }      from "./commands/serve.js";
 import { registerConfig }     from "./commands/config.js";
 import { registerLogin }      from "./commands/login.js";
 import { registerLogout }     from "./commands/logout.js";
 import { registerSync }       from "./commands/sync.js";
 import { registerUpdate }     from "./commands/update.js";
 
-import { registerDaemonStart }     from "./commands/daemon/start.js";
-import { registerDaemonStop }      from "./commands/daemon/stop.js";
-import { registerDaemonRestart }   from "./commands/daemon/restart.js";
-import { registerDaemonStatus }    from "./commands/daemon/status.js";
-import { registerDaemonLogs }      from "./commands/daemon/logs.js";
-import { registerDaemonAutostart } from "./commands/daemon/autostart.js";
+import { registerStart }   from "./commands/start.js";
+import { registerStop }    from "./commands/stop.js";
+import { registerRestart } from "./commands/restart.js";
+import { registerLogs }    from "./commands/logs.js";
+
+import {
+  getDaemonStatus,
+  startDaemonProcess,
+  waitForDaemonReady,
+} from "./services/daemon.service.js";
+import { info, dim } from "./utils/display.js";
 
 const program = new Command();
 
@@ -33,40 +39,47 @@ program
   .description("Track and improve your AI coding sessions")
   .version(__VERSION__);
 
-// useai (no args) → run setup wizard
+// Bare `useai` is the smart entrypoint:
+//   - First run (no keystore yet) → run the setup wizard, then ensure the
+//     daemon is running, then open the dashboard in the browser.
+//   - Returning user → just make sure the daemon is up and open the dashboard.
+//
+// We treat the keystore file as the "has the user ever set this up" marker
+// because the first MCP/daemon interaction always lazily creates one. There
+// is no dedicated `keystoreExists()` helper in @devness/useai-storage today,
+// so we fall back to a direct fs.existsSync check on KEYSTORE_FILE.
 program.action(async () => {
-  await runSetup({});
+  const isFirstRun = !existsSync(KEYSTORE_FILE);
+
+  if (isFirstRun) {
+    await runSetup({});
+  }
+
+  await ensureDaemonRunning();
+  openDashboard();
 });
 
-// Top-level commands
+// Top-level commands (the 13 visible ones).
 registerSetup(program);
-registerUninstall(program);
-registerMcp(program);
-registerServe(program);
-registerStats(program);
 registerStatus(program);
-registerExport(program);
-registerConfig(program);
+registerStart(program);
+registerStop(program);
+registerRestart(program);
+registerLogs(program);
+registerStats(program);
 registerLogin(program);
 registerLogout(program);
 registerSync(program);
+registerConfig(program);
 registerUpdate(program);
 
-// useai daemon <subcommand>
-const daemon = program
-  .command("daemon")
-  .description("Manage the useai daemon");
-
-registerDaemonStart(daemon);
-registerDaemonStop(daemon);
-registerDaemonRestart(daemon);
-registerDaemonStatus(daemon);
-registerDaemonLogs(daemon);
-registerDaemonAutostart(daemon);
+// Hidden internals — registered for runtime use but not advertised in --help.
+registerMcp(program);
+registerExport(program);
 
 // Hidden: useai daemon-run starts the HTTP server in-process. Used internally
-// by `useai daemon start` to spawn a detached background daemon — not for
-// direct user invocation.
+// by `useai start` to spawn a detached background daemon — not for direct
+// user invocation.
 program
   .command("daemon-run", { hidden: true })
   .description("(internal) Run the daemon HTTP server in-process")
@@ -79,3 +92,39 @@ program.parseAsync().catch((err: unknown) => {
   process.stderr.write(`useai: ${msg}\n`);
   process.exit(1);
 });
+
+// ---------------------------------------------------------------------------
+// Helpers for the bare `useai` action.
+// ---------------------------------------------------------------------------
+
+/**
+ * Ensure the daemon is running before we open the dashboard. If it is already
+ * up we just confirm it; if not, we kick a detached process and wait briefly.
+ * We deliberately avoid blocking forever — if the daemon takes more than ~10 s
+ * to come up, the dashboard will still load and surface the error itself.
+ */
+async function ensureDaemonRunning(): Promise<void> {
+  const status = await getDaemonStatus();
+  if (status.running) return;
+
+  info("Starting daemon…");
+  startDaemonProcess();
+  await waitForDaemonReady(10_000);
+}
+
+/**
+ * Open the local dashboard URL in the user's default browser. Cross-platform
+ * via the `open` (macOS), `start` (Windows), or `xdg-open` (Linux) command.
+ */
+function openDashboard(): void {
+  info(`Opening dashboard: ${DAEMON_URL}`);
+  const opener =
+    process.platform === "darwin"
+      ? "open"
+      : process.platform === "win32"
+        ? "start"
+        : "xdg-open";
+  spawn(opener, [DAEMON_URL], { detached: true, stdio: "ignore" }).unref();
+  dim("Dashboard is running. Press Ctrl+C to exit.");
+  console.log();
+}

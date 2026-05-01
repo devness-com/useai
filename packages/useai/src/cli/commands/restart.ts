@@ -3,11 +3,11 @@ import {
   stopDaemonProcess,
   startDaemonProcess,
   waitForDaemonReady,
-} from "../../services/daemon.service.js";
-import { success, fail, info, spinner } from "../../utils/display.js";
+} from "../services/daemon.service.js";
+import { success, fail, info, spinner } from "../utils/display.js";
 
-export function registerDaemonRestart(daemon: Command): void {
-  daemon
+export function registerRestart(program: Command): void {
+  program
     .command("restart")
     .description("Restart the daemon")
     .action(async () => {
