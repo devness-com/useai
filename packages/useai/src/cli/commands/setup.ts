@@ -10,7 +10,6 @@ import {
   removeClaudeCodeHooks,
   isClaudeCodeHooksInstalled,
 } from "@devness/useai-tool-installer";
-import { DAEMON_URL } from "@devness/useai-storage/paths";
 import {
   getDaemonStatus,
   startDaemonProcess,
@@ -106,7 +105,7 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
   if (installedCount > 0) {
     const status = await getDaemonStatus();
     if (status.running) {
-      p.log.info(`Daemon already running at ${DAEMON_URL}`);
+      p.log.info(`Daemon already running at ${status.url}`);
     } else {
       const platform = getAutostartPlatform();
       let startedViaAutostart = false;
@@ -134,7 +133,7 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
         waitSpin.start("Waiting for daemon to come online…");
         const after = await waitForDaemonReady(startedViaAutostart ? 15_000 : 10_000);
         if (after.running) {
-          waitSpin.stop(`Daemon ready at ${DAEMON_URL}`);
+          waitSpin.stop(`Daemon ready at ${after.url}`);
         } else {
           waitSpin.stop("Daemon is still starting in the background");
           p.log.info(`Run \`useai status\` in a few seconds to confirm.`);

@@ -3,7 +3,8 @@ import { spawn } from "node:child_process";
 import { Command } from "commander";
 
 import { startDaemon } from "../daemon/app.js";
-import { DAEMON_URL, KEYSTORE_FILE } from "@devness/useai-storage/paths";
+import { KEYSTORE_FILE } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 
 // Injected by tsup at bundle time from packages/useai/package.json.
 declare const __VERSION__: string;
@@ -56,7 +57,14 @@ program.action(async () => {
   }
 
   await ensureDaemonRunning();
-  openDashboard();
+  // Read the dashboard URL AFTER the daemon has come up. The daemon may have
+  // had to fall back from port 19200 onto 19201–19210 if the preferred port
+  // was busy, and it persists the actually-bound port to config before it
+  // starts serving traffic. Reading from config here guarantees we open the
+  // browser at the URL the daemon is really listening on, not the static
+  // default.
+  const dashboardUrl = await getDaemonUrl();
+  openDashboard(dashboardUrl);
 });
 
 // Top-level commands (the 13 visible ones).
@@ -116,15 +124,15 @@ async function ensureDaemonRunning(): Promise<void> {
  * Open the local dashboard URL in the user's default browser. Cross-platform
  * via the `open` (macOS), `start` (Windows), or `xdg-open` (Linux) command.
  */
-function openDashboard(): void {
-  info(`Opening dashboard: ${DAEMON_URL}`);
+function openDashboard(url: string): void {
+  info(`Opening dashboard: ${url}`);
   const opener =
     process.platform === "darwin"
       ? "open"
       : process.platform === "win32"
         ? "start"
         : "xdg-open";
-  spawn(opener, [DAEMON_URL], { detached: true, stdio: "ignore" }).unref();
+  spawn(opener, [url], { detached: true, stdio: "ignore" }).unref();
   dim("Dashboard is running. Press Ctrl+C to exit.");
   console.log();
 }

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, unlinkSync, openSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { DAEMON_URL, DAEMON_PID_FILE, DAEMON_LOG_FILE } from "@devness/useai-storage/paths";
+import { DAEMON_PID_FILE, DAEMON_LOG_FILE } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 
 export interface DaemonStatus {
   running: boolean;
@@ -13,8 +14,9 @@ export interface DaemonStatus {
 }
 
 export async function getDaemonStatus(): Promise<DaemonStatus> {
+  const url = await getDaemonUrl();
   try {
-    const res = await fetch(`${DAEMON_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const json = await res.json() as {
         uptime_seconds?: number;
@@ -24,7 +26,7 @@ export async function getDaemonStatus(): Promise<DaemonStatus> {
       const pid = readPid();
       return {
         running: true,
-        url: DAEMON_URL,
+        url,
         ...(pid !== undefined && { pid }),
         ...(json.uptime_seconds !== undefined && { uptimeSeconds: json.uptime_seconds }),
         ...(json.active_sessions !== undefined && { activeSessions: json.active_sessions }),
@@ -32,7 +34,7 @@ export async function getDaemonStatus(): Promise<DaemonStatus> {
       };
     }
   } catch { /* not running */ }
-  return { running: false, url: DAEMON_URL };
+  return { running: false, url };
 }
 
 export function readPid(): number | undefined {
