@@ -3,6 +3,14 @@ import { isAutostartEnabled } from "../../daemon/core/autostart.js";
 
 const PACKAGE_NAME = "@devness/useai";
 
+// Injected by tsup at bundle time from packages/useai/package.json — same
+// macro the CLI's `program.version()` and the autostart launcher use.
+// Falls back to "dev" when running via the un-bundled tsc output so local
+// development doesn't crash.
+declare const __VERSION__: string | undefined;
+const VERSION =
+  typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
+
 export interface UpdateInfo {
   current: string;
   latest: string;
@@ -19,14 +27,14 @@ export function checkForUpdate(): UpdateInfo {
   return { current, latest, hasUpdate: latest !== "0.0.0" && latest !== current };
 }
 
+/**
+ * The version of the CLI binary that is currently running. Read from the
+ * tsup-injected __VERSION__ macro rather than asking npm — `npm list` only
+ * inspects the current working directory's node_modules, which makes it
+ * useless for a globally-installed CLI invoked from any directory.
+ */
 export function getCurrentVersion(): string {
-  try {
-    return execSync(`npm list ${PACKAGE_NAME} --json 2>/dev/null`, { encoding: "utf-8" })
-      .trim()
-      .match(/"version":\s*"([^"]+)"/)?.[1] ?? "0.1.0";
-  } catch {
-    return "0.1.0";
-  }
+  return VERSION;
 }
 
 export function runUpdate(): void {
