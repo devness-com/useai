@@ -89,3 +89,6 @@ export function FaqsPage() {
     </div>
   );
 }
+
+export default FaqsPage;
+

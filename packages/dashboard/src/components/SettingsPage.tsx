@@ -476,3 +476,6 @@ export function SettingsPage({ onTabChange }: { onTabChange?: (tab: string) => v
     </div>
   );
 }
+
+export default SettingsPage;
+

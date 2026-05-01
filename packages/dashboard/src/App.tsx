@@ -1,11 +1,20 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useDashboardStore } from "./store";
 import { Header } from "./components/Header";
 import { DashboardBody } from "./components/DashboardBody";
 import { SearchOverlay } from "./components/SearchOverlay";
-import { SettingsPage } from "./components/SettingsPage";
-import { FaqsPage } from "./components/FaqsPage";
-import { LogsPage } from "./components/LogsPage";
+
+// Lazy-loaded tab pages — split into separate chunks so the initial JS
+// payload only contains the default Sessions/Insights view.
+const SettingsPage = lazy(() => import("./components/SettingsPage"));
+const FaqsPage = lazy(() => import("./components/FaqsPage"));
+const LogsPage = lazy(() => import("./components/LogsPage"));
+
+function TabFallback() {
+  return (
+    <div className="py-12 text-center text-xs text-text-muted">loading…</div>
+  );
+}
 
 export function App() {
   const {
@@ -74,12 +83,16 @@ export function App() {
         onRefresh={loadConfig}
       />
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 pb-6">
-        {activeTab === "logs" ? (
-          <LogsPage />
-        ) : activeTab === "faqs" ? (
-          <FaqsPage />
-        ) : activeTab === "settings" ? (
-          <SettingsPage onTabChange={setActiveTab as (tab: string) => void} />
+        {activeTab === "logs" || activeTab === "faqs" || activeTab === "settings" ? (
+          <Suspense fallback={<TabFallback />}>
+            {activeTab === "logs" ? (
+              <LogsPage />
+            ) : activeTab === "faqs" ? (
+              <FaqsPage />
+            ) : (
+              <SettingsPage onTabChange={setActiveTab as (tab: string) => void} />
+            )}
+          </Suspense>
         ) : (
           <>
             <SearchOverlay
