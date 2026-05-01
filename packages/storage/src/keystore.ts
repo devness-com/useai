@@ -3,28 +3,31 @@ import { generateKeystore, decryptKeystore } from "@devness/useai-crypto";
 import { KEYSTORE_FILE } from "./paths.js";
 import { readJson, writeJson } from "./fs.js";
 
+const KEYSTORE_FILE_MODE = 0o600;
+
+function isValidKeystore(raw: unknown): raw is Keystore {
+  if (raw === null || typeof raw !== "object") return false;
+  const o = raw as Record<string, unknown>;
+  return (
+    typeof o["publicKey"] === "string" &&
+    typeof o["encryptedPrivateKey"] === "string" &&
+    typeof o["iv"] === "string" &&
+    typeof o["authTag"] === "string" &&
+    typeof o["keyMaterial"] === "string"
+  );
+}
+
 export async function getOrCreateKeystore(): Promise<{
   keystore: Keystore;
   privateKey: Buffer;
 }> {
-  const raw = await readJson<Record<string, unknown>>(KEYSTORE_FILE);
+  const raw = await readJson<unknown>(KEYSTORE_FILE);
 
-  // Detect v2 or malformed keystore by checking for required v3 camelCase fields.
-  // If missing, discard and generate a fresh v3 keystore.
-  const isV3 =
-    raw !== null &&
-    typeof raw["authTag"] === "string" &&
-    typeof raw["encryptedPrivateKey"] === "string" &&
-    typeof raw["publicKey"] === "string";
-
-  let keystore: Keystore;
-  if (!isV3) {
-    keystore = generateKeystore();
-    await writeJson(KEYSTORE_FILE, keystore);
-  } else {
-    keystore = raw as unknown as Keystore;
+  if (!isValidKeystore(raw)) {
+    const fresh = generateKeystore();
+    await writeJson(KEYSTORE_FILE, fresh, { mode: KEYSTORE_FILE_MODE });
+    return { keystore: fresh, privateKey: decryptKeystore(fresh) };
   }
 
-  const privateKey = decryptKeystore(keystore);
-  return { keystore, privateKey };
+  return { keystore: raw, privateKey: decryptKeystore(raw) };
 }
