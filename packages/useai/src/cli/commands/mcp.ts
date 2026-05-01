@@ -13,9 +13,11 @@ async function runStdioMcpServer(): Promise<void> {
 }
 
 export function registerMcp(program: Command): void {
+  // Hidden: spawned by AI tools over stdio, never typed by humans. Surfacing
+  // it in --help would just confuse end users so we keep it out of the menu.
   program
-    .command("mcp")
-    .description("Run useai as an MCP stdio server (for AI tools that don't support HTTP MCP)")
+    .command("mcp", { hidden: true })
+    .description("(internal) Run useai as an MCP stdio server")
     .action(async () => {
       try {
         await runStdioMcpServer();

@@ -44,9 +44,14 @@ export const UseaiConfigSchema = z.object({
 
   lastSyncAt: z.string().optional(),
 
+  // The persisted port the daemon is bound to. Only present once the daemon
+  // has actually bound a port — absent until then so the resolver knows there
+  // is no preferred port yet and starts probing from 19200. See P2.1 of the
+  // auto-update plan: this lets the daemon survive port collisions instead of
+  // failing to start when 19200 is taken by another app.
   daemon: z
     .object({
-      port: z.number().default(19200),
+      port: z.number().int().positive().optional(),
     })
     .default({}),
 });
