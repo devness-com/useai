@@ -4,13 +4,14 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { getTimeWindow } from "../services/stats.service.js";
 import { success, fail, header } from "../utils/display.js";
-import { DAEMON_URL } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 import type { Session } from "@devness/useai-types";
 
 async function fetchAllSessions(
   start: string,
   end: string,
 ): Promise<Session[]> {
+  const daemonUrl = await getDaemonUrl();
   const all: Session[] = [];
   let offset = 0;
   const limit = 50;
@@ -22,7 +23,7 @@ async function fetchAllSessions(
       offset: String(offset),
       limit: String(limit),
     });
-    const res = await fetch(`${DAEMON_URL}/api/local/prompts?${params}`, {
+    const res = await fetch(`${daemonUrl}/api/local/prompts?${params}`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) throw new Error(`Daemon returned ${res.status}`);

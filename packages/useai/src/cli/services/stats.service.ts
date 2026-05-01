@@ -1,5 +1,5 @@
 import type { Session } from "@devness/useai-types";
-import { DAEMON_URL } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 
 export interface StatsData {
   totalSessions: number;
@@ -41,8 +41,9 @@ export interface StatsData {
 
 export async function getStats(start: string, end: string): Promise<StatsData> {
   const params = new URLSearchParams({ start, end });
+  const daemonUrl = await getDaemonUrl();
 
-  const res = await fetch(`${DAEMON_URL}/api/local/aggregations?${params}`, {
+  const res = await fetch(`${daemonUrl}/api/local/aggregations?${params}`, {
     signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error(`Daemon returned ${res.status}`);
@@ -150,7 +151,8 @@ export function getTimeWindow(scale: string): { start: string; end: string; labe
 
 export async function getSessions(days = 30): Promise<Session[]> {
   try {
-    const res = await fetch(`${DAEMON_URL}/api/local/sessions?days=${days}`, { signal: AbortSignal.timeout(2000) });
+    const daemonUrl = await getDaemonUrl();
+    const res = await fetch(`${daemonUrl}/api/local/sessions?days=${days}`, { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const json = await res.json() as { data: { sessions: Session[] } };
       return json.data.sessions;

@@ -1,5 +1,5 @@
 import type { Session, UseaiConfig } from "@devness/useai-types";
-const DAEMON_URL = "http://127.0.0.1:19200";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 import { apiFetch } from "./api-client.js";
 import type { SanitizedSession, SyncPayload, SyncResult } from "./types.js";
 
@@ -130,7 +130,8 @@ async function fetchDaemonAggregations(
   const params = new URLSearchParams({ start, end });
 
   try {
-    const res = await fetch(`${DAEMON_URL}/api/local/aggregations?${params}`, {
+    const daemonUrl = await getDaemonUrl();
+    const res = await fetch(`${daemonUrl}/api/local/aggregations?${params}`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -150,6 +151,7 @@ async function fetchSessionsFromDaemon(days: number): Promise<Session[]> {
   startDate.setDate(startDate.getDate() - days);
   const start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}T00:00:00.000Z`;
   const end = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}T23:59:59.999Z`;
+  const daemonUrl = await getDaemonUrl();
   const all: Session[] = [];
   let offset = 0;
   const limit = 50;
@@ -161,7 +163,7 @@ async function fetchSessionsFromDaemon(days: number): Promise<Session[]> {
       offset: String(offset),
       limit: String(limit),
     });
-    const res = await fetch(`${DAEMON_URL}/api/local/prompts?${params}`, {
+    const res = await fetch(`${daemonUrl}/api/local/prompts?${params}`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) break;

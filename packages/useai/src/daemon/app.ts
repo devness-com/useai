@@ -1,10 +1,12 @@
 import { serve } from "@hono/node-server";
+import type { Hono } from "hono";
 import { writeFileSync, unlinkSync, existsSync } from "node:fs";
 import { createApp } from "./core/router.js";
+import { resolveDaemonPort } from "./core/port-resolver.js";
 import { ensureDir } from "@devness/useai-storage";
+import { getDaemonPort, setDaemonPort } from "@devness/useai-storage/config";
 import {
   DATA_DIR,
-  DAEMON_PORT,
   DAEMON_HOST,
   DAEMON_PID_FILE,
 } from "@devness/useai-storage/paths";
@@ -42,23 +44,109 @@ function installSignalHandlers(): void {
   process.on("exit", clearPidFile);
 }
 
+/**
+ * Read the preferred port. Priority:
+ *   1. USEAI_PORT env var — explicit override, useful for tests and dev
+ *      where you want to pin the daemon to a known port.
+ *   2. config.daemon.port — what the resolver chose last time. Sticky so
+ *      tools that already wrote the URL into their MCP config keep working.
+ *   3. undefined — let the resolver start from the default 19200.
+ */
+async function readPreferredPort(): Promise<number | undefined> {
+  const fromEnv = process.env["USEAI_PORT"];
+  if (fromEnv) {
+    const parsed = Number(fromEnv);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return getDaemonPort();
+}
+
+/**
+ * Launch the HTTP server on the given port. The returned promise resolves
+ * with the actual bound port (which may differ from the requested one if
+ * `serve()` reports a different value), or rejects with the original error
+ * — `EADDRINUSE` in particular bubbles up so the caller can re-resolve and
+ * retry once (covers the race between port-probe and bind).
+ */
+function listen(app: Hono, port: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    let resolved = false;
+    const server = serve(
+      { fetch: app.fetch, port, hostname: DAEMON_HOST },
+      (info) => {
+        resolved = true;
+        console.log(`useai daemon running at ${info.address}:${info.port}`);
+        console.log(`MCP endpoint: ${info.address}:${info.port}/mcp`);
+        console.log(`Dashboard API: ${info.address}:${info.port}/api/local/`);
+        resolve(info.port);
+      },
+    );
+
+    server.on("error", (err: NodeJS.ErrnoException) => {
+      if (resolved) return; // post-startup errors are not our concern here
+      reject(err);
+    });
+  });
+}
+
 export async function startDaemon(): Promise<void> {
   await ensureDir(DATA_DIR);
 
   writePidFile();
   installSignalHandlers();
 
-  const app = createApp();
-
   // Start background sync scheduler
   // startSyncScheduler();
 
-  serve(
-    { fetch: app.fetch, port: DAEMON_PORT, hostname: DAEMON_HOST },
-    (info) => {
-      console.log(`useai daemon running at ${info.address}:${info.port}`);
-      console.log(`MCP endpoint: ${info.address}:${info.port}/mcp`);
-      console.log(`Dashboard API: ${info.address}:${info.port}/api/local/`);
-    },
-  );
+  const app = createApp();
+  const preferred = await readPreferredPort();
+  const actualPort = await listenWithRetry(app, preferred);
+
+  // Persist the actual bound port so every other process (CLI, dashboard
+  // proxy, tool-installer) can reach the daemon. Best-effort — if the
+  // config write fails the daemon still serves; the next start will just
+  // re-resolve from scratch.
+  try {
+    await setDaemonPort(actualPort);
+  } catch (err) {
+    console.warn(
+      `useai daemon: bound on ${actualPort} but failed to persist port to config: ${(err as Error).message}`,
+    );
+  }
+}
+
+/**
+ * Resolve a port, bind on it, and on `EADDRINUSE` re-resolve once and retry.
+ *
+ * The resolver's probe is inherently racy: another process can grab the
+ * port between the probe and `serve()`'s real bind. One re-resolve covers
+ * the common case (the now-taken port gets skipped on the second pass).
+ * Anything else, or a second failure, exits the process with a descriptive
+ * message — better than letting the rejection bubble out unhandled and
+ * leaving launchd/systemd to retry every 10 seconds forever.
+ */
+async function listenWithRetry(app: Hono, preferred: number | undefined): Promise<number> {
+  const firstPort = await resolveDaemonPort(preferred);
+  try {
+    return await listen(app, firstPort);
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== "EADDRINUSE") {
+      console.error(`useai daemon: failed to start: ${(err as Error).message}`);
+      process.exit(1);
+    }
+    console.warn(
+      `useai daemon: port ${firstPort} was taken between probe and bind, re-resolving…`,
+    );
+  }
+
+  const retryPort = await resolveDaemonPort(preferred);
+  try {
+    return await listen(app, retryPort);
+  } catch (retryErr: unknown) {
+    console.error(
+      `useai daemon: failed to start after retry: ${(retryErr as Error).message}`,
+    );
+    process.exit(1);
+  }
 }
