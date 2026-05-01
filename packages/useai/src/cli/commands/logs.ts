@@ -1,10 +1,10 @@
 import type { Command } from "commander";
 import { readFileSync, existsSync } from "node:fs";
-import { getDaemonLogPath } from "../../services/daemon.service.js";
-import { fail, dim } from "../../utils/display.js";
+import { getDaemonLogPath } from "../services/daemon.service.js";
+import { fail, dim } from "../utils/display.js";
 
-export function registerDaemonLogs(daemon: Command): void {
-  daemon
+export function registerLogs(program: Command): void {
+  program
     .command("logs")
     .description("Show daemon log output")
     .option("-n, --lines <n>", "Number of lines to show", "50")

@@ -44,8 +44,10 @@ async function fetchAllSessions(
 }
 
 export function registerExport(program: Command): void {
+  // Hidden from --help: kept functional for scripts and power users, but
+  // not part of the simplified 13-command surface.
   program
-    .command("export")
+    .command("export", { hidden: true })
     .description("Export prompts to a file")
     .option(
       "-s, --scale <scale>",
