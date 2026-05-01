@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { getDaemonStatus, startDaemonProcess } from "../services/daemon.service.js";
-import { DAEMON_URL } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 import { header, success, info, dim } from "../utils/display.js";
 
 export function registerServe(program: Command): void {
@@ -21,7 +21,10 @@ export function registerServe(program: Command): void {
         success("Daemon already running.");
       }
 
-      const dashboardUrl = `${DAEMON_URL}`;
+      // Read URL after the daemon has had time to start so we pick up any
+      // fallback port it had to bind on (it persists the bound port to
+      // config before serving traffic).
+      const dashboardUrl = await getDaemonUrl();
       info(`Opening dashboard: ${dashboardUrl}`);
 
       // Open browser (cross-platform)

@@ -1,7 +1,6 @@
 import type { Command } from "commander";
 import { intro, outro, spinner } from "@clack/prompts";
-
-const DAEMON_URL = "http://127.0.0.1:19200";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 
 export function registerSync(parent: Command) {
   parent
@@ -14,7 +13,8 @@ export function registerSync(parent: Command) {
       s.start("Syncing sessions...");
 
       try {
-        const res = await fetch(`${DAEMON_URL}/api/local/sync`, {
+        const daemonUrl = await getDaemonUrl();
+        const res = await fetch(`${daemonUrl}/api/local/sync`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: AbortSignal.timeout(60000),

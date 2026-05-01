@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { DAEMON_URL } from "@devness/useai-storage/paths";
+import { getDaemonUrl } from "@devness/useai-storage/config";
 import { getToolConfig, getAllToolConfigs } from "./configs.js";
 import { readConfig, writeConfig } from "./formats.js";
 import { injectInstructions, removeInstructions } from "./instructions.js";
@@ -10,10 +10,16 @@ export interface ToolInstallResult {
   message: string;
 }
 
-const HTTP_ENTRY = {
-  type: "http",
-  url: `${DAEMON_URL}/mcp`,
-} as const;
+/**
+ * Build the HTTP MCP entry for the running daemon. Resolved at install time
+ * (not at module load) so tools written into config pick up whatever
+ * fallback port the daemon ended up on. Same shape as before — only the
+ * URL is now dynamic.
+ */
+async function httpEntry(): Promise<{ type: "http"; url: string }> {
+  const daemonUrl = await getDaemonUrl();
+  return { type: "http", url: `${daemonUrl}/mcp` };
+}
 
 /**
  * Build the stdio MCP entry for a given useai version. We pin the version
@@ -45,7 +51,7 @@ export async function installTool(
 
     servers["useai"] = config.transport === "stdio"
       ? stdioEntry(version)
-      : HTTP_ENTRY;
+      : await httpEntry();
     existing[config.mcpKey] = servers;
 
     await writeConfig(config.configPath, existing, config.configFormat);

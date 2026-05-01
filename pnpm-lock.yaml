@@ -17,6 +17,9 @@ importers:
 
   packages/cloud:
     dependencies:
+      '@devness/useai-storage':
+        specifier: workspace:*
+        version: link:../storage
       '@devness/useai-types':
         specifier: workspace:*
         version: link:../types
