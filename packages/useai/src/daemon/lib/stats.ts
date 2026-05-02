@@ -446,36 +446,172 @@ export function computeStats(
 
 // ── Streak calculation ────────────────────────────────────────────────────────
 
-export function calculateStreak(prompts: Session[]): number {
-  if (prompts.length === 0) return 0;
+export interface StreakOptions {
+  /** Max number of weekday gaps allowed without breaking the streak. */
+  freezesAllowed: number;
+  /** Lookback bound for the streak walk and active-days window. */
+  windowDays: number;
+  /** When true, Saturday and Sunday gaps are free (no freeze consumed). */
+  weekendFreezeFree: boolean;
+}
 
+export interface StreakResult {
+  /** Current consecutive-day streak with freezes/weekend-forgiveness applied. */
+  current: number;
+  /** Longest streak ever observed under the same forgiveness rules. */
+  longest: number;
+  /** Freezes consumed by the current streak. */
+  freezesUsed: number;
+  /** Freezes still available for the current streak. */
+  freezesRemaining: number;
+  /** Number of distinct active days within the rolling window (soft-streak signal). */
+  activeDaysInWindow: number;
+  /** Echoes the window length used. */
+  windowDays: number;
+}
+
+export const DEFAULT_STREAK_OPTIONS: StreakOptions = {
+  freezesAllowed: 2,
+  windowDays: 30,
+  weekendFreezeFree: true,
+};
+
+function dayOfWeek(yyyymmdd: string): number {
+  const [y, m, d] = yyyymmdd.split("-").map(Number);
+  return new Date(y!, m! - 1, d!).getDay();
+}
+
+function isWeekend(yyyymmdd: string): boolean {
+  const dow = dayOfWeek(yyyymmdd);
+  return dow === 0 || dow === 6;
+}
+
+function shiftDay(yyyymmdd: string, days: number): string {
+  const [y, m, d] = yyyymmdd.split("-").map(Number);
+  return toLocalDate(new Date(y!, m! - 1, d! + days));
+}
+
+function collectActiveDays(prompts: Session[]): Set<string> {
   const days = new Set<string>();
   for (const s of prompts) {
-    if (s.startedAt && s.endedAt && s.durationMs > 0)
+    if (s.startedAt && s.endedAt && s.durationMs > 0) {
       days.add(toLocalDate(s.startedAt));
+    }
   }
+  return days;
+}
 
-  const sorted = [...days].sort().reverse();
-  if (sorted.length === 0) return 0;
+function computeLongestStreak(
+  activeDays: Set<string>,
+  opts: StreakOptions,
+): number {
+  if (activeDays.size === 0) return 0;
+  const sorted = [...activeDays].sort();
+  const start = sorted[0]!;
+  const today = toLocalDate(new Date());
+
+  let best = 0;
+  let current = 0;
+  let freezesUsed = 0;
+  let day = start;
+  while (day <= today) {
+    if (activeDays.has(day)) {
+      current++;
+      if (current > best) best = current;
+    } else if (opts.weekendFreezeFree && isWeekend(day)) {
+      // Free skip — preserves run, doesn't extend it.
+    } else if (freezesUsed < opts.freezesAllowed) {
+      freezesUsed++;
+    } else {
+      current = 0;
+      freezesUsed = 0;
+    }
+    day = shiftDay(day, 1);
+  }
+  return best;
+}
+
+/**
+ * Forgiving streak with freezes and weekend forgiveness.
+ *
+ * Anchored on today or yesterday (1-day grace). Walks backward up to
+ * `windowDays` days. Active days extend the streak. Weekend gaps are free
+ * when `weekendFreezeFree`. Weekday gaps consume freezes until exhausted,
+ * then the streak ends. `longest` is computed across all history under the
+ * same rules, so it can never be lower than `current`.
+ */
+export function calculateStreakDetailed(
+  prompts: Session[],
+  options: Partial<StreakOptions> = {},
+): StreakResult {
+  const opts: StreakOptions = { ...DEFAULT_STREAK_OPTIONS, ...options };
+  const activeDays = collectActiveDays(prompts);
 
   const today = toLocalDate(new Date());
   const yesterday = toLocalDate(new Date(Date.now() - 86400000));
 
-  if (sorted[0] !== today && sorted[0] !== yesterday) return 0;
-
-  let streak = 1;
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]!);
-    const curr = new Date(sorted[i]!);
-    const diffDays = (prev.getTime() - curr.getTime()) / 86400000;
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      break;
-    }
+  const windowStart = toLocalDate(
+    new Date(Date.now() - (opts.windowDays - 1) * 86400000),
+  );
+  let activeDaysInWindow = 0;
+  for (const day of activeDays) {
+    if (day >= windowStart && day <= today) activeDaysInWindow++;
   }
 
-  return streak;
+  const longest = computeLongestStreak(activeDays, opts);
+
+  let cursor: string | null = null;
+  if (activeDays.has(today)) cursor = today;
+  else if (activeDays.has(yesterday)) cursor = yesterday;
+
+  if (cursor === null) {
+    return {
+      current: 0,
+      longest,
+      freezesUsed: 0,
+      freezesRemaining: opts.freezesAllowed,
+      activeDaysInWindow,
+      windowDays: opts.windowDays,
+    };
+  }
+
+  let current = 1;
+  let freezesUsed = 0;
+  // Freezes consumed since the last active day. They only "count" once a
+  // subsequent active day folds them in — otherwise they were just trailing
+  // padding past the real streak end and shouldn't be charged.
+  let pendingFreezes = 0;
+  for (let i = 1; i < opts.windowDays; i++) {
+    cursor = shiftDay(cursor, -1);
+    if (activeDays.has(cursor)) {
+      current++;
+      freezesUsed += pendingFreezes;
+      pendingFreezes = 0;
+      continue;
+    }
+    if (opts.weekendFreezeFree && isWeekend(cursor)) {
+      continue;
+    }
+    if (freezesUsed + pendingFreezes < opts.freezesAllowed) {
+      pendingFreezes++;
+      continue;
+    }
+    break;
+  }
+
+  return {
+    current,
+    longest: Math.max(current, longest),
+    freezesUsed,
+    freezesRemaining: opts.freezesAllowed - freezesUsed,
+    activeDaysInWindow,
+    windowDays: opts.windowDays,
+  };
+}
+
+/** Backward-compatible single-number streak. */
+export function calculateStreak(prompts: Session[]): number {
+  return calculateStreakDetailed(prompts).current;
 }
 
 // ── Window filtering ──────────────────────────────────────────────────────────

@@ -156,6 +156,7 @@ export function DashboardBody({
         aiMultiplier={data.stats.aiMultiplier}
         peakConcurrency={data.stats.peakConcurrency}
         currentStreak={data.stats.currentStreak}
+        streakDetail={data.streak}
         filesTouched={data.stats.filesTouched}
         featuresShipped={data.stats.featuresShipped}
         bugsFixed={data.stats.bugsFixed}
@@ -180,6 +181,7 @@ export function DashboardBody({
         sessions={data.filteredSessions}
         allSessions={data.allSessionsForStrip}
         currentStreak={data.stats.currentStreak}
+        streakDetail={data.streak}
         stats={{
           totalHours: data.stats.totalHours,
           coveredHours: data.stats.coveredHours,

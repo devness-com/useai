@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Clock, Bot, Rocket, Bug, Zap, Target, Layers } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { StatCardType } from './StatDetailPanel';
+import type { StreakDetail } from '../../lib/api';
 
 function animateCounter(
   el: HTMLSpanElement,
@@ -60,7 +61,7 @@ function StatCard({
   clickable?: boolean;
   selected?: boolean;
   onClick?: () => void;
-  subtitle?: string;
+  subtitle?: string | undefined;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const prevValue = useRef(0);
@@ -133,6 +134,7 @@ interface StatsBarProps {
   aiMultiplier: number;
   peakConcurrency: number;
   currentStreak: number;
+  streakDetail?: StreakDetail;
   filesTouched: number;
   featuresShipped: number;
   bugsFixed: number;
@@ -145,6 +147,18 @@ interface StatsBarProps {
   loading?: boolean;
 }
 
+function buildStreakSubtitle(s?: StreakDetail): string | undefined {
+  if (!s) return undefined;
+  const parts: string[] = [];
+  if (s.longest > s.current) parts.push(`Best ${s.longest}`);
+  if (s.freezesUsed > 0) parts.push(`❄${s.freezesUsed} used`);
+  else if (s.freezesRemaining > 0) parts.push(`❄${s.freezesRemaining}`);
+  if (s.activeDaysInWindow > 0 && s.windowDays > 0) {
+    parts.push(`${s.activeDaysInWindow}/${s.windowDays}d`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
 export function StatsBar({
   totalHours,
   coveredHours,
@@ -153,6 +167,7 @@ export function StatsBar({
   bugsFixed,
   complexSolved: _complexSolved,
   currentStreak,
+  streakDetail,
   totalMilestones,
   selectedCard,
   onCardClick,
@@ -242,6 +257,7 @@ export function StatsBar({
         clickable
         selected={selectedCard === 'streak'}
         onClick={() => handleClick('streak')}
+        subtitle={buildStreakSubtitle(streakDetail)}
       />
     </div>
   );

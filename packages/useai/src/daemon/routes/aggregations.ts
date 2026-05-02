@@ -7,7 +7,7 @@ import {
 } from "../lib/sessions.js";
 import {
   computeStats,
-  calculateStreak,
+  calculateStreakDetailed,
   getHourlyActivity,
   getHourlyActivityAI,
   collectSessionIntervals,
@@ -277,8 +277,9 @@ aggregationsRoutes.get("/", async (c) => {
   // Compute stats
   const stats = computeStats(filteredSessions, milestones);
 
-  // Override streak with global calculation (not window-scoped)
-  stats.currentStreak = calculateStreak(allSessions);
+  // Compute streak globally (not window-scoped) with freeze + weekend forgiveness
+  const streak = calculateStreakDetailed(allSessions);
+  stats.currentStreak = streak.current;
 
   // Evaluation summary
   const evaluated = filteredSessions.filter(
@@ -342,6 +343,7 @@ aggregationsRoutes.get("/", async (c) => {
   return c.json({
     window: { start: range.start, end: range.end },
     stats,
+    streak,
     evaluation: evalSummary,
     sessionCount: filteredSessions.length,
     milestoneCount: milestones.length,

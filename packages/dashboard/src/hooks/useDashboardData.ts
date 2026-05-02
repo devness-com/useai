@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   DashboardResponse,
   FeedConversation,
+  StreakDetail,
 } from "../lib/api";
 import { fetchAggregations, fetchPrompts } from "../lib/api";
 import type { Filters } from "../lib/types";
@@ -30,6 +31,15 @@ export interface DashboardDataStore {
 
 /** Hook to select state from a Zustand-compatible store. */
 export type UseStore = <T>(selector: (s: DashboardDataStore) => T) => T;
+
+const EMPTY_STREAK: StreakDetail = {
+  current: 0,
+  longest: 0,
+  freezesUsed: 0,
+  freezesRemaining: 2,
+  activeDaysInWindow: 0,
+  windowDays: 30,
+};
 
 const EMPTY_STATS: DashboardResponse["stats"] = {
   totalHours: 0,
@@ -199,6 +209,14 @@ export function useDashboardData({
 
   // ── Destructure server data ────────────────────────────────────────────
   const stats = serverData?.stats ?? EMPTY_STATS;
+  // Server-computed streak with freeze + weekend forgiveness. Falls back to a
+  // synthesized object built from stats.currentStreak when an older daemon
+  // doesn't ship the richer payload yet.
+  const streak: StreakDetail = serverData?.streak ?? {
+    ...EMPTY_STREAK,
+    current: stats.currentStreak,
+    longest: stats.currentStreak,
+  };
   const evaluation = serverData?.evaluation ?? null;
   const complexityData = serverData?.complexity ?? {
     simple: 0,
@@ -309,6 +327,7 @@ export function useDashboardData({
 
     // Server data
     stats,
+    streak,
     evaluation,
     complexityData,
     displaySessionCount,
