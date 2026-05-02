@@ -6,8 +6,14 @@ export type SanitizedSession = Omit<Session, "prompt">;
 /** Per-date sync payload sent to the cloud. */
 export interface SyncPayload {
   date: string;
-  /** Current consecutive-day streak as of this sync */
+  /** Current consecutive-day streak as of this sync (with freeze + weekend forgiveness applied). */
   streakDays?: number;
+  /** Longest streak observed under the same forgiveness rules. */
+  longestStreak?: number;
+  /** Freezes still available against the current streak (Duolingo-style). */
+  freezeBalance?: number;
+  /** Distinct active days within the rolling window — soft-streak signal. */
+  activeDaysInWindow?: number;
   sessions: SanitizedSession[];
 }
 

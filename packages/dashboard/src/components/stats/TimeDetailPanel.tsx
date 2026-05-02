@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Clock, Bot, Layers, Zap, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { SessionSeal } from '../../lib/api';
+import type { SessionSeal, StreakDetail } from '../../lib/api';
 import type { StatCardType } from './StatDetailPanel';
 import { TOOL_INITIALS, TOOL_COLORS, TOOL_ICONS, resolveClient } from '../../constants/tools';
 import { parseTimestamp } from '../../lib/stats';
@@ -129,12 +129,13 @@ interface TimeDetailPanelProps {
   sessions: SessionSeal[];
   allSessions?: SessionSeal[];
   currentStreak?: number;
+  streakDetail?: StreakDetail;
   stats: TimeStats;
   showPublic?: boolean;
   onClose: () => void;
 }
 
-export function TimeDetailPanel({ type, sessions, allSessions, currentStreak = 0, stats, showPublic = false, onClose }: TimeDetailPanelProps) {
+export function TimeDetailPanel({ type, sessions, allSessions, currentStreak = 0, streakDetail, stats, showPublic = false, onClose }: TimeDetailPanelProps) {
   useEffect(() => {
     if (!type || !isTimeCard(type)) return;
     document.body.style.overflow = 'hidden';
@@ -206,7 +207,11 @@ export function TimeDetailPanel({ type, sessions, allSessions, currentStreak = 0
                 <ParallelContent stats={stats} sessions={sorted} showPublic={showPublic} />
               )}
               {type === 'streak' && (
-                <StreakContent allSessions={allSessions ?? sessions} currentStreak={currentStreak} />
+                <StreakContent
+                  allSessions={allSessions ?? sessions}
+                  currentStreak={currentStreak}
+                  streakDetail={streakDetail}
+                />
               )}
             </div>
           </motion.div>
@@ -333,11 +338,22 @@ function computeActiveDays(sessions: SessionSeal[]): {
     });
 }
 
-function StreakContent({ allSessions, currentStreak }: { allSessions: SessionSeal[]; currentStreak: number }) {
+function StreakContent({
+  allSessions,
+  currentStreak,
+  streakDetail,
+}: {
+  allSessions: SessionSeal[];
+  currentStreak: number;
+  streakDetail?: StreakDetail | undefined;
+}) {
   const validSessions = useMemo(() => allSessions.filter(s => !!s.endedAt && s.durationMs > 0), [allSessions]);
   const activeDays = computeActiveDays(validSessions);
 
-  // Mark which days are part of the current streak (consecutive from today backwards)
+  // Mark which days are part of the current streak (consecutive from today backwards).
+  // Daemon's streak length already accounts for freezes + weekend forgiveness, so
+  // walking back N calendar days isn't quite right anymore — but it's close enough
+  // for the calendar visualization, and the precise data is shown in the rows below.
   const streakDates = new Set<string>();
   const today = new Date();
   for (let i = 0; i < currentStreak; i++) {
@@ -349,11 +365,31 @@ function StreakContent({ allSessions, currentStreak }: { allSessions: SessionSea
   return (
     <>
       <ExplanationBlock>
-        Days in a row you used AI. Keep it going!
+        Days in a row you used AI. Weekends are free; you have 2 freezes a month
+        for missed weekdays. Keep it going!
       </ExplanationBlock>
 
       <div className="rounded-lg border border-border/50 bg-bg-surface-1 divide-y divide-border/30">
         <CalcRow label="Current streak" value={`${currentStreak} day${currentStreak === 1 ? '' : 's'}`} />
+        {streakDetail && streakDetail.longest > 0 && (
+          <CalcRow label="Longest streak" value={`${streakDetail.longest} day${streakDetail.longest === 1 ? '' : 's'}`} />
+        )}
+        {streakDetail && (
+          <CalcRow
+            label={`Active days (last ${streakDetail.windowDays})`}
+            value={`${streakDetail.activeDaysInWindow} of ${streakDetail.windowDays}`}
+          />
+        )}
+        {streakDetail && (
+          <CalcRow
+            label="Freezes"
+            value={
+              streakDetail.freezesUsed > 0
+                ? `❄ ${streakDetail.freezesUsed} used · ${streakDetail.freezesRemaining} left`
+                : `❄ ${streakDetail.freezesRemaining} available`
+            }
+          />
+        )}
         <CalcRow label="Total active days" value={String(activeDays.length)} />
       </div>
 

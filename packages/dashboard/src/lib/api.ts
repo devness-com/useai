@@ -128,8 +128,18 @@ export interface LocalConfig {
 
 // ── Server-side computed endpoints ────────────────────────────────────────
 
+export interface StreakDetail {
+  current: number;
+  longest: number;
+  freezesUsed: number;
+  freezesRemaining: number;
+  activeDaysInWindow: number;
+  windowDays: number;
+}
+
 export interface DashboardResponse {
   window: { start: number; end: number; scale: string };
+  streak?: StreakDetail;
   stats: {
     totalHours: number;
     totalSessions: number;

@@ -116,8 +116,18 @@ interface DaemonStats {
   byTaskTypeAiTime: Record<string, number>;
 }
 
+interface DaemonStreak {
+  current: number;
+  longest: number;
+  freezesUsed: number;
+  freezesRemaining: number;
+  activeDaysInWindow: number;
+  windowDays: number;
+}
+
 interface DaemonAggregationsResponse {
   stats: DaemonStats;
+  streak?: DaemonStreak;
   sessionCount: number;
 }
 
@@ -211,7 +221,10 @@ export async function syncPrompts(
   // Fetch streak once (same value regardless of date)
   const today = new Date().toISOString().slice(0, 10);
   const streakAgg = await fetchDaemonAggregations(today);
-  const streakDays = streakAgg?.stats.currentStreak ?? 0;
+  const streakDays = streakAgg?.streak?.current ?? streakAgg?.stats.currentStreak ?? 0;
+  const longestStreak = streakAgg?.streak?.longest ?? streakDays;
+  const freezeBalance = streakAgg?.streak?.freezesRemaining ?? 0;
+  const activeDaysInWindow = streakAgg?.streak?.activeDaysInWindow ?? 0;
 
   // Build all payloads first, then send in one batch request
   const payloads: SyncPayload[] = [];
@@ -220,6 +233,9 @@ export async function syncPrompts(
     payloads.push({
       date,
       streakDays,
+      longestStreak,
+      freezeBalance,
+      activeDaysInWindow,
       sessions: daySessions,
     });
   }
