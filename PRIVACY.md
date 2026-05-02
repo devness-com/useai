@@ -142,7 +142,7 @@ All data is stored in `~/.useai/` on your machine:
 
 ```
 ~/.useai/
-  keystore.json          # Ed25519 key pair (private key encrypted with AES-256-GCM)
+  keystore.json          # Ed25519 key pair (file mode 0600; see SECURITY.md)
   config.json            # Settings, auth token (if logged in), sync preferences
   daemon.pid             # PID of the background daemon (if running)
   daemon.log             # Daemon logs

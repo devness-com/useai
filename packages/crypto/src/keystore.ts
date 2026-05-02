@@ -1,54 +1,31 @@
-import {
-  generateKeyPairSync,
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  createHash,
-} from "node:crypto";
-import { hostname } from "node:os";
+import { generateKeyPairSync } from "node:crypto";
 import type { Keystore } from "@devness/useai-types";
 
-function deriveEncryptionKey(): Buffer {
-  const material = `useai-${hostname()}-${process.env["USER"] ?? "default"}`;
-  return createHash("sha256").update(material).digest();
-}
-
+/**
+ * Generate a new Ed25519 keypair. The private key is stored plaintext (base64
+ * PKCS#8 DER) in the keystore. Filesystem permissions on the keystore file
+ * (0600) are the at-rest boundary — there is no AES layer because any local
+ * process running as the user that needs the key (i.e. the MCP daemon itself)
+ * has to be able to read it, so an "encryption" key colocated with the
+ * ciphertext would not add any real protection.
+ *
+ * The role of the keypair is signature-based tamper evidence: every sealed
+ * session is signed at write time, and any post-hoc edit to the JSONL records
+ * invalidates the signature on read.
+ */
 export function generateKeystore(): Keystore {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519", {
     publicKeyEncoding: { type: "spki", format: "der" },
     privateKeyEncoding: { type: "pkcs8", format: "der" },
   });
 
-  const encKey = deriveEncryptionKey();
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", encKey, iv);
-
-  const encrypted = Buffer.concat([
-    cipher.update(privateKey),
-    cipher.final(),
-  ]);
-  const authTag = cipher.getAuthTag();
-
   return {
     publicKey: publicKey.toString("base64"),
-    encryptedPrivateKey: encrypted.toString("base64"),
-    iv: iv.toString("base64"),
-    authTag: authTag.toString("base64"),
+    privateKey: privateKey.toString("base64"),
     createdAt: new Date().toISOString(),
   };
 }
 
-export function decryptKeystore(keystore: Keystore): Buffer {
-  const encKey = deriveEncryptionKey();
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    encKey,
-    Buffer.from(keystore.iv, "base64"),
-  );
-  decipher.setAuthTag(Buffer.from(keystore.authTag, "base64"));
-
-  return Buffer.concat([
-    decipher.update(Buffer.from(keystore.encryptedPrivateKey, "base64")),
-    decipher.final(),
-  ]);
+export function getPrivateKey(keystore: Keystore): Buffer {
+  return Buffer.from(keystore.privateKey, "base64");
 }

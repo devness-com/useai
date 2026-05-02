@@ -81,38 +81,33 @@ Only seal-verified prompts count towards the leaderboard. prompts without a `sea
 
 ### Key Generation
 
-On first use, UseAI generates an Ed25519 key pair:
+On first use, UseAI generates an Ed25519 key pair stored in `~/.useai/keystore.json`:
 
-- **Private key:** Generated in PKCS#8 DER format, encrypted with AES-256-GCM, stored in `~/.useai/keystore.json`
-- **Public key:** Stored as base64-encoded SPKI DER in the same keystore file
-
-The encryption key for the private key is derived from machine-specific data:
-
-```
-SHA-256("useai-" + hostname + "-" + $USER)
-```
+- **Private key:** Generated in PKCS#8 DER format, base64-encoded, stored as plaintext in the file
+- **Public key:** Stored as base64-encoded SPKI DER
 
 The keystore file contains:
 
 ```json
 {
   "publicKey": "base64-encoded SPKI DER public key",
-  "encryptedPrivateKey": "base64-encoded AES-256-GCM ciphertext",
-  "iv": "base64-encoded 12-byte IV",
-  "authTag": "base64-encoded GCM authentication tag",
+  "privateKey": "base64-encoded PKCS#8 DER private key",
   "createdAt": "ISO timestamp"
 }
 ```
 
-### Encryption Key Derivation
+### What Protects the Key
 
-The private key encryption is based on hostname and OS username. This means:
+The keystore file is written with permissions `0600` (read/write for the owning user only). Filesystem permissions are the at-rest boundary; the private key itself is not encrypted on disk.
 
-- The keystore is tied to the machine it was generated on
-- Moving `keystore.json` to a different machine (or changing your hostname/username) will fail to decrypt
-- This is not a strong secret -- anyone with access to the file and knowledge of the hostname/username can derive the key
+**Why no encryption layer.** The MCP daemon needs the key in cleartext at runtime to sign sealed sessions. Any encryption key would have to be reachable by the daemon — which means any other process running as the same user can reach it too. An "encryption" key colocated with the file it decrypts adds no real protection beyond filesystem permissions; it only adds confusion about what the keystore promises. Real at-rest protection would require OS-level secret storage (macOS Keychain, libsecret, DPAPI) and is not part of the current design.
 
-**Honest caveat:** The encryption key derivation is deterministic from public system information. It protects against casual file theft but not against a targeted attacker with access to the machine. The primary purpose is to prevent accidental exposure of the raw private key.
+**What this means in practice:**
+
+- Other users on a shared machine cannot read the key (`0600`).
+- Any process running as your user can read the key. This includes the daemon itself, malware running under your account, and anything else with read access to your home directory. Treat your home directory as the trust boundary.
+- Backups and sync tools (Time Machine, iCloud Drive, Dropbox, rsync) that capture `~/.useai/keystore.json` capture the key. Use encrypted backup volumes if this matters to you.
+- Moving `keystore.json` between machines now works, since there is no machine-specific encryption key.
 
 ### Key Registration
 

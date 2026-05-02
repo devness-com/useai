@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, rm, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rm, stat, chmod } from "node:fs/promises";
 import { dirname } from "node:path";
 
 const APPEND_SAFE_BYTES = 4096;
@@ -19,9 +19,21 @@ export async function readJson<T>(path: string): Promise<T | null> {
   }
 }
 
-export async function writeJson(path: string, data: unknown): Promise<void> {
+export interface WriteJsonOptions {
+  /** Octal file mode applied to the file after write (e.g. 0o600). */
+  mode?: number;
+}
+
+export async function writeJson(
+  path: string,
+  data: unknown,
+  options: WriteJsonOptions = {},
+): Promise<void> {
   await ensureDir(dirname(path));
   await writeFile(path, JSON.stringify(data, null, 2), "utf-8");
+  if (options.mode !== undefined) {
+    await chmod(path, options.mode);
+  }
 }
 
 async function acquireFileLock(lockPath: string): Promise<void> {
