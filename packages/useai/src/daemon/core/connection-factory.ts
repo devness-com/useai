@@ -4,6 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { registerTools } from "../../mcp-tools/mcp-tools.js";
 import { createPromptContext } from "../../core/prompt-context.js";
 import { connections } from "./connection-store.js";
+import { unregisterActiveSessionsByConnection } from "./active-sessions.js";
 
 // Injected by tsup at bundle time from packages/useai/package.json.
 declare const __VERSION__: string | undefined;
@@ -25,6 +26,10 @@ export async function createMcpConnection(): Promise<WebStandardStreamableHTTPSe
           server.server.ping().catch(() => {
             clearInterval(pingInterval);
             connections.delete(promptContext.connectionId!);
+            // Drop any in-flight useai sessions tied to this dead transport
+            // so /health.active_sessions reflects reality immediately rather
+            // than waiting for the active-sessions sweeper.
+            unregisterActiveSessionsByConnection(promptContext.connectionId!);
           });
         },
         2 * 60 * 1000,
@@ -40,6 +45,7 @@ export async function createMcpConnection(): Promise<WebStandardStreamableHTTPSe
       const conn = connections.get(connectionId);
       if (conn) clearInterval(conn.pingInterval);
       connections.delete(connectionId);
+      unregisterActiveSessionsByConnection(connectionId);
     },
   });
 

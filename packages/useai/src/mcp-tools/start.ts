@@ -8,7 +8,7 @@ import {
   globalSessionRegistry,
 } from "../core/prompt-context.js";
 import { coerceJsonString } from "../core/coerce.js";
-import { incrementActiveSessions } from "../daemon/core/active-sessions.js";
+import { registerActiveSession } from "../daemon/core/active-sessions.js";
 
 export function registerStartTool(server: McpServer, ctx: PromptContext): void {
   server.registerTool(
@@ -99,10 +99,19 @@ export function registerStartTool(server: McpServer, ctx: PromptContext): void {
         ctx.concurrentChildren.set(child.promptId, child);
         globalSessionRegistry.set(child.promptId, child);
 
-        // Concurrent child counts as an active session for the auto-updater's
-        // idle gate — we don't want to restart the daemon while any session
-        // is in flight, regardless of nesting depth.
-        incrementActiveSessions();
+        // Register the concurrent child so it shows on /health.active_sessions
+        // and gates the auto-updater's restart. We don't want to restart the
+        // daemon while any session is in flight, regardless of nesting depth.
+        registerActiveSession({
+          promptId: child.promptId,
+          connectionId: child.connectionId,
+          client: child.client,
+          project: child.project,
+          title: child.title,
+          startedAt: child.startedAt!.getTime(),
+          parentPromptId: ctx.promptId,
+          sessionDepth: child.sessionDepth,
+        });
 
         return {
           content: [
@@ -132,9 +141,19 @@ export function registerStartTool(server: McpServer, ctx: PromptContext): void {
       ctx.prompt = prompt ?? null;
       ctx.promptImages = prompt_images ?? null;
 
-      // Root session is now active — bumps the auto-updater's idle gate so
-      // the daemon won't try to self-restart while work is in progress.
-      incrementActiveSessions();
+      // Root session is now active — register so it shows on /health and the
+      // auto-updater's idle gate fires so the daemon won't try to self-restart
+      // while work is in progress.
+      registerActiveSession({
+        promptId: ctx.promptId,
+        connectionId: ctx.connectionId,
+        client: ctx.client,
+        project: ctx.project,
+        title: ctx.title,
+        startedAt: ctx.startedAt.getTime(),
+        parentPromptId: null,
+        sessionDepth: 0,
+      });
 
       return {
         content: [
