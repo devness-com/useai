@@ -51,6 +51,28 @@ export function unregisterActiveSession(promptId: string): void {
   sessions.delete(promptId);
 }
 
+/**
+ * Drop every session associated with the given MCP transport `connectionId`.
+ * Used by the transport-close hooks (clean shutdown, GET-stream close, ping
+ * rejection) so a killed client's sessions disappear from `/health` within
+ * seconds instead of lingering until the next sweeper tick.
+ *
+ * Returns the evicted records so callers can log them.
+ */
+export function unregisterActiveSessionsByConnection(
+  connectionId: string,
+): ActiveSessionRecord[] {
+  if (!connectionId) return [];
+  const evicted: ActiveSessionRecord[] = [];
+  for (const [promptId, record] of sessions.entries()) {
+    if (record.connectionId === connectionId) {
+      sessions.delete(promptId);
+      evicted.push(record);
+    }
+  }
+  return evicted;
+}
+
 export function touchActiveSession(
   promptId: string,
   now: number = Date.now(),

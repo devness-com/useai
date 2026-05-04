@@ -10,6 +10,7 @@ import {
   sweepStaleSessions,
   touchActiveSession,
   unregisterActiveSession,
+  unregisterActiveSessionsByConnection,
   type ActiveSessionRecord,
 } from "./active-sessions.js";
 
@@ -148,6 +149,33 @@ describe("active-sessions store", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("unregisterActiveSessionsByConnection drops every session for that connection", () => {
+    registerActiveSession(
+      makeRecord({ promptId: "p1", connectionId: "conn_a" }),
+    );
+    registerActiveSession(
+      makeRecord({ promptId: "p2", connectionId: "conn_a" }),
+    );
+    registerActiveSession(
+      makeRecord({ promptId: "p3", connectionId: "conn_b" }),
+    );
+
+    const evicted = unregisterActiveSessionsByConnection("conn_a");
+
+    expect(evicted.map((r) => r.promptId).sort()).toEqual(["p1", "p2"]);
+    expect(getActiveSessionCount()).toBe(1);
+    expect(listActiveSessions()[0]!.promptId).toBe("p3");
+  });
+
+  it("unregisterActiveSessionsByConnection is a no-op for unknown / empty connectionId", () => {
+    registerActiveSession(
+      makeRecord({ promptId: "p1", connectionId: "conn_a" }),
+    );
+    expect(unregisterActiveSessionsByConnection("ghost")).toEqual([]);
+    expect(unregisterActiveSessionsByConnection("")).toEqual([]);
+    expect(getActiveSessionCount()).toBe(1);
   });
 
   it("STALE_TTL_MS exceeds the agent's expected heartbeat cadence", () => {
