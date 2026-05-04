@@ -2,7 +2,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PromptContext } from "../core/prompt-context.js";
 import { touchActivity, resolveSession } from "../core/prompt-context.js";
-import { touchActiveSession } from "../daemon/core/active-sessions.js";
+import {
+  hasActiveSession,
+  registerActiveSession,
+  touchActiveSession,
+} from "../daemon/core/active-sessions.js";
 
 export function registerHeartbeatTool(
   server: McpServer,
@@ -39,7 +43,26 @@ export function registerHeartbeatTool(
 
       const now = Date.now();
       touchActivity(target, now);
-      touchActiveSession(target.promptId, now);
+
+      // If the sweeper already evicted this session (long gap between
+      // heartbeats, or interrupted-then-resumed flow per CLAUDE.md), the
+      // PromptContext is still alive in the MCP server but the dashboard
+      // store has dropped it. Re-register so /health.active_sessions
+      // reflects the resumed session immediately.
+      if (hasActiveSession(target.promptId)) {
+        touchActiveSession(target.promptId, now);
+      } else {
+        registerActiveSession({
+          promptId: target.promptId,
+          connectionId: target.connectionId,
+          client: target.client,
+          project: target.project,
+          title: target.title,
+          startedAt: target.startedAt.getTime(),
+          parentPromptId: target === ctx ? null : ctx.promptId,
+          sessionDepth: target.sessionDepth,
+        });
+      }
 
       const activeDurationMs = Math.max(
         0,

@@ -4,6 +4,7 @@ import {
   STALE_TTL_MS,
   SWEEP_INTERVAL_MS,
   getActiveSessionCount,
+  hasActiveSession,
   listActiveSessions,
   registerActiveSession,
   startActiveSessionsSweeper,
@@ -178,12 +179,22 @@ describe("active-sessions store", () => {
     expect(getActiveSessionCount()).toBe(1);
   });
 
-  it("STALE_TTL_MS exceeds the agent's expected heartbeat cadence", () => {
+  it("hasActiveSession reflects the store contents", () => {
+    expect(hasActiveSession("p1")).toBe(false);
+    registerActiveSession(makeRecord({ promptId: "p1" }));
+    expect(hasActiveSession("p1")).toBe(true);
+    unregisterActiveSession("p1");
+    expect(hasActiveSession("p1")).toBe(false);
+  });
+
+  it("STALE_TTL_MS tolerates at least two missed heartbeats", () => {
     // CLAUDE.md mandates a heartbeat every 4 minutes (or 10 tool calls).
-    // The TTL must give a healthy buffer over that — otherwise live sessions
-    // will be wrongly evicted between heartbeats.
+    // A 7-min TTL only tolerates one missed heartbeat — sessions sometimes
+    // go quiet for 5–6 min on a single long tool call, and one missed
+    // heartbeat shouldn't false-evict them. Two missed heartbeats = ~8 min,
+    // so the TTL must clear that bar.
     const HEARTBEAT_CADENCE_MS = 4 * 60 * 1000;
-    expect(STALE_TTL_MS).toBeGreaterThan(HEARTBEAT_CADENCE_MS);
+    expect(STALE_TTL_MS).toBeGreaterThanOrEqual(2 * HEARTBEAT_CADENCE_MS);
     // But not so wide that crashed sessions linger for hours.
     expect(STALE_TTL_MS).toBeLessThanOrEqual(15 * 60 * 1000);
     expect(SWEEP_INTERVAL_MS).toBeLessThanOrEqual(STALE_TTL_MS);
