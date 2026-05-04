@@ -13,9 +13,13 @@
  */
 
 /** Hard cap on how long a registered session may go without activity before
- *  the sweeper evicts it. Must be wider than the agent's heartbeat cadence
- *  (~4 min in CLAUDE.md) plus a buffer for clock skew and slow tool calls. */
-export const STALE_TTL_MS = 7 * 60 * 1000;
+ *  the sweeper evicts it. Wider than the agent's heartbeat cadence (~4 min
+ *  in CLAUDE.md) by enough to tolerate at least two missed heartbeats —
+ *  sessions sometimes go quiet for 5–6 minutes on a single long-running
+ *  tool call (deploys, big test runs) and shouldn't be false-evicted.
+ *  `useai_heartbeat` will also re-register an evicted session if the agent
+ *  resumes after a longer gap, so this cap is a backstop, not a guillotine. */
+export const STALE_TTL_MS = 12 * 60 * 1000;
 
 /** How often the sweeper runs. */
 export const SWEEP_INTERVAL_MS = 60 * 1000;
@@ -83,6 +87,10 @@ export function touchActiveSession(
 
 export function getActiveSessionCount(): number {
   return sessions.size;
+}
+
+export function hasActiveSession(promptId: string): boolean {
+  return sessions.has(promptId);
 }
 
 export function listActiveSessions(): ActiveSessionRecord[] {
