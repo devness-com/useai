@@ -1,6 +1,12 @@
 import type { Command } from "commander";
 import { checkForUpdate, runUpdate } from "../services/update.service.js";
-import { header, success, info, dim, label } from "../utils/display.js";
+import {
+  getDaemonStatus,
+  startDaemonProcess,
+  stopDaemonProcess,
+  waitForDaemonReady,
+} from "../services/daemon.service.js";
+import { header, success, info, dim, fail, label, spinner } from "../utils/display.js";
 import { createInterface } from "node:readline";
 import pc from "picocolors";
 
@@ -42,8 +48,33 @@ export function registerUpdate(program: Command): void {
         console.log();
       }
 
+      // Capture daemon state BEFORE the install. If the daemon is running, its
+      // in-memory code is still the OLD version even after npm overwrites the
+      // on-disk binary — without an explicit restart the update silently
+      // no-ops until the next reboot.
+      const wasDaemonRunning = (await getDaemonStatus()).running;
+
       info("Running update…");
       runUpdate();
+
+      if (wasDaemonRunning) {
+        info("Restarting daemon to load new version…");
+        try {
+          stopDaemonProcess();
+          await new Promise((r) => setTimeout(r, 500));
+          startDaemonProcess();
+          const stopSpinner = spinner("Waiting for daemon to come online…");
+          const after = await waitForDaemonReady(10_000);
+          stopSpinner();
+          if (after.running) {
+            success(`Daemon restarted at ${after.url}`);
+          } else {
+            fail("Daemon stopped but failed to come back. Run: useai restart");
+          }
+        } catch (err) {
+          fail(`Failed to restart daemon: ${err}. Run: useai restart`);
+        }
+      }
     });
 }
 
