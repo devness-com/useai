@@ -15,6 +15,7 @@ import {
   runBootRollbackCheck,
   startAutoUpdater,
 } from "./core/auto-updater.js";
+import { startActiveSessionsSweeper } from "./core/active-sessions.js";
 // import { startSyncScheduler } from "./sync-scheduler.js";
 
 function writePidFile(): void {
@@ -153,6 +154,12 @@ export async function startDaemon(): Promise<void> {
   // serving by the time the schedule kicks off — equivalent to the
   // serve(...) callback timing.
   startAutoUpdater();
+
+  // Periodic eviction of stale useai sessions (registered via useai_start
+  // but never sealed because the client crashed or was killed). Without
+  // this, /health.active_sessions would drift upward as orphaned records
+  // accumulate.
+  startActiveSessionsSweeper();
 }
 
 /**

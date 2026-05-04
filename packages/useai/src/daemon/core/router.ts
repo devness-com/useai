@@ -12,6 +12,7 @@ import { usersRoutes } from "../routes/users.js";
 import { aggregationsRoutes } from "../routes/aggregations.js";
 import { promptsRoutes } from "../routes/prompts.js";
 import { logsRoutes } from "../routes/logs.js";
+import { activeSessionsRoutes } from "../routes/active-sessions.js";
 import { existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,6 +42,7 @@ export function createApp(): Hono {
   app.route("/api/local/orgs", orgsRoutes);
   app.route("/api/local/users", usersRoutes);
   app.route("/api/local/logs", logsRoutes);
+  app.route("/api/local/active-sessions", activeSessionsRoutes);
   app.route("/api/local/update-check", updateRoutes);
   app.route("/", healthRoutes);
 

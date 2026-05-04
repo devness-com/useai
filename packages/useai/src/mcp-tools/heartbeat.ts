@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PromptContext } from "../core/prompt-context.js";
 import { touchActivity, resolveSession } from "../core/prompt-context.js";
+import { touchActiveSession } from "../daemon/core/active-sessions.js";
 
 export function registerHeartbeatTool(
   server: McpServer,
@@ -38,6 +39,7 @@ export function registerHeartbeatTool(
 
       const now = Date.now();
       touchActivity(target, now);
+      touchActiveSession(target.promptId, now);
 
       const activeDurationMs = Math.max(
         0,

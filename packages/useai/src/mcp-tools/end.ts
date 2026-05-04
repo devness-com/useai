@@ -35,7 +35,7 @@ import {
   ChainLockTimeoutError,
 } from "../core/prompt-context.js";
 import { coerceJsonString } from "../core/coerce.js";
-import { decrementActiveSessions } from "../daemon/core/active-sessions.js";
+import { unregisterActiveSession } from "../daemon/core/active-sessions.js";
 
 let privateKey: Buffer | null = null;
 async function getPrivateKey(): Promise<Buffer> {
@@ -324,8 +324,8 @@ export function registerEndTool(server: McpServer, ctx: PromptContext): void {
 
       // Session sealed successfully — release the auto-updater's idle gate.
       // Do this after the chain lock so a failed seal (which throws above)
-      // doesn't drop the counter.
-      decrementActiveSessions();
+      // doesn't drop the entry early.
+      unregisterActiveSession(targetCtx.promptId);
 
       // A child session is any targetCtx that is not the root ctx itself.
       // This covers both sessions still in concurrentChildren and orphaned sessions
