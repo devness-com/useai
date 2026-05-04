@@ -16,6 +16,8 @@ export const promptsRoutes = new Hono();
 
 function matchesSearch(session: Session, term: string): boolean {
   const lower = term.toLowerCase();
+  if (session.promptId?.toLowerCase().includes(lower)) return true;
+  if (session.connectionId?.toLowerCase().includes(lower)) return true;
   if (session.title?.toLowerCase().includes(lower)) return true;
   if (session.privateTitle?.toLowerCase().includes(lower)) return true;
   if (session.taskType?.toLowerCase().includes(lower)) return true;
@@ -23,6 +25,8 @@ function matchesSearch(session: Session, term: string): boolean {
     return true;
   if (session.project?.toLowerCase().includes(lower)) return true;
   if (session.client?.toLowerCase().includes(lower)) return true;
+  if (session.milestones?.some((m) => m.id?.toLowerCase().includes(lower)))
+    return true;
   return false;
 }
 
