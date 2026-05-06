@@ -1,4 +1,10 @@
-import { existsSync, readFileSync, writeFileSync, unlinkSync, openSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  openSync,
+} from "node:fs";
 import { spawn } from "node:child_process";
 import { DAEMON_PID_FILE, DAEMON_LOG_FILE } from "@devness/useai-storage/paths";
 import { getDaemonUrl } from "@devness/useai-storage/config";
@@ -16,9 +22,11 @@ export interface DaemonStatus {
 export async function getDaemonStatus(): Promise<DaemonStatus> {
   const url = await getDaemonUrl();
   try {
-    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(2000) });
+    const res = await fetch(`${url}/health`, {
+      signal: AbortSignal.timeout(2000),
+    });
     if (res.ok) {
-      const json = await res.json() as {
+      const json = (await res.json()) as {
         uptime_seconds?: number;
         active_sessions?: number;
         version?: string;
@@ -28,19 +36,33 @@ export async function getDaemonStatus(): Promise<DaemonStatus> {
         running: true,
         url,
         ...(pid !== undefined && { pid }),
-        ...(json.uptime_seconds !== undefined && { uptimeSeconds: json.uptime_seconds }),
-        ...(json.active_sessions !== undefined && { activeSessions: json.active_sessions }),
+        ...(json.uptime_seconds !== undefined && {
+          uptimeSeconds: json.uptime_seconds,
+        }),
+        ...(json.active_sessions !== undefined && {
+          activeSessions: json.active_sessions,
+        }),
         ...(json.version !== undefined && { version: json.version }),
       };
     }
-  } catch { /* not running */ }
+  } catch {
+    /* not running */
+  }
   return { running: false, url };
 }
 
 export function readPid(): number | undefined {
   try {
     if (!existsSync(DAEMON_PID_FILE)) return undefined;
-    return parseInt(readFileSync(DAEMON_PID_FILE, "utf-8").trim(), 10);
+    const raw = readFileSync(DAEMON_PID_FILE, "utf-8").trim();
+    const asInt = parseInt(raw, 10);
+    if (Number.isFinite(asInt)) return asInt;
+    // Legacy 0.9.x wrote the pidfile as JSON: {"pid":N,"port":...,"started_at":...}.
+    // parseInt returns NaN on that, which used to make stop/restart/update no-op
+    // for users upgrading from 0.9.x — they'd be left with the old daemon still
+    // bound to port 19200 while the new CLI silently failed to take over.
+    const parsed = JSON.parse(raw) as { pid?: unknown };
+    return typeof parsed.pid === "number" ? parsed.pid : undefined;
   } catch {
     return undefined;
   }
@@ -57,7 +79,9 @@ export function readPid(): number | undefined {
 export function startDaemonProcess(): void {
   const cliScript = process.argv[1];
   if (!cliScript) {
-    throw new Error("Cannot resolve useai entry script (process.argv[1] is empty)");
+    throw new Error(
+      "Cannot resolve useai entry script (process.argv[1] is empty)",
+    );
   }
   const logFd = openSync(DAEMON_LOG_FILE, "a");
   const child = spawn(process.execPath, [cliScript, "daemon-run"], {
