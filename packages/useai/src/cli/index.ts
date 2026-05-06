@@ -10,25 +10,26 @@ import { getDaemonUrl } from "@devness/useai-storage/config";
 declare const __VERSION__: string;
 
 import { registerSetup, runSetup } from "./commands/setup.js";
-import { registerMcp }              from "./commands/mcp.js";
+import { registerMcp } from "./commands/mcp.js";
 
-import { registerStats }      from "./commands/stats.js";
-import { registerStatus }     from "./commands/status.js";
-import { registerExport }     from "./commands/export.js";
-import { registerConfig }     from "./commands/config.js";
-import { registerLogin }      from "./commands/login.js";
-import { registerLogout }     from "./commands/logout.js";
-import { registerSync }       from "./commands/sync.js";
-import { registerUpdate }     from "./commands/update.js";
+import { registerStats } from "./commands/stats.js";
+import { registerStatus } from "./commands/status.js";
+import { registerExport } from "./commands/export.js";
+import { registerConfig } from "./commands/config.js";
+import { registerLogin } from "./commands/login.js";
+import { registerLogout } from "./commands/logout.js";
+import { registerSync } from "./commands/sync.js";
+import { registerUpdate } from "./commands/update.js";
 
-import { registerStart }   from "./commands/start.js";
-import { registerStop }    from "./commands/stop.js";
+import { registerStart } from "./commands/start.js";
+import { registerStop } from "./commands/stop.js";
 import { registerRestart } from "./commands/restart.js";
-import { registerLogs }    from "./commands/logs.js";
+import { registerLogs } from "./commands/logs.js";
 
 import {
   getDaemonStatus,
   startDaemonProcess,
+  stopDaemonProcess,
   waitForDaemonReady,
 } from "./services/daemon.service.js";
 import { info, dim } from "./utils/display.js";
@@ -100,22 +101,19 @@ program.parseAsync().catch((err: unknown) => {
   process.stderr.write(`useai: ${msg}\n`);
   process.exit(1);
 });
-
-// ---------------------------------------------------------------------------
-// Helpers for the bare `useai` action.
-// ---------------------------------------------------------------------------
-
-/**
- * Ensure the daemon is running before we open the dashboard. If it is already
- * up we just confirm it; if not, we kick a detached process and wait briefly.
- * We deliberately avoid blocking forever — if the daemon takes more than ~10 s
- * to come up, the dashboard will still load and surface the error itself.
- */
 async function ensureDaemonRunning(): Promise<void> {
   const status = await getDaemonStatus();
-  if (status.running) return;
 
-  info("Starting daemon…");
+  if (status.running) {
+    if (!status.version || status.version === __VERSION__) return;
+    info(`Daemon is on ${status.version}; restarting on ${__VERSION__}…`);
+    stopDaemonProcess();
+    // Give the OS a moment to release the port before we try to bind it.
+    await new Promise((r) => setTimeout(r, 500));
+  } else {
+    info("Starting daemon…");
+  }
+
   startDaemonProcess();
   await waitForDaemonReady(10_000);
 }
