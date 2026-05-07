@@ -249,11 +249,12 @@ export function fetchConfig(): Promise<LocalConfig> {
 
 // ── Update check ─────────────────────────────────────────────────────────────
 
-export interface UpdateInfo {
-  current: string;
-  latest: string;
-  update_available: boolean;
-}
+// Re-export the canonical UpdateInfo shape from the shared types package so
+// the dashboard and the daemon route can never drift apart again. Historically
+// this file declared its own UpdateInfo with different field names, which is
+// why the "new version available" banner never rendered.
+export type { UpdateInfo } from "@devness/useai-types";
+import type { UpdateInfo } from "@devness/useai-types";
 
 export function fetchUpdateCheck(): Promise<UpdateInfo> {
   return get("/api/local/update-check");

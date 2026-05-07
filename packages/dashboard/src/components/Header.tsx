@@ -31,13 +31,13 @@ function UpdateBanner({ updateInfo }: { updateInfo: UpdateInfo }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent hover:bg-accent/15 transition-colors"
       >
         <ArrowUpCircle className="w-3 h-3" />
-        v{updateInfo.latest} available
+        v{updateInfo.latestVersion} available
       </button>
 
       {showPopover && (
         <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-lg bg-bg-surface-1 border border-border shadow-lg p-3 space-y-2">
           <p className="text-xs text-text-muted">
-            Update from <span className="font-mono text-text-secondary">v{updateInfo.current}</span> to <span className="font-mono text-accent">v{updateInfo.latest}</span>
+            Update from <span className="font-mono text-text-secondary">v{updateInfo.currentVersion}</span> to <span className="font-mono text-accent">v{updateInfo.latestVersion}</span>
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 text-[11px] font-mono bg-bg-base px-2 py-1.5 rounded border border-border text-text-secondary truncate">
@@ -117,7 +117,7 @@ export function Header({ health, updateInfo, onSearchOpen, activeTab, onTabChang
               </kbd>
             </button>
           )}
-          {updateInfo?.update_available && (
+          {updateInfo?.hasUpdate && (
             <UpdateBanner updateInfo={updateInfo} />
           )}
           <ProfileDropdown ref={profileRef} config={config} onRefresh={onRefresh} />

@@ -28,8 +28,7 @@ import { disableAutostart } from "./lib/autostart.js";
 // break tools that were configured during this setup. Same defense as the
 // autostart launcher.
 declare const __VERSION__: string | undefined;
-const VERSION =
-  typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
+const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
 
 export interface SetupOptions {
   yes?: boolean;
@@ -49,8 +48,11 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
 
   const spin = p.spinner();
   spin.start("Scanning for AI tools…");
-  const detected     = detectInstalledTools();
-  const configured   = detected.filter((id) => isToolConfigured(id));
+  // ["claude-code", "cursor"]
+  const detected = detectInstalledTools();
+
+  //Detected ids are stores in configured i.e one configured with useai, rest goes to unconfigured.
+  const configured = detected.filter((id) => isToolConfigured(id));
   const unconfigured = detected.filter((id) => !isToolConfigured(id));
   spin.stop(`Found ${detected.length} tool${detected.length !== 1 ? "s" : ""}`);
 
@@ -60,16 +62,18 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
     return;
   }
 
-  for (const id of configured)   p.log.success(`${getAllToolConfigs().find((c) => c.id === id)?.name ?? id}  (already configured)`);
-  for (const id of unconfigured) p.log.info(`${getAllToolConfigs().find((c) => c.id === id)?.name ?? id}`);
+  for (const id of configured)
+    p.log.success(
+      `${getAllToolConfigs().find((c) => c.id === id)?.name ?? id}  (already configured)`,
+    );
+  for (const id of unconfigured)
+    p.log.info(`${getAllToolConfigs().find((c) => c.id === id)?.name ?? id}`);
 
-  // In --refresh mode, re-install both configured AND unconfigured tools so
-  // any new instructions text or schema changes from the upgrade land on disk.
-  // Otherwise behave as before: prefer to install unconfigured ones, fall
-  // back to configured if everything is already set up.
   const toInstall = opts.refresh
     ? detected
-    : unconfigured.length > 0 ? unconfigured : configured;
+    : unconfigured.length > 0
+      ? unconfigured
+      : configured;
 
   let selected: string[] = toInstall;
   if (!opts.yes && !opts.refresh && unconfigured.length > 0) {
@@ -79,10 +83,15 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
     }));
     const result = await p.multiselect({
       message: "Select tools to configure",
+      //The check boxes with labels.
       options: choices,
+      //Prechecked values, users can uncheck if wishes to
       initialValues: toInstall,
     });
-    if (p.isCancel(result)) { p.cancel("Cancelled."); return; }
+    if (p.isCancel(result)) {
+      p.cancel("Cancelled.");
+      return;
+    }
     selected = result as string[];
   }
 
@@ -113,13 +122,19 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
         try {
           installAutostart();
           startedViaAutostart = true;
-          p.log.success(`Autostart enabled — daemon will start at every login.`);
+          p.log.success(
+            `Autostart enabled — daemon will start at every login.`,
+          );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          p.log.warn(`Could not enable autostart: ${msg}. Falling back to a one-shot start.`);
+          p.log.warn(
+            `Could not enable autostart: ${msg}. Falling back to a one-shot start.`,
+          );
         }
       } else {
-        p.log.info(`Autostart is not yet supported on ${process.platform}. Starting a one-shot daemon.`);
+        p.log.info(
+          `Autostart is not yet supported on ${process.platform}. Starting a one-shot daemon.`,
+        );
       }
 
       try {
@@ -131,7 +146,9 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
         // daemon will keep starting in the background either way.
         const waitSpin = p.spinner();
         waitSpin.start("Waiting for daemon to come online…");
-        const after = await waitForDaemonReady(startedViaAutostart ? 15_000 : 10_000);
+        const after = await waitForDaemonReady(
+          startedViaAutostart ? 15_000 : 10_000,
+        );
         if (after.running) {
           waitSpin.stop(`Daemon ready at ${after.url}`);
         } else {
@@ -145,7 +162,11 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
     }
   }
 
-  p.outro(pc.green("  Done! Restart your AI tool and useai will track every session."));
+  p.outro(
+    pc.green(
+      "  Done! Restart your AI tool and useai will track every session.",
+    ),
+  );
 }
 
 /**
@@ -179,19 +200,22 @@ async function runRemove(opts: SetupOptions): Promise<void> {
   let toRemove = configured.map((c) => c.id);
   if (!opts.yes && configured.length > 0) {
     const choices = configured.map((c) => ({ value: c.id, label: c.name }));
-    const result  = await p.multiselect({
+    const result = await p.multiselect({
       message: "Select tools to remove from",
       options: choices,
       initialValues: toRemove,
     });
-    if (p.isCancel(result)) { p.cancel("Cancelled."); return; }
+    if (p.isCancel(result)) {
+      p.cancel("Cancelled.");
+      return;
+    }
     toRemove = result as string[];
   }
 
   for (const id of toRemove) {
     const res = await removeTool(id);
     if (res.success) p.log.success(res.message);
-    else             p.log.error(res.message);
+    else p.log.error(res.message);
   }
 
   if (hooksInstalled) {
@@ -207,10 +231,12 @@ async function runRemove(opts: SetupOptions): Promise<void> {
     if (daemonStatus.running) {
       const stopped = stopDaemonProcess();
       if (stopped) p.log.success("Daemon stopped");
-      else         p.log.warn("Could not stop daemon — no PID file found");
+      else p.log.warn("Could not stop daemon — no PID file found");
     }
   } else {
-    p.log.info("--keep-daemon set: leaving daemon running and autostart untouched.");
+    p.log.info(
+      "--keep-daemon set: leaving daemon running and autostart untouched.",
+    );
   }
 
   p.outro(pc.green("  Removed."));

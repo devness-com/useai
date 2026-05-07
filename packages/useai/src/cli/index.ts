@@ -5,6 +5,10 @@ import { Command } from "commander";
 import { startDaemon } from "../daemon/app.js";
 import { KEYSTORE_FILE } from "@devness/useai-storage/paths";
 import { getDaemonUrl } from "@devness/useai-storage/config";
+import {
+  detectInstalledTools,
+  isToolConfigured,
+} from "@devness/useai-tool-installer";
 
 // Injected by tsup at bundle time from packages/useai/package.json.
 declare const __VERSION__: string;
@@ -41,29 +45,18 @@ program
   .description("Track and improve your AI coding sessions")
   .version(__VERSION__);
 
-// Bare `useai` is the smart entrypoint:
-//   - First run (no keystore yet) → run the setup wizard, then ensure the
-//     daemon is running, then open the dashboard in the browser.
-//   - Returning user → just make sure the daemon is up and open the dashboard.
-//
-// We treat the keystore file as the "has the user ever set this up" marker
-// because the first MCP/daemon interaction always lazily creates one. There
-// is no dedicated `keystoreExists()` helper in @devness/useai-storage today,
-// so we fall back to a direct fs.existsSync check on KEYSTORE_FILE.
 program.action(async () => {
-  const isFirstRun = !existsSync(KEYSTORE_FILE);
+  const hasKeystore = existsSync(KEYSTORE_FILE);
+  const anyConfigured = detectInstalledTools().some((id) =>
+    isToolConfigured(id),
+  );
+  const needsSetup = !hasKeystore || !anyConfigured;
 
-  if (isFirstRun) {
+  if (needsSetup) {
     await runSetup({});
   }
 
   await ensureDaemonRunning();
-  // Read the dashboard URL AFTER the daemon has come up. The daemon may have
-  // had to fall back from port 19200 onto 19201–19210 if the preferred port
-  // was busy, and it persists the actually-bound port to config before it
-  // starts serving traffic. Reading from config here guarantees we open the
-  // browser at the URL the daemon is really listening on, not the static
-  // default.
   const dashboardUrl = await getDaemonUrl();
   openDashboard(dashboardUrl);
 });

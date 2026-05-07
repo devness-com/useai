@@ -16,6 +16,7 @@ import {
   startAutoUpdater,
 } from "./core/auto-updater.js";
 import { startActiveSessionsSweeper } from "./core/active-sessions.js";
+import { refreshToolInstructionsIfStale } from "./core/refresh-tool-instructions.js";
 // import { startSyncScheduler } from "./sync-scheduler.js";
 
 function writePidFile(): void {
@@ -160,6 +161,14 @@ export async function startDaemon(): Promise<void> {
   // this, /health.active_sessions would drift upward as orphaned records
   // accumulate.
   startActiveSessionsSweeper();
+
+  // Fire-and-forget: if this daemon is running a newer version than the
+  // last time tool instructions were refreshed, re-inject them now. Covers
+  // every upgrade path (`npx @latest`, auto-updater rotation, autostart
+  // launcher boot) without each one having to remember to call us.
+  refreshToolInstructionsIfStale().catch(() => {
+    /* already logged inside */
+  });
 }
 
 /**

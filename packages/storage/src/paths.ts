@@ -11,6 +11,10 @@ export const KEYSTORE_FILE = join(USEAI_DIR, "keystore.json");
 export const DAEMON_PID_FILE = join(USEAI_DIR, "daemon.pid");
 export const DAEMON_LOG_FILE = join(USEAI_DIR, "daemon.log");
 export const SYNC_LOG_FILE = join(USEAI_DIR, "sync-log.json");
+export const INSTRUCTIONS_VERSION_FILE = join(
+  USEAI_DIR,
+  ".instructions-version",
+);
 
 // Auto-update state and rollback safeguard files. The daemon's auto-updater
 // writes the probation record here on every check/install attempt; the boot-
