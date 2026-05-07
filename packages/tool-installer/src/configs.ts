@@ -37,10 +37,12 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   "claude-code": {
     id: "claude-code",
     name: "Claude Code",
+    //mcp tools are registed in this file
     configPath: join(HOME, ".claude.json"),
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "http",
+    //instruction goes in this file.
     instructionsPath: join(HOME, ".claude", "CLAUDE.md"),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".claude")),
@@ -72,7 +74,13 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "http",
-    instructionsPath: join(HOME, ".codeium", "windsurf", "memories", "global_rules.md"),
+    instructionsPath: join(
+      HOME,
+      ".codeium",
+      "windsurf",
+      "memories",
+      "global_rules.md",
+    ),
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".codeium", "windsurf")),
   },
@@ -83,7 +91,13 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configFormat: "json",
     mcpKey: "servers",
     transport: "http",
-    instructionsPath: join(APP_SUPPORT, "Code", "User", "prompts", "useai.instructions.md"),
+    instructionsPath: join(
+      APP_SUPPORT,
+      "Code",
+      "User",
+      "prompts",
+      "useai.instructions.md",
+    ),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code")),
   },
@@ -94,7 +108,13 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configFormat: "json",
     mcpKey: "servers",
     transport: "http",
-    instructionsPath: join(APP_SUPPORT, "Code - Insiders", "User", "prompts", "useai.instructions.md"),
+    instructionsPath: join(
+      APP_SUPPORT,
+      "Code - Insiders",
+      "User",
+      "prompts",
+      "useai.instructions.md",
+    ),
     instructionsMethod: "create",
     detect: () => existsSync(join(APP_SUPPORT, "Code - Insiders")),
   },
@@ -141,11 +161,29 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   "kilo-code": {
     id: "kilo-code",
     name: "Kilo Code",
-    configPath: join(HOME, APP_SUPPORT, "Code", "User", "globalStorage", "kilocode.kilo-code", "settings", "mcp_settings.json"),
+    configPath: join(
+      HOME,
+      APP_SUPPORT,
+      "Code",
+      "User",
+      "globalStorage",
+      "kilocode.kilo-code",
+      "settings",
+      "mcp_settings.json",
+    ),
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "http",
-    detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "kilocode.kilo-code")),
+    detect: () =>
+      existsSync(
+        join(
+          APP_SUPPORT,
+          "Code",
+          "User",
+          "globalStorage",
+          "kilocode.kilo-code",
+        ),
+      ),
   },
   crush: {
     id: "crush",
@@ -177,24 +215,58 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   cline: {
     id: "cline",
     name: "Cline",
-    configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json"),
+    configPath: join(
+      APP_SUPPORT,
+      "Code",
+      "User",
+      "globalStorage",
+      "saoudrizwan.claude-dev",
+      "settings",
+      "cline_mcp_settings.json",
+    ),
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "http",
     instructionsPath: join(HOME, "Documents", "Cline", "Rules", "useai.md"),
     instructionsMethod: "create",
-    detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "saoudrizwan.claude-dev")),
+    detect: () =>
+      existsSync(
+        join(
+          APP_SUPPORT,
+          "Code",
+          "User",
+          "globalStorage",
+          "saoudrizwan.claude-dev",
+        ),
+      ),
   },
   "roo-code": {
     id: "roo-code",
     name: "Roo Code",
-    configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json"),
+    configPath: join(
+      APP_SUPPORT,
+      "Code",
+      "User",
+      "globalStorage",
+      "rooveterinaryinc.roo-cline",
+      "settings",
+      "cline_mcp_settings.json",
+    ),
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "http",
     instructionsPath: join(HOME, ".roo", "rules", "useai.md"),
     instructionsMethod: "create",
-    detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline")),
+    detect: () =>
+      existsSync(
+        join(
+          APP_SUPPORT,
+          "Code",
+          "User",
+          "globalStorage",
+          "rooveterinaryinc.roo-cline",
+        ),
+      ),
   },
   opencode: {
     id: "opencode",
@@ -237,11 +309,28 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   cody: {
     id: "cody",
     name: "Sourcegraph Cody",
-    configPath: join(APP_SUPPORT, "Code", "User", "globalStorage", "sourcegraph.cody-ai", "settings", "mcp_settings.json"),
+    configPath: join(
+      APP_SUPPORT,
+      "Code",
+      "User",
+      "globalStorage",
+      "sourcegraph.cody-ai",
+      "settings",
+      "mcp_settings.json",
+    ),
     configFormat: "json",
     mcpKey: "mcpServers",
     transport: "stdio",
-    detect: () => existsSync(join(APP_SUPPORT, "Code", "User", "globalStorage", "sourcegraph.cody-ai")),
+    detect: () =>
+      existsSync(
+        join(
+          APP_SUPPORT,
+          "Code",
+          "User",
+          "globalStorage",
+          "sourcegraph.cody-ai",
+        ),
+      ),
   },
 };
 
