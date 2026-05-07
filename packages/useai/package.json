@@ -1,6 +1,6 @@
 {
   "name": "@devness/useai",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "type": "module",
   "description": "useai.dev — Track and improve your AI coding sessions",
   "license": "AGPL-3.0-only",
