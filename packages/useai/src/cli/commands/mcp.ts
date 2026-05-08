@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { INSTRUCTIONS_TEXT } from "@devness/useai-tool-installer";
 import { registerTools } from "../../mcp-tools/mcp-tools.js";
 import { createPromptContext } from "../../core/prompt-context.js";
 
@@ -9,7 +10,10 @@ const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
 
 async function runStdioMcpServer(): Promise<void> {
   const promptContext = createPromptContext();
-  const server = new McpServer({ name: "useai", version: VERSION });
+  const server = new McpServer(
+    { name: "useai", version: VERSION },
+    { instructions: INSTRUCTIONS_TEXT },
+  );
   registerTools(server, promptContext);
   const transport = new StdioServerTransport();
   await server.connect(transport);
