@@ -46,6 +46,13 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
   console.log();
   p.intro(pc.bold(opts.refresh ? "  useai setup (refresh)" : "  useai setup"));
 
+  if (isClaudeCodeHooksInstalled()) {
+    removeClaudeCodeHooks();
+    p.log.info(
+      "Removed legacy Claude Code hooks from a previous useai version",
+    );
+  }
+
   const spin = p.spinner();
   spin.start("Scanning for AI tools…");
   // ["claude-code", "cursor"]
@@ -140,10 +147,6 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
       try {
         if (!startedViaAutostart) startDaemonProcess();
 
-        // launchd boots the daemon via `npx`, which can pay a cold-start cost
-        // on first run. Most starts answer in under 5 s; if it hasn't come up
-        // by 15 s we stop blocking and tell the user to check shortly — the
-        // daemon will keep starting in the background either way.
         const waitSpin = p.spinner();
         waitSpin.start("Waiting for daemon to come online…");
         const after = await waitForDaemonReady(

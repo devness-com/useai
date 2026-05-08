@@ -201,7 +201,11 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     configFormat: "yaml",
     mcpKey: "mcpServers",
     transport: "stdio",
-    detect: () => existsSync(join(HOME, ".config", "antigravity")),
+    detect: () =>
+      existsSync(join(HOME, ".antigravity")) ||
+      existsSync(join(HOME, ".config", "Antigravity")) ||
+      existsSync(join(HOME, ".config", "antigravity")) ||
+      existsSync(join(APP_SUPPORT, "Antigravity")),
   },
   goose: {
     id: "goose",
