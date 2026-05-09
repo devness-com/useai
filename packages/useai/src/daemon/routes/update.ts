@@ -2,12 +2,16 @@ import { Hono } from "hono";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { UpdateInfo } from "@devness/useai-types";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
+// Injected by tsup at bundle time from packages/useai/package.json. Matches
+// the pattern used in health.ts / autostart.ts / connection-factory.ts so the
+// version is read from a literal in the bundle instead of a runtime require
+// — the latter previously broke on the npm-installed layout where __dirname
+// is dist/ and `../../package.json` resolves to the @devness/ scope dir.
+declare const __VERSION__: string | undefined;
+const CURRENT_VERSION =
+  typeof __VERSION__ !== "undefined" ? __VERSION__ : "0.1.0";
+
 const execFileAsync = promisify(execFile);
 
 export const updateRoutes = new Hono();
@@ -19,12 +23,6 @@ export const updateRoutes = new Hono();
 // banner could never render: the response shape here used to disagree with
 // the dashboard at three layers (envelope, field names, version field names).
 updateRoutes.get("/", async (c) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const pkg = require(resolve(__dirname, "../../package.json")) as {
-    version: string;
-  };
-  const currentVersion = pkg.version ?? "0.1.0";
-
   try {
     const { stdout } = await execFileAsync("npm", [
       "view",
@@ -32,8 +30,12 @@ updateRoutes.get("/", async (c) => {
       "version",
     ]);
     const latestVersion = stdout.trim();
-    const hasUpdate = latestVersion !== currentVersion;
-    const info: UpdateInfo = { currentVersion, latestVersion, hasUpdate };
+    const hasUpdate = latestVersion !== CURRENT_VERSION;
+    const info: UpdateInfo = {
+      currentVersion: CURRENT_VERSION,
+      latestVersion,
+      hasUpdate,
+    };
     return c.json(info);
   } catch (err) {
     // Surface the real reason (no `npm` on PATH, network down, registry 5xx,
@@ -42,7 +44,7 @@ updateRoutes.get("/", async (c) => {
       `[update-check] npm view failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     return c.json(
-      { error: "Failed to check for updates", currentVersion },
+      { error: "Failed to check for updates", currentVersion: CURRENT_VERSION },
       500,
     );
   }
