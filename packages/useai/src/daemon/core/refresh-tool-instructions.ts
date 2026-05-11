@@ -21,9 +21,11 @@ export async function refreshToolInstructionsIfStale(): Promise<void> {
     // Only refresh tools the user has already configured. We don't want the
     // daemon silently writing MCP config into tools the user explicitly
     // de-selected during setup.
-    const installed = detectInstalledTools().filter((id) =>
-      isToolConfigured(id),
+    const detected = detectInstalledTools();
+    const configuredFlags = await Promise.all(
+      detected.map((id) => isToolConfigured(id)),
     );
+    const installed = detected.filter((_, i) => configuredFlags[i]);
 
     if (installed.length === 0) {
       // Nothing to refresh, but still mark the version so we don't repeat

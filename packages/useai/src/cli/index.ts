@@ -10,8 +10,11 @@ import {
   isToolConfigured,
 } from "@devness/useai-tool-installer";
 
-// Injected by tsup at bundle time from packages/useai/package.json.
-declare const __VERSION__: string;
+// Injected by tsup at bundle time from packages/useai/package.json. Falls back
+// to "dev" when running the un-bundled tsc output (e.g. VS Code debug session).
+declare const __VERSION__: string | undefined;
+const VERSION: string =
+  typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
 
 import { registerSetup, runSetup } from "./commands/setup.js";
 import { registerMcp } from "./commands/mcp.js";
@@ -43,14 +46,19 @@ const program = new Command();
 program
   .name("useai")
   .description("Track and improve your AI coding sessions")
-  .version(__VERSION__);
+  .version(VERSION);
 
 program.action(async () => {
   const hasKeystore = existsSync(KEYSTORE_FILE);
-  const anyConfigured = detectInstalledTools().some((id) =>
-    isToolConfigured(id),
+  const detected = detectInstalledTools();
+  const configuredFlags = await Promise.all(
+    detected.map((id) => isToolConfigured(id)),
   );
-  const needsSetup = !hasKeystore || !anyConfigured;
+  // Setup runs whenever any detected AI tool is missing useai, so new tools
+  // installed after the first onboarding are picked up on the next `useai` run.
+  const allConfigured =
+    detected.length > 0 && configuredFlags.every(Boolean);
+  const needsSetup = !hasKeystore || !allConfigured;
 
   if (needsSetup) {
     await runSetup({});
@@ -98,8 +106,8 @@ async function ensureDaemonRunning(): Promise<void> {
   const status = await getDaemonStatus();
 
   if (status.running) {
-    if (!status.version || status.version === __VERSION__) return;
-    info(`Daemon is on ${status.version}; restarting on ${__VERSION__}…`);
+    if (!status.version || status.version === VERSION) return;
+    info(`Daemon is on ${status.version}; restarting on ${VERSION}…`);
     stopDaemonProcess();
     // Give the OS a moment to release the port before we try to bind it.
     await new Promise((r) => setTimeout(r, 500));
