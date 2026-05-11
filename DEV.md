@@ -49,7 +49,7 @@ keeps it fresh on every save. The bundle is only rebuilt by `tsup` /
 ## Removing useai from all installed tools
 
 ```
-node packages/useai/dist/cli/index.js mcp remove --yes
+node packages/useai/dist/cli/index.js setup --remove --yes
 ```
 
-(or simply `useai mcp remove --yes` if you have it installed globally.)
+(or simply `useai setup --remove --yes` if you have it installed globally.)

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { getDaemonUrl } from "@devness/useai-storage/config";
 import { getToolConfig, getAllToolConfigs } from "./configs.js";
 import { readConfig, writeConfig } from "./formats.js";
@@ -128,15 +128,12 @@ export async function listInstalledTools(): Promise<string[]> {
   return installed;
 }
 
-export function isToolConfigured(toolId: string): boolean {
+export async function isToolConfigured(toolId: string): Promise<boolean> {
   const config = getToolConfig(toolId);
   if (!config || !existsSync(config.configPath)) return false;
 
-  if (config.configFormat !== "json") return false; // sync check only for JSON
-
   try {
-    const raw = readFileSync(config.configPath, "utf-8");
-    const existing = JSON.parse(raw) as Record<string, unknown>;
+    const existing = await readConfig(config.configPath, config.configFormat);
     const servers = existing[config.mcpKey] as Record<string, unknown> | undefined;
     return !!servers?.["useai"];
   } catch {

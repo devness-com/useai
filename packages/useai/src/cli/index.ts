@@ -50,10 +50,15 @@ program
 
 program.action(async () => {
   const hasKeystore = existsSync(KEYSTORE_FILE);
-  const anyConfigured = detectInstalledTools().some((id) =>
-    isToolConfigured(id),
+  const detected = detectInstalledTools();
+  const configuredFlags = await Promise.all(
+    detected.map((id) => isToolConfigured(id)),
   );
-  const needsSetup = !hasKeystore || !anyConfigured;
+  // Setup runs whenever any detected AI tool is missing useai, so new tools
+  // installed after the first onboarding are picked up on the next `useai` run.
+  const allConfigured =
+    detected.length > 0 && configuredFlags.every(Boolean);
+  const needsSetup = !hasKeystore || !allConfigured;
 
   if (needsSetup) {
     await runSetup({});

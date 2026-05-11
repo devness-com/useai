@@ -59,8 +59,11 @@ export async function runSetup(opts: SetupOptions = {}): Promise<void> {
   const detected = detectInstalledTools();
 
   //Detected ids are stores in configured i.e one configured with useai, rest goes to unconfigured.
-  const configured = detected.filter((id) => isToolConfigured(id));
-  const unconfigured = detected.filter((id) => !isToolConfigured(id));
+  const configuredFlags = await Promise.all(
+    detected.map((id) => isToolConfigured(id)),
+  );
+  const configured = detected.filter((_, i) => configuredFlags[i]);
+  const unconfigured = detected.filter((_, i) => !configuredFlags[i]);
   spin.stop(`Found ${detected.length} tool${detected.length !== 1 ? "s" : ""}`);
 
   if (detected.length === 0) {
@@ -184,7 +187,11 @@ async function runRemove(opts: SetupOptions): Promise<void> {
   console.log();
   p.intro(pc.bold("  useai setup --remove"));
 
-  const configured = getAllToolConfigs().filter((c) => isToolConfigured(c.id));
+  const allConfigs = getAllToolConfigs();
+  const configuredFlagsForRemove = await Promise.all(
+    allConfigs.map((c) => isToolConfigured(c.id)),
+  );
+  const configured = allConfigs.filter((_, i) => configuredFlagsForRemove[i]);
   const hooksInstalled = isClaudeCodeHooksInstalled();
   const autostartActive = isAutostartEnabled();
   const daemonStatus = await getDaemonStatus();
@@ -232,9 +239,19 @@ async function runRemove(opts: SetupOptions): Promise<void> {
       disableAutostart();
     }
     if (daemonStatus.running) {
-      const stopped = stopDaemonProcess();
-      if (stopped) p.log.success("Daemon stopped");
-      else p.log.warn("Could not stop daemon — no PID file found");
+      // On Linux/macOS, disabling autostart with `systemctl --user disable --now`
+      // (or `launchctl bootout`) also stops the daemon and deletes the PID file
+      // as a side effect. Re-check before reaching for stopDaemonProcess so we
+      // don't print a misleading "no PID file found" warning for a daemon that
+      // was just shut down cleanly by its own service manager.
+      const after = await getDaemonStatus();
+      if (!after.running) {
+        p.log.success("Daemon stopped");
+      } else {
+        const stopped = stopDaemonProcess();
+        if (stopped) p.log.success("Daemon stopped");
+        else p.log.warn("Could not stop daemon — no PID file found");
+      }
     }
   } else {
     p.log.info(
