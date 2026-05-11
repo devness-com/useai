@@ -5,11 +5,18 @@
       "name": "Debug Daemon",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["start"],
-      "cwd": "${workspaceFolder}/packages/daemon",
+      "cwd": "${workspaceFolder}/packages/useai",
+      "program": "${workspaceFolder}/packages/useai/dist/cli/index.js",
+      "args": ["daemon-run"],
+      "runtimeArgs": ["--watch"],
       "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"]
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "preLaunchTask": "daemon:pre-debug",
+      "outFiles": [
+        "${workspaceFolder}/packages/*/dist/**/*.js"
+      ],
+      "sourceMaps": true
     },
     {
       "name": "Debug Dashboard",
@@ -18,16 +25,6 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
       "cwd": "${workspaceFolder}/packages/dashboard",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"]
-    },
-    {
-      "name": "Debug CLI",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
-      "cwd": "${workspaceFolder}/packages/cli",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"]
     }

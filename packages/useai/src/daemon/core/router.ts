@@ -24,8 +24,19 @@ function resolveDashboardDir(): string {
   // (publish.mjs copies packages/dashboard/dist/** into packages/useai/dist/dashboard/)
   const bundled = resolve(__dirname, "dashboard");
   if (existsSync(bundled)) return bundled;
-  // Dev: monorepo layout — daemon dist is at packages/daemon/dist/core/router.js
-  return resolve(__dirname, "../../../dashboard/dist");
+  // Dev: walk up from __dirname to find <repo>/packages/dashboard/dist.
+  // Avoids brittle ../../.. counts when the daemon source layout changes.
+  let dir = __dirname;
+  for (let i = 0; i < 10; i++) {
+    const candidate = resolve(dir, "packages/dashboard/dist");
+    if (existsSync(candidate)) return candidate;
+    const parent = resolve(dir, "..");
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // Fall back to the historical relative path so the failure message in
+  // serveStatic points somewhere meaningful instead of a stale __dirname.
+  return resolve(__dirname, "../../../../dashboard/dist");
 }
 
 export function createApp(): Hono {
