@@ -13,12 +13,19 @@ export interface ToolInstallResult {
 /**
  * Build the HTTP MCP entry for the running daemon. Resolved at install time
  * (not at module load) so tools written into config pick up whatever
- * fallback port the daemon ended up on. Same shape as before — only the
- * URL is now dynamic.
+ * fallback port the daemon ended up on.
+ *
+ * Most tools accept `{ type: "http", url }`. Antigravity's schema is strict
+ * (`additionalProperties: false`) and uses `serverUrl` for streamable HTTP —
+ * any extra key like `type` is rejected and the server fails to register.
  */
-async function httpEntry(): Promise<{ type: "http"; url: string }> {
+async function httpEntry(toolId: string) {
   const daemonUrl = await getDaemonUrl();
-  return { type: "http", url: `${daemonUrl}/mcp` };
+  const url = `${daemonUrl}/mcp`;
+  if (toolId === "antigravity") {
+    return { serverUrl: url };
+  }
+  return { type: "http", url };
 }
 
 /**
@@ -51,7 +58,7 @@ export async function installTool(
 
     servers["useai"] = config.transport === "stdio"
       ? stdioEntry(version)
-      : await httpEntry();
+      : await httpEntry(toolId);
     existing[config.mcpKey] = servers;
 
     await writeConfig(config.configPath, existing, config.configFormat);

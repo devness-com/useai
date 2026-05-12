@@ -197,15 +197,13 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   antigravity: {
     id: "antigravity",
     name: "Antigravity",
-    configPath: join(HOME, ".config", "antigravity", "config.yaml"),
-    configFormat: "yaml",
+    configPath: join(HOME, ".gemini", "antigravity", "mcp_config.json"),
+    configFormat: "json",
     mcpKey: "mcpServers",
-    transport: "stdio",
-    detect: () =>
-      existsSync(join(HOME, ".antigravity")) ||
-      existsSync(join(HOME, ".config", "Antigravity")) ||
-      existsSync(join(HOME, ".config", "antigravity")) ||
-      existsSync(join(APP_SUPPORT, "Antigravity")),
+    transport: "http",
+    instructionsPath: join(HOME, ".gemini", "GEMINI.md"),
+    instructionsMethod: "append",
+    detect: () => existsSync(join(HOME, ".gemini", "antigravity")),
   },
   goose: {
     id: "goose",
