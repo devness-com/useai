@@ -56,6 +56,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".claude")),
   },
+  //No support for linux
   "claude-desktop": {
     id: "claude-desktop",
     name: "Claude Desktop",

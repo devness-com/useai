@@ -9,6 +9,7 @@ import {
 } from "../core/prompt-context.js";
 import { coerceJsonString } from "../core/coerce.js";
 import { registerActiveSession } from "../daemon/core/active-sessions.js";
+import { recordActivity } from "../daemon/core/connection-store.js";
 
 export function registerStartTool(server: McpServer, ctx: PromptContext): void {
   server.registerTool(
@@ -79,6 +80,12 @@ export function registerStartTool(server: McpServer, ctx: PromptContext): void {
       model,
       prompt_images,
     }) => {
+      recordActivity(ctx.connectionId);
+      // Prefer the host name the IDE reported during MCP initialize over
+      // whatever the LLM passed in — the agent has no reliable way to know
+      // which tool it's running inside, and frequently hallucinates the
+      // `client` value (e.g. Claude-in-Windsurf reports "claude-code").
+      if (ctx.mcpClientName) client = ctx.mcpClientName;
       const framework = "calibrated";
 
       const isNested = ctx.startedAt !== null;

@@ -22,6 +22,13 @@ async function runStdioMcpServer(): Promise<void> {
     { name: "useai", version: VERSION },
     { instructions: INSTRUCTIONS_TEXT },
   );
+  // Capture the host name (e.g. "opencode") at MCP handshake time so
+  // `useai_start` can record the IDE's real identity instead of trusting
+  // the LLM-supplied `client` arg, which the model often hallucinates.
+  server.server.oninitialized = () => {
+    const clientInfo = server.server.getClientVersion();
+    if (clientInfo?.name) promptContext.mcpClientName = clientInfo.name;
+  };
   registerTools(server, promptContext);
   const transport = new StdioServerTransport();
   await server.connect(transport);

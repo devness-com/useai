@@ -36,6 +36,7 @@ import {
 } from "../core/prompt-context.js";
 import { coerceJsonString } from "../core/coerce.js";
 import { unregisterActiveSession } from "../daemon/core/active-sessions.js";
+import { recordActivity } from "../daemon/core/connection-store.js";
 
 let privateKey: Buffer | null = null;
 async function getPrivateKey(): Promise<Buffer> {
@@ -211,6 +212,7 @@ export function registerEndTool(server: McpServer, ctx: PromptContext): void {
       prompt_images,
       evaluation,
     }) => {
+      recordActivity(ctx.connectionId);
       const targetCtx = resolveSession(ctx, prompt_id);
 
       if (!targetCtx || !targetCtx.startedAt) {

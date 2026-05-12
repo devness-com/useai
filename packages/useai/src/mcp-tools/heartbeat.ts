@@ -7,6 +7,7 @@ import {
   registerActiveSession,
   touchActiveSession,
 } from "../daemon/core/active-sessions.js";
+import { recordActivity } from "../daemon/core/connection-store.js";
 
 export function registerHeartbeatTool(
   server: McpServer,
@@ -26,6 +27,7 @@ export function registerHeartbeatTool(
       },
     },
     async ({ prompt_id }) => {
+      recordActivity(ctx.connectionId);
       const target = resolveSession(ctx, prompt_id);
 
       if (!target || !target.startedAt) {

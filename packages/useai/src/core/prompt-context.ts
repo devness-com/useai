@@ -72,6 +72,17 @@ export const globalSessionRegistry = new Map<string, PromptContext>();
 export interface PromptContext {
   promptId: string;
   connectionId: string;
+  /**
+   * Host name from the MCP initialize handshake — the IDE the transport
+   * reports itself as ("windsurf", "claude-code", "opencode", ...). Set
+   * once when the MCP handshake completes (HTTP: via
+   * server.server.oninitialized in connection-factory; stdio: via the same
+   * hook in cli/commands/mcp). Tool handlers prefer this over the
+   * LLM-supplied `client` argument because the agent has no reliable way
+   * to know which IDE it's running inside and routinely hallucinates the
+   * value (e.g. Claude-in-Windsurf reports "claude-code").
+   */
+  mcpClientName?: string;
   prevHash: string;
   /** Mutex that serializes hash chain reads + writes across concurrent useai_end calls. */
   chainLock: ChainLock;
@@ -176,6 +187,7 @@ export function createChildContext(
   return {
     promptId: `prompt_${randomUUID()}`,
     connectionId: parent.connectionId,
+    ...(parent.mcpClientName && { mcpClientName: parent.mcpClientName }),
     prevHash: "", // resolved at seal time from ctx.prevHash — not used at spawn
     chainLock: parent.chainLock, // children share the parent's lock — same chain head
     startedAt: now,
