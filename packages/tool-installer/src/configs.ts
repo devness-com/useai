@@ -10,6 +10,15 @@ export interface ToolConfig {
   configFormat: ConfigFormat;
   mcpKey: string;
   /**
+   * Extra key our installer also checks on this tool. Set per-tool when an
+   * older useai release wrote `useai` under a different top-level key than
+   * the one we now use as `mcpKey`. Detection/remove look here too, and
+   * install drops any stale `useai` entry under it — leaving the old key
+   * behind can break tools whose config validator rejects unknown root
+   * properties.
+   */
+  additionalMcpKey?: string;
+  /**
    * Which MCP transport to write into the tool's config.
    *
    * - "http": tool's MCP server entry points at the daemon's HTTP endpoint
@@ -275,7 +284,8 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     name: "OpenCode",
     configPath: join(HOME, ".config", "opencode", "config.json"),
     configFormat: "json",
-    mcpKey: "mcpServers",
+    mcpKey: "mcp",
+    additionalMcpKey: "mcpServers",
     transport: "stdio",
     instructionsPath: join(HOME, ".config", "opencode", "AGENTS.md"),
     instructionsMethod: "append",

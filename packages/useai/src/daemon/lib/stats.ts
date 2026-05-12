@@ -723,26 +723,34 @@ export function computeAggregateEval(
   };
 }
 
-/** Group prompts into conversations by connectionId. */
+/**
+ * Group prompts into conversations by connectionId.
+ *
+ * Sessions originating from a stdio MCP transport (e.g. OpenCode) carry no
+ * `mcp-session-id` header, so their `connectionId` is "". We can't group
+ * them by transport, so each becomes its own single-prompt conversation
+ * keyed by `prompt:<promptId>` — without this, the prompts feed would
+ * silently drop every stdio-only client.
+ */
 export function groupIntoConversations(
   promptGroups: PromptGroup[],
 ): ConversationGroup[] {
   const convMap = new Map<string, PromptGroup[]>();
 
   for (const pg of promptGroups) {
-    const connectionId = pg.prompt.connectionId;
-    if (!connectionId) continue;
-    const existing = convMap.get(connectionId);
+    const key =
+      pg.prompt.connectionId || `prompt:${pg.prompt.promptId}`;
+    const existing = convMap.get(key);
     if (existing) {
       existing.push(pg);
     } else {
-      convMap.set(connectionId, [pg]);
+      convMap.set(key, [pg]);
     }
   }
 
   const result: ConversationGroup[] = [];
 
-  for (const [connectionId, prompts] of convMap) {
+  for (const [key, prompts] of convMap) {
     // Sort prompts within conversation: latest first (descending by end time)
     prompts.sort(
       (a, b) =>
@@ -760,7 +768,7 @@ export function groupIntoConversations(
     const lastSessionAt = prompts[0]!.prompt.endedAt;
 
     result.push({
-      connectionId: connectionId,
+      connectionId: key,
       prompts,
       aggregateEval: computeAggregateEval(prompts),
       aiTime,

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Command } from "commander";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -10,6 +11,13 @@ const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "latest";
 
 async function runStdioMcpServer(): Promise<void> {
   const promptContext = createPromptContext();
+  // Stdio MCP has no `mcp-session-id` header (that's HTTP-only), so every
+  // session would otherwise land with connectionId="" and the dashboard
+  // would treat each as its own conversation. Generating a UUID once per
+  // process lifetime gives every `useai_start` in this `useai mcp` run a
+  // shared connectionId, so prompts from the same IDE launch (e.g. one
+  // OpenCode session) group together — mirroring HTTP transport semantics.
+  promptContext.connectionId = randomUUID();
   const server = new McpServer(
     { name: "useai", version: VERSION },
     { instructions: INSTRUCTIONS_TEXT },
