@@ -10,6 +10,15 @@ export interface ToolConfig {
   configFormat: ConfigFormat;
   mcpKey: string;
   /**
+   * Extra key our installer also checks on this tool. Set per-tool when an
+   * older useai release wrote `useai` under a different top-level key than
+   * the one we now use as `mcpKey`. Detection/remove look here too, and
+   * install drops any stale `useai` entry under it — leaving the old key
+   * behind can break tools whose config validator rejects unknown root
+   * properties.
+   */
+  additionalMcpKey?: string;
+  /**
    * Which MCP transport to write into the tool's config.
    *
    * - "http": tool's MCP server entry points at the daemon's HTTP endpoint
@@ -47,6 +56,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     instructionsMethod: "append",
     detect: () => existsSync(join(HOME, ".claude")),
   },
+  //No support for linux
   "claude-desktop": {
     id: "claude-desktop",
     name: "Claude Desktop",
@@ -197,15 +207,13 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
   antigravity: {
     id: "antigravity",
     name: "Antigravity",
-    configPath: join(HOME, ".config", "antigravity", "config.yaml"),
-    configFormat: "yaml",
+    configPath: join(HOME, ".gemini", "antigravity", "mcp_config.json"),
+    configFormat: "json",
     mcpKey: "mcpServers",
-    transport: "stdio",
-    detect: () =>
-      existsSync(join(HOME, ".antigravity")) ||
-      existsSync(join(HOME, ".config", "Antigravity")) ||
-      existsSync(join(HOME, ".config", "antigravity")) ||
-      existsSync(join(APP_SUPPORT, "Antigravity")),
+    transport: "http",
+    instructionsPath: join(HOME, ".gemini", "GEMINI.md"),
+    instructionsMethod: "append",
+    detect: () => existsSync(join(HOME, ".gemini", "antigravity")),
   },
   goose: {
     id: "goose",
@@ -277,7 +285,8 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     name: "OpenCode",
     configPath: join(HOME, ".config", "opencode", "config.json"),
     configFormat: "json",
-    mcpKey: "mcpServers",
+    mcpKey: "mcp",
+    additionalMcpKey: "mcpServers",
     transport: "stdio",
     instructionsPath: join(HOME, ".config", "opencode", "AGENTS.md"),
     instructionsMethod: "append",
